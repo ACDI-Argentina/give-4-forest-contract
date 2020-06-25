@@ -2,7 +2,7 @@ const { assertRevert } = require('@aragon/test-helpers/assertThrow')
 const { getEventArgument } = require('@aragon/test-helpers/events')
 const { newDao, newApp } = require('./helpers/dao')
 const { setPermission } = require('./helpers/permissions')
-const { newCrowdfunding, createDac, INFO_CID } = require('./helpers/crowdfunding')
+const { newCrowdfunding, newDac, INFO_CID } = require('./helpers/crowdfunding')
 const { errors } = require('./helpers/errors')
 const Crowdfunding = artifacts.require('Crowdfunding')
 const Vault = artifacts.require('Vault')
@@ -37,11 +37,11 @@ contract('Crowdfunding App - Campaign', ([deployer, giver, registeredUser, deleg
 
         it('Usuario no autorizado', async () => {
 
-            let dacId = await createDac(crowdfunding, delegate);
+            let dacId = await newDac(crowdfunding, delegate);
 
             // El delegate no tiene configurada la autorización para crear campaigns.
             await assertRevert(
-                crowdfunding.createCampaign(
+                crowdfunding.newCampaign(
                     INFO_CID,
                     dacId,
                     campaignReviewer,
@@ -54,14 +54,14 @@ contract('Crowdfunding App - Campaign', ([deployer, giver, registeredUser, deleg
 
         it('Creación de Campaign', async () => {
 
-            let dacId = await createDac(crowdfunding, delegate);
+            let dacId = await newDac(crowdfunding, delegate);
 
             // 1: Crowdfunding.EntityType.Campaign;
             let entityType = 1;
 
-            let receipt = await crowdfunding.createCampaign(INFO_CID, dacId, campaignReviewer, { from: campaignManager });
+            let receipt = await crowdfunding.newCampaign(INFO_CID, dacId, campaignReviewer, { from: campaignManager });
 
-            let campaignId = getEventArgument(receipt, 'CreateCampaign', 'id');
+            let campaignId = getEventArgument(receipt, 'NewCampaign', 'id');
             assert.equal(campaignId, 2);
 
             let campaigns = await crowdfunding.getAllCampaigns();
@@ -95,7 +95,7 @@ contract('Crowdfunding App - Campaign', ([deployer, giver, registeredUser, deleg
             // La Dac con Id 1 no existe.
             let dacId = 1;
 
-            await assertRevert(crowdfunding.createCampaign(
+            await assertRevert(crowdfunding.newCampaign(
                 INFO_CID,
                 dacId,
                 campaignReviewer,

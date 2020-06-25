@@ -39,19 +39,19 @@ const newCrowdfunding = async (deployer) => {
   return await Crowdfunding.new({ from: deployer });
 }
 
-const createDac = async (crowdfunding, delegate) => {
-  let receipt = await crowdfunding.createDac(INFO_CID, { from: delegate });
-  return getEventArgument(receipt, 'CreateDac', 'id').toNumber();
+const newDac = async (crowdfunding, delegate) => {
+  let receipt = await crowdfunding.newDac(INFO_CID, { from: delegate });
+  return getEventArgument(receipt, 'NewDac', 'id').toNumber();
 }
 
-const createCampaign = async (crowdfunding, campaignManager, campaignReviewer, dacId) => {
-  let receipt = await crowdfunding.createCampaign(INFO_CID, dacId, campaignReviewer, { from: campaignManager });
-  return getEventArgument(receipt, 'CreateCampaign', 'id');
+const newCampaign = async (crowdfunding, campaignManager, campaignReviewer, dacId) => {
+  let receipt = await crowdfunding.newCampaign(INFO_CID, dacId, campaignReviewer, { from: campaignManager });
+  return getEventArgument(receipt, 'NewCampaign', 'id');
 }
 
 module.exports = {
   newCrowdfunding,
-  createDac,
-  createCampaign,
+  newDac,
+  newCampaign,
   INFO_CID
 }

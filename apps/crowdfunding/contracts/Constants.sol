@@ -28,5 +28,9 @@ contract Constants is KernelNamespaceConstants {
     string
         internal constant ERROR_DONATE_AMOUNT_ZERO = "CROWDFUNDING_DONATE_AMOUNT_ZERO";
     string
-        internal constant ERROR_RBTC_VALUE_MISMATCH = "CROWDFUNDING_RBTC_VALUE_MISMATCH";
+        internal constant ERROR_ETH_VALUE_MISMATCH = "CROWDFUNDING_ETH_VALUE_MISMATCH";
+    string
+        internal constant ERROR_TOKEN_TRANSFER_FROM_REVERTED = "CROWDFUNDING_TKN_TRANSFER_FROM_REVERT";
+    string
+        internal constant ERROR_TOKEN_APPROVE_FAILED = "CROWDFUNDING_TKN_APPROVE_FAILED";
 }

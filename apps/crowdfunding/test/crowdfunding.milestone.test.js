@@ -2,7 +2,7 @@ const { assertRevert } = require('@aragon/test-helpers/assertThrow')
 const { getEventArgument } = require('@aragon/test-helpers/events')
 const { newDao, newApp } = require('./helpers/dao')
 const { setPermission } = require('./helpers/permissions')
-const { newCrowdfunding, createDac, createCampaign, INFO_CID } = require('./helpers/crowdfunding')
+const { newCrowdfunding, newDac, newCampaign, INFO_CID } = require('./helpers/crowdfunding')
 const { errors } = require('./helpers/errors')
 const Crowdfunding = artifacts.require('Crowdfunding')
 const Vault = artifacts.require('Vault')
@@ -40,14 +40,14 @@ contract('Crowdfunding App - Milestone', ([deployer, giver, registeredUser, dele
 
         it('Usuario no autorizado', async () => {
 
-            let dacId = await createDac(crowdfunding, delegate, '1');
-            let campaignId = await createCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
+            let dacId = await newDac(crowdfunding, delegate, '1');
+            let campaignId = await newCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
 
             let maxAmount = 10;
 
             // El delegate no tiene configurada la autorización para crear milestones.
             await assertRevert(
-                crowdfunding.createMilestone(
+                crowdfunding.newMilestone(
                     INFO_CID,
                     campaignId,
                     maxAmount,
@@ -63,15 +63,15 @@ contract('Crowdfunding App - Milestone', ([deployer, giver, registeredUser, dele
 
         it('Creación de Milestone', async () => {
 
-            let dacId = await createDac(crowdfunding, delegate, '1');
-            let campaignId = await createCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
+            let dacId = await newDac(crowdfunding, delegate, '1');
+            let campaignId = await newCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
 
             let maxAmount = 10;
 
             // 2: Crowdfunding.EntityType.Milestone;
             let entityType = 2;
 
-            let receipt = await crowdfunding.createMilestone(
+            let receipt = await crowdfunding.newMilestone(
                 INFO_CID,
                 campaignId,
                 maxAmount,
@@ -80,7 +80,7 @@ contract('Crowdfunding App - Milestone', ([deployer, giver, registeredUser, dele
                 campaignReviewer,
                 { from: milestoneManager });
 
-            let milestoneId = getEventArgument(receipt, 'CreateMilestone', 'id');
+            let milestoneId = getEventArgument(receipt, 'NewMilestone', 'id');
             assert.equal(milestoneId, 3);
 
             let milestones = await crowdfunding.getAllMilestones();
@@ -117,7 +117,7 @@ contract('Crowdfunding App - Milestone', ([deployer, giver, registeredUser, dele
 
             let maxAmount = 10;
 
-            await assertRevert(crowdfunding.createMilestone(
+            await assertRevert(crowdfunding.newMilestone(
                 INFO_CID,
                 campaignId,
                 maxAmount,

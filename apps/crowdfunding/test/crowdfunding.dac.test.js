@@ -34,7 +34,7 @@ contract('Crowdfunding App - Dac', ([deployer, giver, registeredUser, delegate, 
 
         it('Usuario no autorizado', async () => {
 
-            await assertRevert(crowdfunding.createDac(
+            await assertRevert(crowdfunding.newDac(
                 INFO_CID,
                 { from: notAuthorized }
             ), errors.APP_AUTH_FAILED)
@@ -48,9 +48,9 @@ contract('Crowdfunding App - Dac', ([deployer, giver, registeredUser, delegate, 
             // 0: Crowdfunding.EntityType.Dac;
             let entityType = 0;
 
-            let receipt = await crowdfunding.createDac(INFO_CID, { from: delegate });
+            let receipt = await crowdfunding.newDac(INFO_CID, { from: delegate });
 
-            let dacId = getEventArgument(receipt, 'CreateDac', 'id');
+            let dacId = getEventArgument(receipt, 'NewDac', 'id');
             assert.equal(dacId, 1);
 
             let dacs = await crowdfunding.getAllDacs();
