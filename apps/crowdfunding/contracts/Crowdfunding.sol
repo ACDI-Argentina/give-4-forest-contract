@@ -5,28 +5,34 @@ import "@aragon/os/contracts/apps/AragonApp.sol";
 import "@aragon/apps-vault/contracts/Vault.sol";
 import "./Constants.sol";
 
-//import "./EntityLib.sol";
-//import "./DacLib.sol";
-//import "./CampaignLib.sol";
-//import "./MilestoneLib.sol";
-
 /**
  * @title Crowdfunding
  * @author Mauricio Coronel
  * @notice Contrato encargado de las principales operaciones de manejo de entidades y fondos.
  */
 contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
-    enum DonationStatus {Available, Spent, Returned}
+    enum EntityType {Dac, Campaign, Milestone}
+    enum ButgetStatus {Budgeted, Paying, Paid}
     enum DacStatus {Active, Cancelled}
     enum CampaignStatus {Active, Cancelled}
     enum MilestoneStatus {Active, Cancelled}
-    enum EntityType {Dac, Campaign, Milestone}
+    enum DonationStatus {Available, Spent, Returned}
 
     /// @dev Estructura que define la base de una entidad.
     struct Entity {
         uint256 id; // Identificación de la entidad
         uint256 idIndex; // Índice del Id en entityIds;
         EntityType entityType;
+        uint256 butgetId; // Identificador del presupuesto de la entidad.
+    }
+
+    /// @dev Estructura que define los datos de un Presupuesto para una Entidad.
+    struct Butget {
+        uint256 id; // Identificación del presupuesto.
+        uint256 idIndex; // Índice del Id en butguIds;
+        uint256 amount; // Monto del presupuesto.
+        uint256 entityId; // Identificación de la entidad al cual está destinado el presupuesto.
+        ButgetStatus status;
     }
 
     /// @dev Estructura que define los datos de una DAC.
@@ -89,6 +95,13 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         mapping(uint256 => Entity) entities;
     }
 
+    struct ButgetData {
+        /// @dev Almacena los ids de las presupuestos para poder iterar en el iterable mapping de presupuestos.
+        uint256[] ids;
+        /// @dev Iterable Mapping de Presupuesto
+        mapping(uint256 => Butget) butgets;
+    }
+
     struct DacData {
         /// @dev Almacena los ids de la dacs para poder iterar en el iterable mapping de Dacs
         uint256[] ids;
@@ -118,24 +131,33 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     }
 
     EntityData entityData;
+    ButgetData butgetData;
     DacData dacData;
     CampaignData campaignData;
     MilestoneData milestoneData;
     DonationData donationData;
 
-    modifier entityExists(uint256 entityId) {
-        require(entityData.entities[entityId].id != 0, ERROR_ENTITY_NOT_EXISTS);
-        _;
-    }
-
-    modifier dacExists(uint256 dacId) {
-        require(dacData.dacs[dacId].id != 0, ERROR_DAC_NOT_EXISTS);
-        _;
-    }
-
-    modifier campaignExists(uint256 campaignId) {
+    modifier entityExists(uint256 _entityId) {
         require(
-            campaignData.campaigns[campaignId].id != 0,
+            entityData.entities[_entityId].id != 0,
+            ERROR_ENTITY_NOT_EXISTS
+        );
+        _;
+    }
+
+    modifier butgetExists(uint256 _butgetId) {
+        require(butgetData.butgets[_butgetId].id != 0, ERROR_BUTGET_NOT_EXISTS);
+        _;
+    }
+
+    modifier dacExists(uint256 _dacId) {
+        require(dacData.dacs[_dacId].id != 0, ERROR_DAC_NOT_EXISTS);
+        _;
+    }
+
+    modifier campaignExists(uint256 _campaignId) {
+        require(
+            campaignData.campaigns[_campaignId].id != 0,
             ERROR_CAMPAIGN_NOT_EXISTS
         );
         _;
@@ -156,20 +178,25 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     event NewDac(uint256 id);
     event NewCampaign(uint256 id);
     event NewMilestone(uint256 id);
-    event NewDonation(uint256 id, uint256 entityId, address token, uint256 amount);
+    event NewDonation(
+        uint256 id,
+        uint256 entityId,
+        address token,
+        uint256 amount
+    );
 
     /**
      * @notice Crea la DAC `title`. Quien envía la transacción es el delegate de la Dac.
-     * @param infoCid Content ID de las información (JSON) de la Dac. IPFS Cid.
+     * @param _infoCid Content ID de las información (JSON) de la Dac. IPFS Cid.
      */
-    function newDac(string infoCid) external auth(CREATE_DAC_ROLE) {
-        uint256 entityId = createEntity(EntityType.Dac);
+    function newDac(string _infoCid) external auth(CREATE_DAC_ROLE) {
+        uint256 entityId = newEntity(EntityType.Dac);
         dacData.ids.push(entityId);
         uint256 idIndex = dacData.ids.length - 1;
         Dac memory dac;
         dac.id = entityId;
         dac.idIndex = idIndex;
-        dac.infoCid = infoCid;
+        dac.infoCid = _infoCid;
         dac.delegate = msg.sender;
         dac.status = DacStatus.Active;
         dacData.dacs[entityId] = dac;
@@ -178,70 +205,70 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
 
     /**
      * @notice Crea la Campaign `title`. Quien envía la transacción es el manager de la Campaign.
-     * @param infoCid Content ID de las información (JSON) de la Campaign. IPFS Cid.
-     * @param dacId Id de la Dac a la cual pertenece la Campaign.
-     * @param reviewer address del Campaign Reviewer
+     * @param _infoCid Content ID de las información (JSON) de la Campaign. IPFS Cid.
+     * @param _dacId Id de la Dac a la cual pertenece la Campaign.
+     * @param _reviewer address del Campaign Reviewer
      */
     function newCampaign(
-        string infoCid,
-        uint256 dacId,
-        address reviewer
-    ) external auth(CREATE_CAMPAIGN_ROLE) dacExists(dacId) {
-        uint256 entityId = createEntity(EntityType.Campaign);
+        string _infoCid,
+        uint256 _dacId,
+        address _reviewer
+    ) external auth(CREATE_CAMPAIGN_ROLE) dacExists(_dacId) {
+        uint256 entityId = newEntity(EntityType.Campaign);
         campaignData.ids.push(entityId);
         uint256 idIndex = campaignData.ids.length - 1;
         Campaign memory campaign;
         campaign.id = entityId;
         campaign.idIndex = idIndex;
-        campaign.infoCid = infoCid;
+        campaign.infoCid = _infoCid;
         campaign.manager = msg.sender;
-        campaign.reviewer = reviewer;
+        campaign.reviewer = _reviewer;
         campaign.status = CampaignStatus.Active;
         // Asociación entre Dac y Campaign
         // Memory Array no permite que se cree con un tamaño dinámico.
         // Memory Array no tiene la función push.
         uint256[] memory dacIdsTmp = new uint256[](1);
-        dacIdsTmp[0] = dacId;
+        dacIdsTmp[0] = _dacId;
         campaign.dacIds = dacIdsTmp;
         campaignData.campaigns[entityId] = campaign;
-        dacData.dacs[dacId].campaignIds.push(entityId);
+        dacData.dacs[_dacId].campaignIds.push(entityId);
         emit NewCampaign(entityId);
     }
 
     /**
      * @notice Crea el Milestone `title`. Quien envía la transacción es el manager del Milestone.
-     * @param infoCid Content ID de las información (JSON) del Milestone. IPFS Cid.
-     * @param campaignId Id de la Campaign a la cual pertenece el Milestone.
-     * @param maxAmount Monto máximo para financiar el Milestone.
-     * @param reviewer address del Milestone Reviewer
-     * @param recipient address del Milestone Recipient
-     * @param campaignReviewer address del Campaign Reviewer del Milestone
+     * @param _infoCid Content ID de las información (JSON) del Milestone. IPFS Cid.
+     * @param _campaignId Id de la Campaign a la cual pertenece el Milestone.
+     * @param _maxAmount Monto máximo para financiar el Milestone.
+     * @param _reviewer address del Milestone Reviewer
+     * @param _recipient address del Milestone Recipient
+     * @param _campaignReviewer address del Campaign Reviewer del Milestone
      */
     function newMilestone(
-        string infoCid,
-        uint256 campaignId,
-        uint256 maxAmount,
-        address reviewer,
-        address recipient,
-        address campaignReviewer
-    ) external auth(CREATE_MILESTONE_ROLE) campaignExists(campaignId) {
-        uint256 entityId = createEntity(EntityType.Milestone);
+        string _infoCid,
+        uint256 _campaignId,
+        uint256 _maxAmount,
+        address _reviewer,
+        address _recipient,
+        address _campaignReviewer
+    ) external auth(CREATE_MILESTONE_ROLE) campaignExists(_campaignId) {
+        uint256 entityId = newEntity(EntityType.Milestone);
         milestoneData.ids.push(entityId);
         uint256 idIndex = milestoneData.ids.length - 1;
         Milestone memory milestone;
         milestone.id = entityId;
         milestone.idIndex = idIndex;
-        milestone.infoCid = infoCid;
-        milestone.maxAmount = maxAmount;
+        milestone.infoCid = _infoCid;
+        milestone.maxAmount = _maxAmount;
         milestone.manager = msg.sender;
-        milestone.reviewer = reviewer;
-        milestone.recipient = recipient;
-        milestone.campaignReviewer = campaignReviewer;
+        milestone.reviewer = _reviewer;
+        milestone.recipient = _recipient;
+        milestone.campaignReviewer = _campaignReviewer;
         milestone.status = MilestoneStatus.Active;
         // Asociación entre Campaign y Milestone
-        milestone.campaignId = campaignId;
+        milestone.campaignId = _campaignId;
         milestoneData.milestones[entityId] = milestone;
-        campaignData.campaigns[campaignId].milestoneIds.push(entityId);
+        campaignData.campaigns[_campaignId].milestoneIds.push(entityId);
         emit NewMilestone(entityId);
     }
 
@@ -293,9 +320,12 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         donation.amount = _amount;
         donation.amountRemainding = _amount;
         donation.entityId = _entityId;
-        // TODO Butget
         donation.status = DonationStatus.Available;
         donationData.donations[donationId] = donation;
+
+        // Se agrega al presupuesto de la entidad.
+        Butget storage butget = getButgetByEntity(_entityId);
+        butget.amount += _amount;
 
         emit NewDonation(donationId, _entityId, _token, _amount);
     }
@@ -361,20 +391,84 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         return result;
     }
 
+    /**
+     * @notice Obtiene todas las Presupuestos.
+     * @return Lista con todos los Presupuestos.
+     */
+    function getAllButgets() public view returns (Butget[] memory) {
+        Butget[] memory result = new Butget[](butgetData.ids.length);
+        for (uint256 i = 0; i < butgetData.ids.length; i++) {
+            result[i] = butgetData.butgets[butgetData.ids[i]];
+        }
+        return result;
+    }
+
+    /**
+     * @notice Obtiene el Entity `_entityId`
+     * @return Entity cuya identificación coincide con el especificado.
+     */
+    function getEntity(uint256 _entityId)
+        internal
+        view
+        entityExists(_entityId)
+        returns (Entity storage)
+    {
+        return entityData.entities[_entityId];
+    }
+
+    /**
+     * @notice Obtiene el Presupuesto de Entity `_entityId`
+     * @return Presupuesto del entity especificado.
+     */
+    function getButgetByEntity(uint256 _entityId)
+        internal
+        view
+        returns (Butget storage)
+    {
+        Entity storage entity = getEntity(_entityId);
+        return butgetData.butgets[entity.butgetId];
+    }
+
     // Internal functions
 
     /**
-     * @notice Crea una entidad base del tipo `entityType`.
-     * @param entityType tipo de la entidad a crear.
+     * @dev Crea una entidad base del tipo `_entityType`.
+     * Al crearse la entidad, también se crea su presupuesto inicial.
+     * @param _entityType tipo de la entidad a crear.
      * @return identificador de la entidad creada.
      */
-    function createEntity(EntityType entityType)
+    function newEntity(EntityType _entityType)
         internal
         returns (uint256 entityId)
     {
         entityId = entityData.ids.length + 1; // Generación del Id único por entidad.
         entityData.ids.push(entityId);
         uint256 idIndex = entityData.ids.length - 1;
-        entityData.entities[entityId] = Entity(entityId, idIndex, entityType);
+        uint256 butgetId = newButget(entityId);
+        entityData.entities[entityId] = Entity(
+            entityId,
+            idIndex,
+            _entityType,
+            butgetId
+        );
+    }
+
+    /**
+     * @dev crea un nuevo presupuesto para la entidad `_entityId`.
+     * @param _entityId Identificador de la entidad a la cual se asociará el presupuesto.
+     * @return identificador del presupuesto creado.
+     */
+    function newButget(uint256 _entityId) internal returns (uint256 butgetId) {
+        butgetId = butgetData.ids.length + 1; // Generación del Id único por presupuesto.
+        butgetData.ids.push(butgetId);
+        uint256 idIndex = butgetData.ids.length - 1;
+        // El presupuesto se inicializa en 0.
+        butgetData.butgets[butgetId] = Butget(
+            butgetId,
+            idIndex,
+            0,
+            _entityId,
+            ButgetStatus.Budgeted
+        );
     }
 }

@@ -22,6 +22,8 @@ contract Constants is KernelNamespaceConstants {
     string
         internal constant ERROR_ENTITY_NOT_EXISTS = "CROWDFUNDING_ENTITY_NOT_EXIST";
     string
+        internal constant ERROR_BUTGET_NOT_EXISTS = "CROWDFUNDING_BUTGET_NOT_EXIST";
+    string
         internal constant ERROR_DAC_NOT_EXISTS = "CROWDFUNDING_DAC_NOT_EXIST";
     string
         internal constant ERROR_CAMPAIGN_NOT_EXISTS = "CROWDFUNDING_CAMPAIGN_NOT_EXIST";

@@ -7,6 +7,16 @@ const { errors } = require('./helpers/errors')
 const Crowdfunding = artifacts.require('Crowdfunding')
 const Vault = artifacts.require('Vault')
 
+// 0: EntityType.Dac;
+// 1: EntityType.Campaign;
+// 2: EntityType.Milestone;
+const ENTITY_TYPE_DAC = 0;
+const ENTITY_TYPE_CAMPAIGN = 1;
+const ENTITY_TYPE_MILESTONE = 2;
+
+// 0: ButgetStatus.Butgeted;
+const BUTGET_STATUS_BUTGETED = 0;
+
 contract('Crowdfunding App - Dac', ([deployer, giver, registeredUser, delegate, campaignManager, campaignReviewer, notAuthorized]) => {
     let crowdfundingBase, crowdfunding;
     let vaultBase, vault;
@@ -45,9 +55,6 @@ contract('Crowdfunding App - Dac', ([deployer, giver, registeredUser, delegate, 
 
         it('Creación de Dac', async () => {
 
-            // 0: Crowdfunding.EntityType.Dac;
-            let entityType = 0;
-
             let receipt = await crowdfunding.newDac(INFO_CID, { from: delegate });
 
             let dacId = getEventArgument(receipt, 'NewDac', 'id');
@@ -67,7 +74,17 @@ contract('Crowdfunding App - Dac', ([deployer, giver, registeredUser, delegate, 
             let entity = entities[0];
             assert.equal(entity.id, 1);
             assert.equal(entity.idIndex, 0);
-            assert.equal(entity.entityType, entityType);
+            assert.equal(entity.entityType, ENTITY_TYPE_DAC);
+            assert.equal(entity.butgetId, 1);
+
+            let butgets = await crowdfunding.getAllButgets();
+            assert.equal(butgets.length, 1)
+            let butget = butgets[0];
+            assert.equal(butget.id, 1);
+            assert.equal(butget.idIndex, 0);
+            assert.equal(butget.amount, 0);
+            assert.equal(butget.entityId, 1);
+            assert.equal(butget.status, BUTGET_STATUS_BUTGETED);
         })
     })
 })

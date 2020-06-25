@@ -7,6 +7,16 @@ const { errors } = require('./helpers/errors')
 const Crowdfunding = artifacts.require('Crowdfunding')
 const Vault = artifacts.require('Vault')
 
+// 0: EntityType.Dac;
+// 1: EntityType.Campaign;
+// 2: EntityType.Milestone;
+const ENTITY_TYPE_DAC = 0;
+const ENTITY_TYPE_CAMPAIGN = 1;
+const ENTITY_TYPE_MILESTONE = 2;
+
+// 0: ButgetStatus.Butgeted;
+const BUTGET_STATUS_BUTGETED = 0;
+
 contract('Crowdfunding App - Campaign', ([deployer, giver, registeredUser, delegate, campaignManager, campaignReviewer, notAuthorized]) => {
     let crowdfundingBase, crowdfunding;
     let vaultBase, vault;
@@ -56,9 +66,6 @@ contract('Crowdfunding App - Campaign', ([deployer, giver, registeredUser, deleg
 
             let dacId = await newDac(crowdfunding, delegate);
 
-            // 1: Crowdfunding.EntityType.Campaign;
-            let entityType = 1;
-
             let receipt = await crowdfunding.newCampaign(INFO_CID, dacId, campaignReviewer, { from: campaignManager });
 
             let campaignId = getEventArgument(receipt, 'NewCampaign', 'id');
@@ -77,12 +84,20 @@ contract('Crowdfunding App - Campaign', ([deployer, giver, registeredUser, deleg
 
             let entities = await crowdfunding.getAllEntities();
             assert.equal(entities.length, 2);
-            // El elemento 0 es la Dac
-            // El elemento 1 es la Campaign
             let entity = entities[1];
             assert.equal(entity.id, 2);
             assert.equal(entity.idIndex, 1);
-            assert.equal(entity.entityType, entityType);
+            assert.equal(entity.entityType, ENTITY_TYPE_CAMPAIGN);
+            assert.equal(entity.butgetId, 2);
+
+            let butgets = await crowdfunding.getAllButgets();
+            assert.equal(butgets.length, 2)
+            let butget = butgets[1];
+            assert.equal(butget.id, 2);
+            assert.equal(butget.idIndex, 1);
+            assert.equal(butget.amount, 0);
+            assert.equal(butget.entityId, 2);
+            assert.equal(butget.status, BUTGET_STATUS_BUTGETED);
         })
     })
 

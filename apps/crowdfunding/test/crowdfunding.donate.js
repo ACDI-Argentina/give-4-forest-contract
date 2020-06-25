@@ -25,6 +25,9 @@ const VAULT_INITIAL_TOKEN1_BALANCE = 100;
 // 0: DonationStatus.Available;
 const DONATION_STATUS_AVAILABLE = 0;
 
+// 0: ButgetStatus.Butgeted;
+const BUTGET_STATUS_BUTGETED = 0;
+
 contract('Crowdfunding App - Donate', ([deployer, giver, registeredUser, delegate, campaignManager, campaignReviewer, notAuthorized]) => {
     let crowdfundingBase, crowdfunding;
     let vaultBase, vault;
@@ -117,6 +120,15 @@ contract('Crowdfunding App - Donate', ([deployer, giver, registeredUser, delegat
                 assert.equal(donation.amountRemainding, amount);
                 assert.equal(donation.entityId, dacId);
                 assert.equal(donation.status, DONATION_STATUS_AVAILABLE);
+
+                let butgets = await crowdfunding.getAllButgets();
+                assert.equal(butgets.length, 1)
+                let butget = butgets[0];
+                assert.equal(butget.id, 1);
+                assert.equal(butget.idIndex, 0);
+                assert.equal(butget.amount, amount);
+                assert.equal(butget.entityId, 1);
+                assert.equal(butget.status, BUTGET_STATUS_BUTGETED);
 
                 // Assert desde el Vault
                 assert.equal(await vault.balance(tokenInstance.address), VAULT_INITIAL_TOKEN1_BALANCE + amount, 'Los tokens donados deben estar en el Vault.');

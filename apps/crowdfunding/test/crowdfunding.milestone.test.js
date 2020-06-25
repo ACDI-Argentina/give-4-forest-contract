@@ -7,6 +7,16 @@ const { errors } = require('./helpers/errors')
 const Crowdfunding = artifacts.require('Crowdfunding')
 const Vault = artifacts.require('Vault')
 
+// 0: EntityType.Dac;
+// 1: EntityType.Campaign;
+// 2: EntityType.Milestone;
+const ENTITY_TYPE_DAC = 0;
+const ENTITY_TYPE_CAMPAIGN = 1;
+const ENTITY_TYPE_MILESTONE = 2;
+
+// 0: ButgetStatus.Butgeted;
+const BUTGET_STATUS_BUTGETED = 0;
+
 contract('Crowdfunding App - Milestone', ([deployer, giver, registeredUser, delegate, campaignManager, campaignReviewer, milestoneManager, milestoneReviewer, milestoneRecipient, notAuthorized]) => {
     let crowdfundingBase, crowdfunding;
     let vaultBase, vault;
@@ -68,9 +78,6 @@ contract('Crowdfunding App - Milestone', ([deployer, giver, registeredUser, dele
 
             let maxAmount = 10;
 
-            // 2: Crowdfunding.EntityType.Milestone;
-            let entityType = 2;
-
             let receipt = await crowdfunding.newMilestone(
                 INFO_CID,
                 campaignId,
@@ -98,13 +105,20 @@ contract('Crowdfunding App - Milestone', ([deployer, giver, registeredUser, dele
 
             let entities = await crowdfunding.getAllEntities();
             assert.equal(entities.length, 3);
-            // El elemento 0 es la Dac
-            // El elemento 1 es la Campaign
-            // El elemento 2 es el Milestone
             let entity = entities[2];
             assert.equal(entity.id, 3);
             assert.equal(entity.idIndex, 2);
-            assert.equal(entity.entityType, entityType);
+            assert.equal(entity.entityType, ENTITY_TYPE_MILESTONE);
+            assert.equal(entity.butgetId, 3);
+
+            let butgets = await crowdfunding.getAllButgets();
+            assert.equal(butgets.length, 3)
+            let butget = butgets[2];
+            assert.equal(butget.id, 3);
+            assert.equal(butget.idIndex, 2);
+            assert.equal(butget.amount, 0);
+            assert.equal(butget.entityId, 3);
+            assert.equal(butget.status, BUTGET_STATUS_BUTGETED);
         })
     })
 
