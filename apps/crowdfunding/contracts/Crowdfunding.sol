@@ -23,15 +23,16 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         uint256 id; // Identificación de la entidad
         uint256 idIndex; // Índice del Id en entityIds;
         EntityType entityType;
-        uint256 butgetId; // Identificador del presupuesto de la entidad.
+        uint256[] butgetIds; // Ids de los presupuestos.
     }
 
     /// @dev Estructura que define los datos de un Presupuesto para una Entidad.
     struct Butget {
         uint256 id; // Identificación del presupuesto.
         uint256 idIndex; // Índice del Id en butguIds;
-        uint256 amount; // Monto del presupuesto.
         uint256 entityId; // Identificación de la entidad al cual está destinado el presupuesto.
+        address token; // Token del presupuesto.
+        uint256 amount; // Monto del presupuesto.
         ButgetStatus status;
     }
 
@@ -321,14 +322,18 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         donation.amountRemainding = _amount;
         donation.entityId = _entityId;
         donation.status = DonationStatus.Available;
-        donationData.donations[donationId] = donation;
 
         // Se agrega al presupuesto de la entidad.
-        Butget storage butget = getButgetByEntity(_entityId);
-        butget.amount += _amount;
+        Butget storage butget = getButget(_entityId, _token);
+        butget.amount = butget.amount + _amount;
+        donation.butgetId = butget.id;
+
+        donationData.donations[donationId] = donation;
 
         emit NewDonation(donationId, _entityId, _token, _amount);
     }
+
+    // Getters functions
 
     /**
      * @notice Obtiene todas las Entities.
@@ -403,32 +408,6 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         return result;
     }
 
-    /**
-     * @notice Obtiene el Entity `_entityId`
-     * @return Entity cuya identificación coincide con el especificado.
-     */
-    function getEntity(uint256 _entityId)
-        internal
-        view
-        entityExists(_entityId)
-        returns (Entity storage)
-    {
-        return entityData.entities[_entityId];
-    }
-
-    /**
-     * @notice Obtiene el Presupuesto de Entity `_entityId`
-     * @return Presupuesto del entity especificado.
-     */
-    function getButgetByEntity(uint256 _entityId)
-        internal
-        view
-        returns (Butget storage)
-    {
-        Entity storage entity = getEntity(_entityId);
-        return butgetData.butgets[entity.butgetId];
-    }
-
     // Internal functions
 
     /**
@@ -444,31 +423,70 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         entityId = entityData.ids.length + 1; // Generación del Id único por entidad.
         entityData.ids.push(entityId);
         uint256 idIndex = entityData.ids.length - 1;
-        uint256 butgetId = newButget(entityId);
-        entityData.entities[entityId] = Entity(
-            entityId,
-            idIndex,
-            _entityType,
-            butgetId
-        );
+        Entity memory entity;
+        entity.id = entityId;
+        entity.idIndex = idIndex;
+        entity.entityType = _entityType;
+        entityData.entities[entityId] = entity;
     }
 
     /**
      * @dev crea un nuevo presupuesto para la entidad `_entityId`.
      * @param _entityId Identificador de la entidad a la cual se asociará el presupuesto.
-     * @return identificador del presupuesto creado.
+     * @param _token Token del presupuesto.
+     * @return presupuesto creado.
      */
-    function newButget(uint256 _entityId) internal returns (uint256 butgetId) {
-        butgetId = butgetData.ids.length + 1; // Generación del Id único por presupuesto.
+    function newButget(uint256 _entityId, address _token)
+        internal
+        entityExists(_entityId)
+        returns (Butget storage butget)
+    {
+        uint256 butgetId = butgetData.ids.length + 1; // Generación del Id único por presupuesto.
         butgetData.ids.push(butgetId);
         uint256 idIndex = butgetData.ids.length - 1;
-        // El presupuesto se inicializa en 0.
-        butgetData.butgets[butgetId] = Butget(
-            butgetId,
-            idIndex,
-            0,
-            _entityId,
-            ButgetStatus.Budgeted
-        );
+        butget = butgetData.butgets[butgetId];
+        butget.id = butgetId;
+        butget.idIndex = idIndex;
+        butget.entityId = _entityId;
+        butget.token = _token;
+        // El presupuesto se inicializa en 0 tokens.
+        butget.amount = 0;
+        butget.status = ButgetStatus.Budgeted;
+        // Se asocia el presupuesto a la entidad
+        entityData.entities[_entityId].butgetIds.push(butgetId);
+    }
+
+    /**
+     * @notice Obtiene el Entity `_entityId`
+     * @return Entity cuya identificación coincide con el especificado.
+     */
+    function getEntity(uint256 _entityId)
+        internal
+        view
+        entityExists(_entityId)
+        returns (Entity storage)
+    {
+        return entityData.entities[_entityId];
+    }
+
+    /**
+     * @notice Obtiene el Presupuesto de la Entity `_entityId` del token `_token`.
+     * @param _entityId identificador de la entidad.
+     * @param _token token del presupuesto.
+     * @return Presupuesto del entity y token especificado.
+     */
+    function getButget(uint256 _entityId, address _token)
+        internal
+        returns (Butget storage)
+    {
+        Entity storage entity = getEntity(_entityId);
+        for (uint256 i = 0; i < entity.butgetIds.length; i++) {
+            if (butgetData.butgets[entity.butgetIds[i]].token == _token) {
+                return butgetData.butgets[entity.butgetIds[i]];
+            }
+        }
+        // No existe un presupuesto de la entidad para el token especificado,
+        // por lo que se crea un nuevo presupuesto para el token.
+        return newButget(_entityId, _token);
     }
 }
