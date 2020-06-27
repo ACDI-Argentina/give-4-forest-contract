@@ -107,7 +107,7 @@ contract('Crowdfunding App', ([
     context('Inicialización', function () {
 
         it('Falla al reinicializar', async () => {
-            await assertRevert(crowdfunding.initialize(), errors.INIT_ALREADY_INITIALIZED)
+            await assertRevert(crowdfunding.initialize(vault.address), errors.INIT_ALREADY_INITIALIZED)
         })
     });
 
@@ -667,6 +667,52 @@ contract('Crowdfunding App', ([
             assert.equal(receiptEntityIdTo, campaignId);
             assert.equal(receiptDonationId, donationId1);
             assert.equal(receiptAmount, donationAmount);
+
+            let butgetFrom = await crowdfunding.getButget(dacId, ETH);
+            assertButget(butgetFrom, {
+                entityId: dacId,
+                token: ETH,
+                amount: 0,
+                status: BUTGET_STATUS_BUTGETED
+            });
+
+            let butgetTo = await crowdfunding.getButget(campaignId, ETH);
+            assertButget(butgetTo, {
+                entityId: campaignId,
+                token: ETH,
+                amount: donationAmount,
+                status: BUTGET_STATUS_BUTGETED
+            });
+        })
+
+        it('Transferencia de ETH de Dac a Milestone', async () => {
+
+            const receipt = await crowdfunding.transfer(dacId, milestoneId, [donationId1], { from: delegate });
+            const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
+            const receiptEntityIdTo = getEventArgument(receipt, 'Transfer', 'entityIdTo');
+            const receiptDonationId = getEventArgument(receipt, 'Transfer', 'donationId');
+            const receiptAmount = getEventArgument(receipt, 'Transfer', 'amount');
+
+            assert.equal(receiptEntityIdFrom, dacId);
+            assert.equal(receiptEntityIdTo, milestoneId);
+            assert.equal(receiptDonationId, donationId1);
+            assert.equal(receiptAmount, donationAmount);
+
+            let butgetFrom = await crowdfunding.getButget(dacId, ETH);
+            assertButget(butgetFrom, {
+                entityId: dacId,
+                token: ETH,
+                amount: 0,
+                status: BUTGET_STATUS_BUTGETED
+            });
+
+            let butgetTo = await crowdfunding.getButget(milestoneId, ETH);
+            assertButget(butgetTo, {
+                entityId: milestoneId,
+                token: ETH,
+                amount: donationAmount,
+                status: BUTGET_STATUS_BUTGETED
+            });
         })
     })
 })

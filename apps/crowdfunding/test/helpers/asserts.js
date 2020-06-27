@@ -60,8 +60,12 @@ const assertDonation = (donation, donationExpected) => {
 }
 
 const assertButget = (butget, butgetExpected) => {
-  assert.equal(butget.id, butgetExpected.id);
-  assert.equal(butget.idIndex, butgetExpected.idIndex);
+  if(butgetExpected.id != undefined) {
+    assert.equal(butget.id, butgetExpected.id);
+  }
+  if(butgetExpected.idIndex != undefined) {
+    assert.equal(butget.idIndex, butgetExpected.idIndex);
+  }  
   assert.equal(butget.entityId, butgetExpected.entityId);
   assert.equal(butget.token, butgetExpected.token);
   assert.equal(butget.amount, butgetExpected.amount);

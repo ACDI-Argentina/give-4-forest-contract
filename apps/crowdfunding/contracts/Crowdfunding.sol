@@ -349,7 +349,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         donation.status = DonationStatus.Available;
 
         // Se agrega al presupuesto de la entidad.
-        Butget storage butget = _getButget(_entityId, _token);
+        Butget storage butget = _getOrNewButget(_entityId, _token);
         butget.amount = butget.amount + _amount;
         donation.butgetId = butget.id;
 
@@ -391,14 +391,12 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
             if (entityTo.entityType == EntityType.Campaign) {
                 // Transferencia DAC > Campaign
                 // La entidad de destino debe estar entre las Campaigns de la Dac.
-                require(
-                    dacFrom.campaignIds[entityTo.id] != 0,
-                    ERROR_TRANSFER_CAMPAIGN_NOT_BELONGS_DAC
-                );
-                Campaign storage campaignTo = _getCampaign(entityTo.id);
+                if (!_contains(dacFrom.campaignIds, entityTo.id)) {
+                    revert(ERROR_TRANSFER_CAMPAIGN_NOT_BELONGS_DAC);
+                }
                 // La Campaign debe estar Activa.
                 require(
-                    campaignTo.status == CampaignStatus.Active,
+                    _getCampaign(entityTo.id).status == CampaignStatus.Active,
                     ERROR_TRANSFER_CAMPAIGN_NOT_ACTIVE
                 );
             } else if (entityTo.entityType == EntityType.Milestone) {
@@ -407,8 +405,10 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
                 bool found = false;
                 for (uint256 i1 = 0; i1 < dacFrom.campaignIds.length; i1++) {
                     if (
-                        _getCampaign(dacFrom.campaignIds[i1])
-                            .milestoneIds[entityTo.id] != 0
+                        _contains(
+                            _getCampaign(dacFrom.campaignIds[i1]).milestoneIds,
+                            entityTo.id
+                        )
                     ) {
                         found = true;
                         break;
@@ -423,7 +423,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
                     ERROR_TRANSFER_MILESTONE_NOT_ACTIVE
                 );
             } else {
-                // Solamente se permite transferir a una Campaign o Milestone.
+                // Solamente se permite transferir a una Campaign o Milestone desde una Dac.
                 revert(ERROR_TRANSFER_INVALID);
             }
         } else if (entityFrom.entityType == EntityType.Campaign) {
@@ -438,11 +438,10 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
                 campaignFrom.status == CampaignStatus.Active,
                 ERROR_TRANSFER_CAMPAIGN_NOT_ACTIVE
             );
-            // La entidad de destino debe estar entre los Milestone de la Dac.
-            require(
-                campaignFrom.milestoneIds[entityTo.id] != 0,
-                ERROR_TRANSFER_MILESTONE_NOT_BELONGS_CAMPAIGN
-            );
+            // La entidad de destino debe estar entre los Milestone de la Campaign.
+            if (!_contains(campaignFrom.milestoneIds, entityTo.id)) {
+                revert(ERROR_TRANSFER_MILESTONE_NOT_BELONGS_CAMPAIGN);
+            }
             // Transferencia Campaign > Milestone
             // El Milestone debe estar Activo.
             require(
@@ -456,7 +455,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         }
         // La transferencia superó las validaciones de autorización, estructura y estado.
         for (uint256 i2 = 0; i2 < _donationIds.length; i2++) {
-            //_doTransfer(_entityIdFrom, _entityIdTo, _donationIds[i2]);
+            _doTransfer(_entityIdFrom, _entityIdTo, _donationIds[i2]);
         }
     }
 
@@ -534,6 +533,39 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
             result[i] = butgetData.butgets[butgetData.ids[i]];
         }
         return result;
+    }
+
+    /**
+     * @notice Obtiene el Presupuesto de la Entity `_entityId` del token `_token`.
+     * @param _entityId identificador de la entidad.
+     * @param _token token del presupuesto.
+     * @return Presupuesto del entity y token especificado.
+     */
+    function getButget(uint256 _entityId, address _token)
+        public
+        view
+        returns (
+            uint256 id,
+            uint256 idIndex,
+            uint256 entityId,
+            address token,
+            uint256 amount,
+            ButgetStatus status
+        )
+    {
+        Entity storage entity = _getEntity(_entityId);
+        for (uint256 i = 0; i < entity.butgetIds.length; i++) {
+            Butget storage butget = butgetData.butgets[entity.butgetIds[i]];
+            if (butget.token == _token) {
+                id = butget.id;
+                idIndex = butget.idIndex;
+                entityId = butget.entityId;
+                token = butget.token;
+                amount = butget.amount;
+                status = butget.status;
+                break;
+            }
+        }
     }
 
     // Internal functions
@@ -656,19 +688,20 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
      * @param _token token del presupuesto.
      * @return Presupuesto del entity y token especificado.
      */
-    function _getButget(uint256 _entityId, address _token)
+    function _getOrNewButget(uint256 _entityId, address _token)
         internal
-        returns (Butget storage)
+        returns (Butget storage butget)
     {
         Entity storage entity = _getEntity(_entityId);
         for (uint256 i = 0; i < entity.butgetIds.length; i++) {
-            if (butgetData.butgets[entity.butgetIds[i]].token == _token) {
-                return butgetData.butgets[entity.butgetIds[i]];
+            butget = butgetData.butgets[entity.butgetIds[i]];
+            if (butget.token == _token) {
+                return;
             }
         }
         // No existe un presupuesto de la entidad para el token especificado,
         // por lo que se crea un nuevo presupuesto para el token.
-        return _newButget(_entityId, _token);
+        butget = _newButget(_entityId, _token);
     }
 
     /**
@@ -691,8 +724,11 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
             donation.status == DonationStatus.Available,
             ERROR_TRANSFER_DONATION_NOT_AVAILABLE
         );
-        Butget storage butgetFrom = _getButget(_entityIdFrom, donation.token);
-        Butget storage butgetTo = _getButget(_entityIdTo, donation.token);
+        Butget storage butgetFrom = _getOrNewButget(
+            _entityIdFrom,
+            donation.token
+        );
+        Butget storage butgetTo = _getOrNewButget(_entityIdTo, donation.token);
 
         uint256 amountTransfer = donation.amountRemainding;
         butgetFrom.amount = butgetFrom.amount - amountTransfer;
@@ -700,5 +736,25 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         donation.butgetId = butgetTo.id;
 
         emit Transfer(_entityIdFrom, _entityIdTo, _donationId, amountTransfer);
+    }
+
+    /**
+     * @dev Determina si una arreglo contiene un elemento o no.
+     * @param _array arreglo de elementos
+     * @param _element elemento a determinar si se encuentra dentro del arreglo o no.
+     * @return si elemento existe o no dentro del arreglo.
+     */
+    function _contains(uint256[] _array, uint256 _element)
+        internal
+        pure
+        returns (bool contains)
+    {
+        contains = false;
+        for (uint256 i = 0; i < _array.length; i++) {
+            if (_array[i] == _element) {
+                contains = true;
+                break;
+            }
+        }
     }
 }
