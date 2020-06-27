@@ -59,10 +59,20 @@ const assertDonation = (donation, donationExpected) => {
   assert.equal(donation.status, donationExpected.status);
 }
 
+const assertButget = (butget, butgetExpected) => {
+  assert.equal(butget.id, butgetExpected.id);
+  assert.equal(butget.idIndex, butgetExpected.idIndex);
+  assert.equal(butget.entityId, butgetExpected.entityId);
+  assert.equal(butget.token, butgetExpected.token);
+  assert.equal(butget.amount, butgetExpected.amount);
+  assert.equal(butget.status, butgetExpected.status);
+}
+
 module.exports = {
   assertEntity,
   assertDac,
   assertCampaign,
   assertMilestone,
-  assertDonation
+  assertDonation,
+  assertButget
 }
