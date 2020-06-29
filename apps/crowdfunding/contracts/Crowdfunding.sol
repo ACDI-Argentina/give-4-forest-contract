@@ -13,10 +13,21 @@ import "./Constants.sol";
 contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     enum EntityType {Dac, Campaign, Milestone}
     enum DacStatus {Active, Cancelled}
-    enum CampaignStatus {Active, Finished, Cancelled}
-    enum MilestoneStatus {Active, Finished, Cancelled}
+    enum CampaignStatus {Active, Cancelled, Finished}
+    enum MilestoneStatus {
+        Active,
+        Cancelled,
+        Completed, // Fue marcado completado.
+        Approved, // Se aprobó una vez completado. Listo para el retiro de fondos.
+        Rejected, // Se rechazó una vez completado. Debe volver a completarse.
+        Finished // Se finalizó y se retiraron los fondos.
+    }
     enum DonationStatus {Available, Spent, Returned}
-    enum ButgetStatus {Budgeted, Paying, Paid}
+    enum ButgetStatus {
+        Budgeted, // Los fondos del presupuesto están comprometidos.
+        Paying, // No utilizado por el momento. Se utiliza si se utiliza una aprobación de pago antes de hacerlo efectivo-
+        Paid // El presupuesto fue pagado.
+    }
 
     /// @dev Estructura que define la base de una entidad.
     struct Entity {
@@ -86,6 +97,13 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         ButgetStatus status;
     }
 
+    /// @dev Estructura que almacena el tipo de cambio en USD de un token para una fecha y hora.
+    struct ExchangeRate {
+        address token;
+        uint64 date; // Fecha y hora del tipo de cambio.
+        uint256 rate; // USD por Token.
+    }
+
     struct EntityData {
         /**
          * @dev Almacena los ids de la entities para poder iterar
@@ -143,6 +161,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     MilestoneData milestoneData;
     DonationData donationData;
     ButgetData butgetData;
+    mapping(address => ExchangeRate) public exchangeRates;
 
     modifier entityExists(uint256 _id) {
         require(entityData.entities[_id].id != 0, ERROR_ENTITY_NOT_EXISTS);
@@ -177,6 +196,14 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
 
     modifier butgetExists(uint256 _id) {
         require(butgetData.butgets[_id].id != 0, ERROR_BUTGET_NOT_EXISTS);
+        _;
+    }
+
+    modifier exchangeRateExists(address _token) {
+        require(
+            exchangeRates[_token].date != 0,
+            ERROR_EXCHANGE_RATE_NOT_EXISTS
+        );
         _;
     }
 
@@ -316,7 +343,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
             require(msg.value == _amount, ERROR_ETH_VALUE_MISMATCH);
             vault.deposit.value(_amount)(ETH, _amount);
         } else {
-            // This assumes the sender has approved the tokens for Crowdfunding
+            // Se asume que el sender aprobó al Crowdfunding para manejar el monto de tokens.
             require(
                 ERC20(_token).safeTransferFrom(
                     msg.sender,
@@ -325,12 +352,12 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
                 ),
                 ERROR_TOKEN_TRANSFER_FROM_REVERTED
             );
-            // Approve the tokens for the Vault (it does the actual transferring)
+            // Se aprueba al Vault para que transfiera los tokens.
             require(
                 ERC20(_token).safeApprove(vault, _amount),
                 ERROR_TOKEN_APPROVE_FAILED
             );
-            // Finally, initiate the deposit
+            // Se inicia el depósito en el Vault.
             vault.deposit(_token, _amount);
         }
 
@@ -459,6 +486,68 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         }
     }
 
+    /**
+     * @notice Retiro de fondos. TODO Completar.
+     * @dev Withdraw Pattern
+     * @param _entityId Id del milestone sobre el cual se retiran los fondos.
+     */
+    function withdraw(uint256 _milestoneId) external isInitialized {
+        Milestone storage milestone = _getMilestone(_entityId);
+        // Solamente el destinatario de los fondos puede hacer el retiro.
+        require(
+            milestone.recipient == msg.sender,
+            ERROR_WITHDRAW_NOT_AUTHORIZED
+        );
+        // El Milestone debe estar Aprobado.
+        require(
+            milestone.status == MilestoneStatus.Approved,
+            ERROR_WITHDRAW_NOT_APPROVED
+        );
+        // El retiro superó las validaciones del Milestones
+        /*Entity storage entity = _getEntity(_entityId);
+        for (uint256 i = 0; i < entity.butgetIds.length; i++) {
+            _doWithdraw(entity.butgetIds[i], milestone.recipient);
+        }*/
+        uint256 memory targetAmount = milestone.maxAmount;
+        Entity storage entity = _getEntity(_entityId);
+        for (uint256 i = 0; i < entity.butgetIds.length; i++) {
+            targetAmount = _updateButgetDonations(
+                entity.butgetIds[i],
+                targetAmount
+            );
+        }
+
+        /*Butget[] butgets = getButgets(milestone.id);
+        // Se transfieren cada uno de los tokens al destinatario.
+        for (uint256 i = 0; i < butgets.length; i++) {
+            Butget storage butget = butgets[i];
+            vault.transfer(butget.token, milestone.recipient, butget.amount);
+        }*/
+    }
+
+    function _updateButgetDonations(uint256 _butgetId, uint256 _targetAmount)
+        internal
+        returns (uint256 targetAmount)
+    {
+        Butget storage butget = _getButget(_butgetId);
+        uint256 rate = _getExchangeRate(butget.token);
+        Donation[] storage donations = getDonationsByButget(_butgetId);
+        targetAmount = _targetAmount;
+        for (uint256 i = 0; i < donations.length; i++) {
+            Donation storage donation = donations[i];
+            uint256 convertedAmount = donation.amountRemainding * rate;
+            if (targetAmount >= convertedAmount) {
+                // No se superó el monto objetivo.
+                targetAmount = targetAmount - convertedAmount;
+                donation.amountRemainding = 0;
+                donation.status = DonationStatus.Spent;
+            } else {
+                // El monto restante de la donación es superior al objetivo.
+                
+            }
+        }
+    }
+
     // Getters functions
 
     /**
@@ -536,6 +625,23 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     }
 
     /**
+     * @notice Obtiene los presupuestos de la Entity `_entityId` para cada token.
+     * @param _entityId identificador de la entidad.
+     * @return Presupuestos del entity con los diferentes tokens.
+     */
+    function getButgets(uint256 _entityId)
+        public
+        view
+        returns (Butget[] memory butgets)
+    {
+        Entity storage entity = _getEntity(_entityId);
+        for (uint256 i = 0; i < entity.butgetIds.length; i++) {
+            Butget storage butget = butgetData.butgets[entity.butgetIds[i]];
+            butgets.push(butget);
+        }
+    }
+
+    /**
      * @notice Obtiene el Presupuesto de la Entity `_entityId` del token `_token`.
      * @param _entityId identificador de la entidad.
      * @param _token token del presupuesto.
@@ -566,6 +672,40 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
                 break;
             }
         }
+    }
+
+    /**
+     * @notice Obtiene las donaciones del presupuesto `_butgetId`.
+     * @param _butgetId identificador del presuesto al cual pertenecen las donaciones.
+     * @return Donaciones del presupuesto.
+     */
+    function getDonationsByButget(uint256 _butgetId)
+        public
+        view
+        butgetExists(_butgetId)
+        returns (Donation[] storage donations)
+    {
+        for (uint256 i = 0; i < donationData.ids.length; i++) {
+            Donation storage donation = donationData.donations[donationData
+                .ids[i]];
+            if (donation.butgetId == _butgetId) {
+                butgets.push(donation);
+            }
+        }
+    }
+
+    /**
+     * @notice Establece el tipo de cambio del `_token` a `_rate` USD.
+     * @dev TODO este método debe reeplazarse por el establecimiento a través de un Oracle.
+     *  Evaluar la incorporación de RIF Gateway.
+     * @param _token Token para el cual se estable el tipo de cambio en USD.
+     * @param _rate Precio en USD del Token.
+     */
+    function setExchangeRate(address _token, uint256 _rate)
+        public
+        auth(EXCHANGE_RATE_ROLE)
+    {
+        exchangeRates[_token] = ExchangeRate(_token, getTimestamp64(), _rate);
     }
 
     // Internal functions
@@ -669,6 +809,19 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     }
 
     /**
+     * @notice Obtiene el presupuesto `_id`
+     * @return Presupuesto cuya identificación coincide con la especificada.
+     */
+    function _getButget(uint256 _id)
+        internal
+        view
+        butgetExists(_id)
+        returns (Butget storage)
+    {
+        return butgetData.butgets[_id];
+    }
+
+    /**
      * @notice Obtiene la donación `_id`
      * @return Donación cuya identificación coincide con la especificada.
      */
@@ -679,6 +832,19 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         returns (Donation storage)
     {
         return donationData.donations[_id];
+    }
+
+    /**
+     * @notice Obtiene el Exchange Rate del Token `_token`
+     * @return Exchange Rate del Token.
+     */
+    function _getExchangeRate(address _token)
+        internal
+        view
+        exchangeRateExists(_token)
+        returns (ExchangeRate storage)
+    {
+        return exchangeRate[_token];
     }
 
     /**
@@ -737,6 +903,25 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
 
         emit Transfer(_entityIdFrom, _entityIdTo, _donationId, amountTransfer);
     }
+
+    /**
+     * @notice Retiro de fondos. TODO Completar.
+     * @param _entityId Id del milestone sobre el cual se retiran los fondos.
+     */
+    function _doWithdraw(uint256 _butgetId, address recipient) internal {
+        Butget storage butget = _getButget(_butgetId);
+        // El presupuesto debe estar comprometido.
+        require(
+            butget.status == ButgetStatus.Butgeted,
+            ERROR_WITHDRAW_NOT_BUTGETED
+        );
+        // Se realiza la transferencia desde el Vault al destinatario.
+        vault.transfer(butget.token, recipient, butget.amount);
+        // El presupuesto es finalizado.
+        butget.status = ButgetStatus.Paid;
+    }
+
+    // Internal functions - utils
 
     /**
      * @dev Determina si una arreglo contiene un elemento o no.

@@ -16,6 +16,9 @@ contract Constants is KernelNamespaceConstants {
     bytes32 public constant CREATE_MILESTONE_ROLE = keccak256(
         "CREATE_MILESTONE_ROLE"
     );
+    bytes32 public constant EXCHANGE_RATE_ROLE = keccak256(
+        "EXCHANGE_RATE_ROLE"
+    );
 
     string
         internal constant ERROR_VAULT_NOT_CONTRACT = "CROWDFUNDING_VAULT_NOT_CONTRACT";
@@ -39,6 +42,7 @@ contract Constants is KernelNamespaceConstants {
         internal constant ERROR_TOKEN_TRANSFER_FROM_REVERTED = "CROWDFUNDING_TKN_TRANSFER_FROM_REVERT";
     string
         internal constant ERROR_TOKEN_APPROVE_FAILED = "CROWDFUNDING_TKN_APPROVE_FAILED";
+    // Transfer
     string
         internal constant ERROR_TRANSFER_NOT_AUTHORIZED = "CROWDFUNDING_TRANSFER_NOT_AUTHORIZED";
     string
@@ -57,4 +61,14 @@ contract Constants is KernelNamespaceConstants {
         internal constant ERROR_TRANSFER_MILESTONE_NOT_ACTIVE = "CROWDFUNDING_TRANSFER_MILESTONE_NOT_ACTIVE";
     string
         internal constant ERROR_TRANSFER_DONATION_NOT_AVAILABLE = "CROWDFUNDING_TRANSFER_DONATION_NOT_AVAILABLE";
+    // Withdraw
+    string
+        internal constant ERROR_WITHDRAW_NOT_AUTHORIZED = "CROWDFUNDING_WITHDRAW_NOT_AUTHORIZED";
+    string
+        internal constant ERROR_WITHDRAW_NOT_APPROVED = "CROWDFUNDING_WITHDRAW_NOT_APPROVED";
+    string
+        internal constant ERROR_WITHDRAW_NOT_BUTGETED = "CROWDFUNDING_WITHDRAW_NOT_BUTGETED";
+    // Exchange Rate
+    string
+        internal constant ERROR_EXCHANGE_RATE_NOT_EXISTS = "CROWDFUNDING_EXCHANGE_RATE_NOT_EXISTS";
 }
