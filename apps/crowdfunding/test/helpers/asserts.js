@@ -39,7 +39,7 @@ const assertMilestone = (milestone, milestoneExpected) => {
   assert.equal(milestone.id, milestoneExpected.id);
   assert.equal(milestone.idIndex, milestoneExpected.idIndex);
   assert.equal(milestone.infoCid, milestoneExpected.infoCid);
-  assert.equal(milestone.maxAmount, milestoneExpected.maxAmount);
+  assert.equal(milestone.fiatAmountTarget, milestoneExpected.fiatAmountTarget);
   assert.equal(milestone.manager, milestoneExpected.manager);
   assert.equal(milestone.reviewer, milestoneExpected.reviewer);
   assert.equal(milestone.recipient, milestoneExpected.recipient);

@@ -24,8 +24,9 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     }
     enum DonationStatus {Available, Spent, Returned}
     enum ButgetStatus {
-        Budgeted, // Los fondos del presupuesto están comprometidos.
+        Butgeted, // Los fondos del presupuesto están comprometidos.
         Paying, // No utilizado por el momento. Se utiliza si se utiliza una aprobación de pago antes de hacerlo efectivo-
+        Closed, // EL presupuesto se cierra sin realizarse el pago.
         Paid // El presupuesto fue pagado.
     }
 
@@ -64,7 +65,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         uint256 id; // Identificación de la entidad
         uint256 idIndex; // Índice del Id en MilestoneIds;
         string infoCid; // IPFS Content ID de las información (JSON) del Milestone.
-        uint256 maxAmount;
+        uint256 fiatAmountTarget; // Cantidad de dinero Fiat necesario para el Milestone.
         address manager;
         address reviewer;
         address recipient;
@@ -234,6 +235,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         uint256 donationId,
         uint256 amount
     );
+    event Withdraw(uint256 milestoneId, address token, uint256 amount);
 
     /**
      * @notice Crea la DAC `title`. Quien envía la transacción es el delegate de la Dac.
@@ -291,7 +293,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
      *  manager del Milestone.
      * @param _infoCid Content ID de las información (JSON) del Milestone. IPFS Cid.
      * @param _campaignId Id de la Campaign a la cual pertenece el Milestone.
-     * @param _maxAmount Monto máximo para financiar el Milestone.
+     * @param _fiatAmountTarget Monto máximo para financiar el Milestone.
      * @param _reviewer address del Milestone Reviewer
      * @param _recipient address del Milestone Recipient
      * @param _campaignReviewer address del Campaign Reviewer del Milestone
@@ -299,7 +301,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     function newMilestone(
         string _infoCid,
         uint256 _campaignId,
-        uint256 _maxAmount,
+        uint256 _fiatAmountTarget,
         address _reviewer,
         address _recipient,
         address _campaignReviewer
@@ -311,7 +313,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         milestone.id = entityId;
         milestone.idIndex = idIndex;
         milestone.infoCid = _infoCid;
-        milestone.maxAmount = _maxAmount;
+        milestone.fiatAmountTarget = _fiatAmountTarget;
         milestone.manager = msg.sender;
         milestone.reviewer = _reviewer;
         milestone.recipient = _recipient;
@@ -487,13 +489,14 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     }
 
     /**
-     * @notice Retiro de fondos. TODO Completar.
-     * @dev Withdraw Pattern
-     * @param _entityId Id del milestone sobre el cual se retiran los fondos.
+     * @notice Retira los fondos del Milestone `_milestoneId`.
+     * @dev Implementación de Withdraw Pattern.
+     * @param _milestoneId Id del milestone sobre el cual se retiran los fondos.
      */
     function withdraw(uint256 _milestoneId) external isInitialized {
-        Milestone storage milestone = _getMilestone(_entityId);
+        Milestone storage milestone = _getMilestone(_milestoneId);
         // Solamente el destinatario de los fondos puede hacer el retiro.
+        // Withdraw Pattern
         require(
             milestone.recipient == msg.sender,
             ERROR_WITHDRAW_NOT_AUTHORIZED
@@ -504,48 +507,30 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
             ERROR_WITHDRAW_NOT_APPROVED
         );
         // El retiro superó las validaciones del Milestones
-        /*Entity storage entity = _getEntity(_entityId);
+        uint256 fiatAmountTarget = milestone.fiatAmountTarget;
+        Entity storage entity = _getEntity(_milestoneId);
         for (uint256 i = 0; i < entity.butgetIds.length; i++) {
-            _doWithdraw(entity.butgetIds[i], milestone.recipient);
-        }*/
-        uint256 memory targetAmount = milestone.maxAmount;
-        Entity storage entity = _getEntity(_entityId);
-        for (uint256 i = 0; i < entity.butgetIds.length; i++) {
-            targetAmount = _updateButgetDonations(
+            fiatAmountTarget = _fitButget(
+                _milestoneId,
                 entity.butgetIds[i],
-                targetAmount
+                fiatAmountTarget
             );
+            _doWithdraw(_milestoneId, entity.butgetIds[i]);
         }
-
-        /*Butget[] butgets = getButgets(milestone.id);
-        // Se transfieren cada uno de los tokens al destinatario.
-        for (uint256 i = 0; i < butgets.length; i++) {
-            Butget storage butget = butgets[i];
-            vault.transfer(butget.token, milestone.recipient, butget.amount);
-        }*/
     }
 
-    function _updateButgetDonations(uint256 _butgetId, uint256 _targetAmount)
-        internal
-        returns (uint256 targetAmount)
+    /**
+     * @notice Establece el tipo de cambio del `_token` a `_rate` USD.
+     * @dev TODO este método debe reeplazarse por el establecimiento a través de un Oracle.
+     *  Evaluar la incorporación de RIF Gateway.
+     * @param _token Token para el cual se estable el tipo de cambio en USD.
+     * @param _rate Precio en USD del Token.
+     */
+    function setExchangeRate(address _token, uint256 _rate)
+        public
+        auth(EXCHANGE_RATE_ROLE)
     {
-        Butget storage butget = _getButget(_butgetId);
-        uint256 rate = _getExchangeRate(butget.token);
-        Donation[] storage donations = getDonationsByButget(_butgetId);
-        targetAmount = _targetAmount;
-        for (uint256 i = 0; i < donations.length; i++) {
-            Donation storage donation = donations[i];
-            uint256 convertedAmount = donation.amountRemainding * rate;
-            if (targetAmount >= convertedAmount) {
-                // No se superó el monto objetivo.
-                targetAmount = targetAmount - convertedAmount;
-                donation.amountRemainding = 0;
-                donation.status = DonationStatus.Spent;
-            } else {
-                // El monto restante de la donación es superior al objetivo.
-                
-            }
-        }
+        exchangeRates[_token] = ExchangeRate(_token, getTimestamp64(), _rate);
     }
 
     // Getters functions
@@ -632,12 +617,12 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     function getButgets(uint256 _entityId)
         public
         view
-        returns (Butget[] memory butgets)
+        returns (Butget[] butgets)
     {
         Entity storage entity = _getEntity(_entityId);
         for (uint256 i = 0; i < entity.butgetIds.length; i++) {
             Butget storage butget = butgetData.butgets[entity.butgetIds[i]];
-            butgets.push(butget);
+            butgets[i] = butget;
         }
     }
 
@@ -672,40 +657,6 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
                 break;
             }
         }
-    }
-
-    /**
-     * @notice Obtiene las donaciones del presupuesto `_butgetId`.
-     * @param _butgetId identificador del presuesto al cual pertenecen las donaciones.
-     * @return Donaciones del presupuesto.
-     */
-    function getDonationsByButget(uint256 _butgetId)
-        public
-        view
-        butgetExists(_butgetId)
-        returns (Donation[] storage donations)
-    {
-        for (uint256 i = 0; i < donationData.ids.length; i++) {
-            Donation storage donation = donationData.donations[donationData
-                .ids[i]];
-            if (donation.butgetId == _butgetId) {
-                butgets.push(donation);
-            }
-        }
-    }
-
-    /**
-     * @notice Establece el tipo de cambio del `_token` a `_rate` USD.
-     * @dev TODO este método debe reeplazarse por el establecimiento a través de un Oracle.
-     *  Evaluar la incorporación de RIF Gateway.
-     * @param _token Token para el cual se estable el tipo de cambio en USD.
-     * @param _rate Precio en USD del Token.
-     */
-    function setExchangeRate(address _token, uint256 _rate)
-        public
-        auth(EXCHANGE_RATE_ROLE)
-    {
-        exchangeRates[_token] = ExchangeRate(_token, getTimestamp64(), _rate);
     }
 
     // Internal functions
@@ -751,7 +702,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         butget.token = _token;
         // El presupuesto se inicializa en 0 tokens.
         butget.amount = 0;
-        butget.status = ButgetStatus.Budgeted;
+        butget.status = ButgetStatus.Butgeted;
         // Se asocia el presupuesto a la entidad
         entityData.entities[_entityId].butgetIds.push(butgetId);
     }
@@ -844,7 +795,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         exchangeRateExists(_token)
         returns (ExchangeRate storage)
     {
-        return exchangeRate[_token];
+        return exchangeRates[_token];
     }
 
     /**
@@ -873,8 +824,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     /**
      * @notice Realiza la transferencia de la donación `_donationId` desde
      *  la entidad `_entityIdFrom` a la entidad `_entityIdTo`.
-     * @dev Las donación se transfiere por completo y no fraccionada.
-     *  En este punto, ya se encuentra validada la transferencia entre entidades.
+     * @dev La donación se transfiere por completo y no fraccionada.
      * @param _entityIdFrom Id de la entidad a la cual pertenece la donación transferida.
      * @param _entityIdTo Id de la entidad a la cual se transfiere la donación.
      * @param _donationId Id de las donación a transferir.
@@ -905,20 +855,92 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     }
 
     /**
-     * @notice Retiro de fondos. TODO Completar.
-     * @param _entityId Id del milestone sobre el cual se retiran los fondos.
+     * @notice Realiza el retiro de fondos desde el presupuesto `_butgetId` del Milestone `_milestoneId`.
+     * @param _milestoneId Id del Milestone para el cual se retiran los fondos.
+     * @param _butgetId Id del presupuesto desde el cual se retiran los fondos.
      */
-    function _doWithdraw(uint256 _butgetId, address recipient) internal {
+    function _doWithdraw(uint256 _milestoneId, uint256 _butgetId) internal {
+        Milestone storage milestone = _getMilestone(_milestoneId);
         Butget storage butget = _getButget(_butgetId);
+        if (butget.amount == 0) {
+            // No se continúa con el retiro porque no hay monto por transferir.
+            // El presupuesto es cerrado.
+            butget.status = ButgetStatus.Closed;
+            return;
+        }
         // El presupuesto debe estar comprometido.
         require(
             butget.status == ButgetStatus.Butgeted,
             ERROR_WITHDRAW_NOT_BUTGETED
         );
         // Se realiza la transferencia desde el Vault al destinatario.
-        vault.transfer(butget.token, recipient, butget.amount);
+        vault.transfer(butget.token, milestone.recipient, butget.amount);
         // El presupuesto es finalizado.
         butget.status = ButgetStatus.Paid;
+
+        emit Withdraw(_milestoneId, butget.token, butget.amount);
+    }
+
+    /**
+     * @notice Ajusta el presupuesto `_butgetId` del Milestone `_milestoneId`
+     *  según el monto objetivo `_fiatAmountTarget`.
+     *  @dev Los cálculos de valores restantes de las donaciones del presupuesto,
+     *  ajustan el presupuesto en sí.
+     * @param _milestoneId Id del Milestone para el cual se ajusta el presupuesto.
+     * @param _butgetId Id del presupuesto del Milestone que se ajusta.
+     * @param _fiatAmountTarget Monto en dinero fiat objetivo a alcanzar por el presupuesto.
+     */
+    function _fitButget(
+        uint256 _milestoneId,
+        uint256 _butgetId,
+        uint256 _fiatAmountTarget
+    ) internal returns (uint256 fiatAmountTarget) {
+        Milestone storage milestone = _getMilestone(_milestoneId);
+        Butget storage butget = _getButget(_butgetId);
+        Donation[] storage donations = _getDonationsByButget(_butgetId);
+        uint256 rate = _getExchangeRate(butget.token).rate;
+        fiatAmountTarget = _fiatAmountTarget;
+        for (uint256 i = 0; i < donations.length; i++) {
+            Donation storage donation = donations[i];
+            uint256 fiatAmount = donation.amountRemainding * rate;
+            if (fiatAmountTarget >= fiatAmount) {
+                // No se superó el monto objetivo.
+                donation.amountRemainding = 0;
+                donation.status = DonationStatus.Spent;
+                fiatAmountTarget = fiatAmountTarget - fiatAmount;
+            } else {
+                // El monto restante de la donación es superior al objetivo.
+                if (fiatAmountTarget != 0) {
+                    // Se calculan los Token para completar el objetivo.
+                    uint256 tokenAmountTarget = fiatAmountTarget / rate;
+                    donation.amountRemainding =
+                        donation.amountRemainding -
+                        tokenAmountTarget;
+                    fiatAmountTarget = 0;
+                }
+                // Se transfiere el fondo restante de la Donación a la Campaign del Milestone.
+                _doTransfer(milestone.id, milestone.campaignId, donation.id);
+            }
+        }
+    }
+
+    /**
+     * @notice Obtiene las donaciones del presupuesto `_butgetId`.
+     * @param _butgetId identificador del presuesto al cual pertenecen las donaciones.
+     * @return Donaciones del presupuesto.
+     */
+    function _getDonationsByButget(uint256 _butgetId)
+        internal
+        butgetExists(_butgetId)
+        returns (Donation[] storage donations)
+    {
+        for (uint256 i = 0; i < donationData.ids.length; i++) {
+            Donation storage donation = donationData.donations[donationData
+                .ids[i]];
+            if (donation.butgetId == _butgetId) {
+                donations.push(donation);
+            }
+        }
     }
 
     // Internal functions - utils

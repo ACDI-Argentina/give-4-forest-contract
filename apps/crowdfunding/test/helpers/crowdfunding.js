@@ -30,8 +30,13 @@ const newMilestone = async (crowdfunding, manager, reviewer, recipient, campaign
   return getEventArgument(receipt, 'NewMilestone', 'id').toNumber();
 }
 
-const newDonation = async (crowdfunding, entityId, token, amount, giver) => {
+const newDonationEther = async (crowdfunding, entityId, token, amount, giver) => {
   let receipt = await crowdfunding.donate(entityId, token, amount, { from: giver, value: amount });
+  return getEventArgument(receipt, 'NewDonation', 'id').toNumber();
+}
+
+const newDonationToken = async (crowdfunding, entityId, token, amount, giver) => {
+  let receipt = await crowdfunding.donate(entityId, token, amount, { from: giver });
   return getEventArgument(receipt, 'NewDonation', 'id').toNumber();
 }
 
@@ -40,6 +45,7 @@ module.exports = {
   newDac,
   newCampaign,
   newMilestone,
-  newDonation,
+  newDonationEther,
+  newDonationToken,
   INFO_CID
 }
