@@ -835,15 +835,21 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         uint256 _donationId
     ) internal {
         Donation storage donation = _getDonation(_donationId);
+        Butget storage butgetFrom = _getOrNewButget(
+            _entityIdFrom,
+            donation.token
+        );
         // La donación debe estar disponible.
         require(
             donation.status == DonationStatus.Available,
             ERROR_TRANSFER_DONATION_NOT_AVAILABLE
         );
-        Butget storage butgetFrom = _getOrNewButget(
-            _entityIdFrom,
-            donation.token
+        // La donación debe pertenecer al presupuesto de la entidad origen.
+        require(
+            donation.butgetId == butgetFrom.id,
+            ERROR_TRANSFER_DONATION_NOT_BELONGS_ORIGIN
         );
+        
         Butget storage butgetTo = _getOrNewButget(_entityIdTo, donation.token);
 
         uint256 amountTransfer = donation.amountRemainding;
