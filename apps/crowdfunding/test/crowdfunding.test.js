@@ -26,7 +26,7 @@ const TokenMock = artifacts.require('TokenMock')
 // Tests for different token interfaces
 const tokenTestGroups = [
     {
-        title: 'standards compliant, reverting token',
+        title: 'Standards compliant',
         tokenContract: TokenMock,
     }
 ];
@@ -446,7 +446,7 @@ contract('Crowdfunding App', ([
     })
 
     for (const { title, tokenContract } of tokenTestGroups) {
-        context(`Token ERC20 (${title})`, () => {
+        context(`Donación de Token ERC20 (${title})`, () => {
             let tokenInstance;
             let dacId, campaignId, milestoneId;
             const amount = 10;
@@ -603,7 +603,7 @@ contract('Crowdfunding App', ([
     context('Transferencia', function () {
 
         let dacId, campaignId, milestoneId;
-        let donationAmount, donationId1, donationId2, donationId3, donationId4, donationId5, donationId6;
+        let donationAmount, donationId1, donationId2, donationId3;
 
         beforeEach(async () => {
 
@@ -637,35 +637,6 @@ contract('Crowdfunding App', ([
                 ETH,
                 donationAmount,
                 giver);
-            for (const { tokenContract } of tokenTestGroups) {
-                // Set up a new token similar to token1's distribution
-                tokenInstance = await tokenContract.new(giver, 10000 + VAULT_INITIAL_TOKEN1_BALANCE)
-                await tokenInstance.transfer(vault.address, VAULT_INITIAL_TOKEN1_BALANCE, { from: giver })
-                // Se aprueba al Crowdfunding para depositar los Tokens en el Vault.
-                await tokenInstance.approve(crowdfunding.address, donationAmount, { from: giver });
-                // Donación del Token a DAC
-                donationId4 = await newDonationToken(crowdfunding,
-                    dacId,
-                    tokenInstance.address,
-                    donationAmount,
-                    giver);
-                // Se aprueba al Crowdfunding para depositar los Tokens en el Vault.
-                await tokenInstance.approve(crowdfunding.address, donationAmount, { from: giver });
-                // Donación del Token a Campaign
-                donationId5 = await newDonationToken(crowdfunding,
-                    campaignId,
-                    tokenInstance.address,
-                    donationAmount,
-                    giver);
-                // Se aprueba al Crowdfunding para depositar los Tokens en el Vault.
-                await tokenInstance.approve(crowdfunding.address, donationAmount, { from: giver });
-                // Donación del Token a Milestone
-                donationId6 = await newDonationToken(crowdfunding,
-                    milestoneId,
-                    tokenInstance.address,
-                    donationAmount,
-                    giver);
-            }
         });
 
         it('Transferencia de ETH de Dac a Campaign', async () => {
@@ -690,7 +661,7 @@ contract('Crowdfunding App', ([
             });
 
             let butgetTo = await crowdfunding.getButget(campaignId, ETH);
-            
+
             assertButget(butgetTo, {
                 entityId: campaignId,
                 token: ETH,
@@ -758,5 +729,174 @@ contract('Crowdfunding App', ([
                 status: BUTGET_STATUS_BUTGETED
             });
         })
+
+        it('Transferencia de ETH de Dac a Campaign no autorizada', async () => {
+
+            // notAuthorized account no es el delegate de la Dac
+            await assertRevert(crowdfunding.transfer(
+                dacId,
+                campaignId,
+                [donationId1],
+                { from: notAuthorized }),
+                errors.CROWDFUNDING_TRANSFER_NOT_AUTHORIZED);
+        })
+
+        it('Transferencia de ETH de Dac a Milestone no autorizada', async () => {
+
+            // notAuthorized account no es el delegate de la Dac
+            await assertRevert(crowdfunding.transfer(
+                dacId,
+                milestoneId,
+                [donationId1],
+                { from: notAuthorized }),
+                errors.CROWDFUNDING_TRANSFER_NOT_AUTHORIZED);
+        })
+
+        it('Transferencia de ETH de Campaing a Milestone no autorizada', async () => {
+
+            // notAuthorized account no es el manager de la Campaign
+            await assertRevert(crowdfunding.transfer(
+                campaignId,
+                milestoneId,
+                [donationId1],
+                { from: notAuthorized }),
+                errors.CROWDFUNDING_TRANSFER_NOT_AUTHORIZED);
+        })
     })
+
+    for (const { title, tokenContract } of tokenTestGroups) {
+        context(`Transferencia de Token ERC20 (${title})`, () => {
+            let tokenInstance;
+            let dacId, campaignId, milestoneId;
+            let donationAmount, donationId1, donationId2, donationId3;
+
+            beforeEach(async () => {
+
+                dacId = await newDac(crowdfunding, delegate);
+                campaignId = await newCampaign(crowdfunding,
+                    campaignManager,
+                    campaignReviewer,
+                    dacId);
+                milestoneId = await newMilestone(crowdfunding,
+                    milestoneManager,
+                    milestoneReviewer,
+                    milestoneRecipient,
+                    campaignReviewer,
+                    campaignId);
+                donationAmount = 10;
+
+                // Set up a new token similar to token1's distribution
+                tokenInstance = await tokenContract.new(giver, 10000 + VAULT_INITIAL_TOKEN1_BALANCE)
+                await tokenInstance.transfer(vault.address, VAULT_INITIAL_TOKEN1_BALANCE, { from: giver })
+                // Donación del Token a DAC
+                donationId1 = await newDonationToken(crowdfunding,
+                    tokenInstance,
+                    dacId,
+                    donationAmount,
+                    giver);
+                // Donación del Token a Campaign
+                donationId2 = await newDonationToken(crowdfunding,
+                    tokenInstance,
+                    campaignId,
+                    donationAmount,
+                    giver);
+                // Donación del Token a Milestone
+                donationId3 = await newDonationToken(crowdfunding,
+                    tokenInstance,
+                    milestoneId,
+                    donationAmount,
+                    giver);
+            })
+
+            it(`Transferencia de Token ERC20 (${title}) de Dac a Campaign`, async () => {
+
+                const receipt = await crowdfunding.transfer(dacId, campaignId, [donationId1], { from: delegate });
+                const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
+                const receiptEntityIdTo = getEventArgument(receipt, 'Transfer', 'entityIdTo');
+                const receiptDonationId = getEventArgument(receipt, 'Transfer', 'donationId');
+                const receiptAmount = getEventArgument(receipt, 'Transfer', 'amount');
+
+                assert.equal(receiptEntityIdFrom, dacId);
+                assert.equal(receiptEntityIdTo, campaignId);
+                assert.equal(receiptDonationId, donationId1);
+                assert.equal(receiptAmount, donationAmount);
+
+                let butgetFrom = await crowdfunding.getButget(dacId, tokenInstance.address);
+                assertButget(butgetFrom, {
+                    entityId: dacId,
+                    token: tokenInstance.address,
+                    amount: 0,
+                    status: BUTGET_STATUS_BUTGETED
+                });
+
+                let butgetTo = await crowdfunding.getButget(campaignId, tokenInstance.address);
+                assertButget(butgetTo, {
+                    entityId: campaignId,
+                    token: tokenInstance.address,
+                    amount: donationAmount + donationAmount, // Donación inicial + transferencia
+                    status: BUTGET_STATUS_BUTGETED
+                });
+            })
+
+            it(`Transferencia de Token ERC20 (${title}) de Dac a Campaign`, async () => {
+
+                const receipt = await crowdfunding.transfer(dacId, milestoneId, [donationId1], { from: delegate });
+                const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
+                const receiptEntityIdTo = getEventArgument(receipt, 'Transfer', 'entityIdTo');
+                const receiptDonationId = getEventArgument(receipt, 'Transfer', 'donationId');
+                const receiptAmount = getEventArgument(receipt, 'Transfer', 'amount');
+
+                assert.equal(receiptEntityIdFrom, dacId);
+                assert.equal(receiptEntityIdTo, milestoneId);
+                assert.equal(receiptDonationId, donationId1);
+                assert.equal(receiptAmount, donationAmount);
+
+                let butgetFrom = await crowdfunding.getButget(dacId, tokenInstance.address);
+                assertButget(butgetFrom, {
+                    entityId: dacId,
+                    token: tokenInstance.address,
+                    amount: 0,
+                    status: BUTGET_STATUS_BUTGETED
+                });
+
+                let butgetTo = await crowdfunding.getButget(milestoneId, tokenInstance.address);
+                assertButget(butgetTo, {
+                    entityId: milestoneId,
+                    token: tokenInstance.address,
+                    amount: donationAmount + donationAmount, // Donación inicial + transferencia
+                    status: BUTGET_STATUS_BUTGETED
+                });
+            })
+
+            it(`Transferencia de Token ERC20 (${title}) de Campaign a Milestone`, async () => {
+
+                const receipt = await crowdfunding.transfer(campaignId, milestoneId, [donationId2], { from: campaignManager });
+                const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
+                const receiptEntityIdTo = getEventArgument(receipt, 'Transfer', 'entityIdTo');
+                const receiptDonationId = getEventArgument(receipt, 'Transfer', 'donationId');
+                const receiptAmount = getEventArgument(receipt, 'Transfer', 'amount');
+
+                assert.equal(receiptEntityIdFrom, campaignId);
+                assert.equal(receiptEntityIdTo, milestoneId);
+                assert.equal(receiptDonationId, donationId2);
+                assert.equal(receiptAmount, donationAmount);
+
+                let butgetFrom = await crowdfunding.getButget(campaignId, tokenInstance.address);
+                assertButget(butgetFrom, {
+                    entityId: campaignId,
+                    token: tokenInstance.address,
+                    amount: 0,
+                    status: BUTGET_STATUS_BUTGETED
+                });
+
+                let butgetTo = await crowdfunding.getButget(milestoneId, tokenInstance.address);
+                assertButget(butgetTo, {
+                    entityId: milestoneId,
+                    token: tokenInstance.address,
+                    amount: donationAmount + donationAmount, // Donación inicial + transferencia
+                    status: BUTGET_STATUS_BUTGETED
+                });
+            })
+        })
+    }
 })

@@ -35,8 +35,10 @@ const newDonationEther = async (crowdfunding, entityId, token, amount, giver) =>
   return getEventArgument(receipt, 'NewDonation', 'id').toNumber();
 }
 
-const newDonationToken = async (crowdfunding, entityId, token, amount, giver) => {
-  let receipt = await crowdfunding.donate(entityId, token, amount, { from: giver });
+const newDonationToken = async (crowdfunding, token, entityId, amount, giver) => {
+  // Se aprueba al Crowdfunding para depositar los Tokens en el Vault.
+  await token.approve(crowdfunding.address, amount, { from: giver });
+  let receipt = await crowdfunding.donate(entityId, token.address, amount, { from: giver });
   return getEventArgument(receipt, 'NewDonation', 'id').toNumber();
 }
 
