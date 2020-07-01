@@ -520,6 +520,67 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     }
 
     /**
+     * @notice Marca el Milestone `_milestoneId` como completado.
+     * @param _milestoneId Id del milestone que se marca como completado.
+     */
+    function milestoneComplete(uint256 _milestoneId) external isInitialized {
+        Milestone storage milestone = _getMilestone(_milestoneId);
+        // Solamente el Milestone Manager puede marcar el Milestone como completado.
+        require(
+            milestone.manager == msg.sender,
+            ERROR_MILESTONE_COMPLETE_NOT_AUTHORIZED
+        );
+        // El Milestone debe estar Activo.
+        require(
+            milestone.status == MilestoneStatus.Active,
+            ERROR_MILESTONE_COMPLETE_NOT_ACTIVE
+        );
+        milestone.status = MilestoneStatus.Completed;
+    }
+
+    /**
+     * @notice Marca el Milestone `_milestoneId` como aprobado.
+     * @param _milestoneId Id del milestone que se marca como aprobado.
+     */
+    function milestoneApprove(uint256 _milestoneId) external isInitialized {
+        Milestone storage milestone = _getMilestone(_milestoneId);
+        // Solamente el Milestone Reviewer o Campaign Reviewer puede
+        // marcar el Milestone como aprobado.
+        require(
+            milestone.reviewer == msg.sender ||
+                milestone.campaignReviewer == msg.sender,
+            ERROR_MILESTONE_APPROVE_NOT_AUTHORIZED
+        );
+        // El Milestone debe estar Completado.
+        require(
+            milestone.status == MilestoneStatus.Completed,
+            ERROR_MILESTONE_APPROVE_NOT_COMPLETED
+        );
+        milestone.status = MilestoneStatus.Approved;
+    }
+
+    /**
+     * @notice Marca el Milestone `_milestoneId` como rechazado.
+     * @param _milestoneId Id del milestone que se marca como rechazado.
+     */
+    function milestoneReject(uint256 _milestoneId) external isInitialized {
+        Milestone storage milestone = _getMilestone(_milestoneId);
+        // Solamente el Milestone Reviewer o Campaign Reviewer puede
+        // marcar el Milestone como rechazado.
+        require(
+            milestone.reviewer == msg.sender ||
+                milestone.campaignReviewer == msg.sender,
+            ERROR_MILESTONE_REJECT_NOT_AUTHORIZED
+        );
+        // El Milestone debe estar Completado.
+        require(
+            milestone.status == MilestoneStatus.Completed,
+            ERROR_MILESTONE_REJECT_NOT_COMPLETED
+        );
+        milestone.status = MilestoneStatus.Rejected;
+    }
+
+    /**
      * @notice Establece el tipo de cambio del `_token` a `_rate` USD.
      * @dev TODO este método debe reeplazarse por el establecimiento a través de un Oracle.
      *  Evaluar la incorporación de RIF Gateway.
@@ -849,7 +910,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
             donation.butgetId == butgetFrom.id,
             ERROR_TRANSFER_DONATION_NOT_BELONGS_ORIGIN
         );
-        
+
         Butget storage butgetTo = _getOrNewButget(_entityIdTo, donation.token);
 
         uint256 amountTransfer = donation.amountRemainding;

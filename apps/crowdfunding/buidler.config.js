@@ -11,7 +11,10 @@ module.exports = {
   networks: {
     localhost: {
       url: 'http://localhost:8545',
-      timeout: 60000
+      timeout: 60000      
+    },
+    buidlerevm: {
+      allowUnlimitedContractSize: true
     },
     rsk: {
       url: 'http://localhost:4444',
