@@ -68,7 +68,8 @@ const assertButget = (butget, butgetExpected) => {
   }  
   assert.equal(butget.entityId, butgetExpected.entityId);
   assert.equal(butget.token, butgetExpected.token);
-  assert.equal(butget.amount, butgetExpected.amount);
+  //assert.equal(butget.amount, butgetExpected.amount);
+  assert.equal(butget.amount.toString(), butgetExpected.amount.toString());
   assert.equal(butget.status, butgetExpected.status);
 }
 

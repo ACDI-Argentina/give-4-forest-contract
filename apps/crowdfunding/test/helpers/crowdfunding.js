@@ -1,10 +1,13 @@
 const { getEventArgument } = require('@aragon/test-helpers/events')
 
 const Crowdfunding = artifacts.require('Crowdfunding')
+const BN = require('bn.js');
 
 // Ejemplo de IPFS CID con datos JSON
 // https://ipfs.io/ipfs/Qmd4PvCKbFbbB8krxajCSeHdLXQamdt7yFxFxzTbedwiYM
 const INFO_CID = 'Qmd4PvCKbFbbB8krxajCSeHdLXQamdt7yFxFxzTbedwiYM';
+// 100 USD = 10000 Centavos USD
+const FIAT_AMOUNT_TARGET = new BN('10000');
 
 const linkLib = async (lib, destination, libPlaceholder) => {
   let libAddr = lib.address.replace('0x', '').toLowerCase()
@@ -26,7 +29,7 @@ const newCampaign = async (crowdfunding, manager, reviewer, dacId) => {
 }
 
 const newMilestone = async (crowdfunding, manager, reviewer, recipient, campaignReviewer, campaignId) => {
-  let receipt = await crowdfunding.newMilestone(INFO_CID, campaignId, 10, reviewer, recipient, campaignReviewer, { from: manager });
+  let receipt = await crowdfunding.newMilestone(INFO_CID, campaignId, FIAT_AMOUNT_TARGET, reviewer, recipient, campaignReviewer, { from: manager });
   return getEventArgument(receipt, 'NewMilestone', 'id').toNumber();
 }
 
@@ -49,5 +52,6 @@ module.exports = {
   newMilestone,
   newDonationEther,
   newDonationToken,
-  INFO_CID
+  INFO_CID,
+  FIAT_AMOUNT_TARGET
 }

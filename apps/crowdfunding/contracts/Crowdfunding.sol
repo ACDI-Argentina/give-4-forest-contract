@@ -2,6 +2,7 @@ pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
 import "@aragon/os/contracts/apps/AragonApp.sol";
+import "@aragon/os/contracts/lib/math/SafeMath.sol";
 import "@aragon/apps-vault/contracts/Vault.sol";
 import "./Constants.sol";
 
@@ -11,6 +12,7 @@ import "./Constants.sol";
  * @notice Contrato encargado de las principales operaciones de manejo de entidades y fondos.
  */
 contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
+    using SafeMath for uint256;
     enum EntityType {Dac, Campaign, Milestone}
     enum DacStatus {Active, Cancelled}
     enum CampaignStatus {Active, Cancelled, Finished}
@@ -497,10 +499,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         Milestone storage milestone = _getMilestone(_milestoneId);
         // Solamente el destinatario de los fondos puede hacer el retiro.
         // Withdraw Pattern
-        require(
-            milestone.recipient == msg.sender,
-            ERROR_WITHDRAW_NOT_AUTHORIZED
-        );
+        require(milestone.recipient == msg.sender, ERROR_AUTH_FAILED);
         // El Milestone debe estar Aprobado.
         require(
             milestone.status == MilestoneStatus.Approved,
@@ -517,6 +516,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
             );
             _doWithdraw(_milestoneId, entity.butgetIds[i]);
         }
+        milestone.status = MilestoneStatus.Finished;
     }
 
     /**
@@ -526,10 +526,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     function milestoneComplete(uint256 _milestoneId) external isInitialized {
         Milestone storage milestone = _getMilestone(_milestoneId);
         // Solamente el Milestone Manager puede marcar el Milestone como completado.
-        require(
-            milestone.manager == msg.sender,
-            ERROR_MILESTONE_COMPLETE_NOT_AUTHORIZED
-        );
+        require(milestone.manager == msg.sender, ERROR_AUTH_FAILED);
         // El Milestone debe estar Activo.
         require(
             milestone.status == MilestoneStatus.Active,
@@ -549,7 +546,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         require(
             milestone.reviewer == msg.sender ||
                 milestone.campaignReviewer == msg.sender,
-            ERROR_MILESTONE_APPROVE_NOT_AUTHORIZED
+            ERROR_AUTH_FAILED
         );
         // El Milestone debe estar Completado.
         require(
@@ -570,7 +567,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         require(
             milestone.reviewer == msg.sender ||
                 milestone.campaignReviewer == msg.sender,
-            ERROR_MILESTONE_REJECT_NOT_AUTHORIZED
+            ERROR_AUTH_FAILED
         );
         // El Milestone debe estar Completado.
         require(
@@ -581,11 +578,11 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     }
 
     /**
-     * @notice Establece el tipo de cambio del `_token` a `_rate` USD.
+     * @notice Establece que `_rate` del `_token` equivale a 0.01 USD.
      * @dev TODO este método debe reeplazarse por el establecimiento a través de un Oracle.
      *  Evaluar la incorporación de RIF Gateway.
      * @param _token Token para el cual se estable el tipo de cambio en USD.
-     * @param _rate Precio en USD del Token.
+     * @param _rate Equivalencia de 0.01 USD en Token.
      */
     function setExchangeRate(address _token, uint256 _rate)
         public
@@ -914,8 +911,10 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         Butget storage butgetTo = _getOrNewButget(_entityIdTo, donation.token);
 
         uint256 amountTransfer = donation.amountRemainding;
-        butgetFrom.amount = butgetFrom.amount - amountTransfer;
-        butgetTo.amount = butgetTo.amount + amountTransfer;
+        //butgetFrom.amount = butgetFrom.amount - amountTransfer;
+        butgetFrom.amount = butgetFrom.amount.sub(amountTransfer);
+        //butgetTo.amount = butgetTo.amount + amountTransfer;
+        butgetTo.amount = butgetTo.amount.add(amountTransfer);
         donation.butgetId = butgetTo.id;
 
         emit Transfer(_entityIdFrom, _entityIdTo, _donationId, amountTransfer);
@@ -964,50 +963,83 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     ) internal returns (uint256 fiatAmountTarget) {
         Milestone storage milestone = _getMilestone(_milestoneId);
         Butget storage butget = _getButget(_butgetId);
-        Donation[] storage donations = _getDonationsByButget(_butgetId);
         uint256 rate = _getExchangeRate(butget.token).rate;
-        fiatAmountTarget = _fiatAmountTarget;
-        for (uint256 i = 0; i < donations.length; i++) {
-            Donation storage donation = donations[i];
-            uint256 fiatAmount = donation.amountRemainding * rate;
-            if (fiatAmountTarget >= fiatAmount) {
+        //uint256[] memory donationIds = _getDonationIdsByButget(_butgetId);
+
+        // returns $0.01 ETH wei
+        // A cuántos Token (WEI) equivale un 0.01 USD.
+
+        // Centavos de dolar.
+        //fiatAmountTarget = _fiatAmountTarget;
+
+        // WEI objetivo
+        //uint256 weiAmountTarget = _fiatAmountTarget * rate;
+        uint256 weiAmountTarget = _fiatAmountTarget.mul(rate);
+
+        for (uint256 i = 0; i < donationData.ids.length; i++) {
+            Donation storage donation = donationData.donations[donationData
+                .ids[i]];
+
+            if (donation.butgetId != _butgetId) {
+                continue;
+            }
+
+            //uint256 fiatAmount = donation.amountRemainding * rate;
+            //if (fiatAmountTarget >= fiatAmount) {
+            if (weiAmountTarget >= donation.amountRemainding) {
                 // No se superó el monto objetivo.
                 donation.amountRemainding = 0;
                 donation.status = DonationStatus.Spent;
-                fiatAmountTarget = fiatAmountTarget - fiatAmount;
+                //fiatAmountTarget = fiatAmountTarget - fiatAmount;
+                //weiAmountTarget = weiAmountTarget - donation.amountRemainding;
+                weiAmountTarget = weiAmountTarget.sub(
+                    donation.amountRemainding
+                );
             } else {
                 // El monto restante de la donación es superior al objetivo.
-                if (fiatAmountTarget != 0) {
+                if (weiAmountTarget != 0) {
                     // Se calculan los Token para completar el objetivo.
-                    uint256 tokenAmountTarget = fiatAmountTarget / rate;
-                    donation.amountRemainding =
+                    //uint256 tokenAmountTarget = fiatAmountTarget / rate;
+                    /*donation.amountRemainding =
                         donation.amountRemainding -
-                        tokenAmountTarget;
-                    fiatAmountTarget = 0;
+                        tokenAmountTarget;*/
+                    /*donation.amountRemainding =
+                        donation.amountRemainding -
+                        weiAmountTarget;*/
+                    donation.amountRemainding = donation.amountRemainding.sub(
+                        weiAmountTarget
+                    );
+                    weiAmountTarget = 0;
                 }
                 // Se transfiere el fondo restante de la Donación a la Campaign del Milestone.
                 _doTransfer(milestone.id, milestone.campaignId, donation.id);
             }
         }
+
+        // El redondeo favorece a la retención de fondos.
+        fiatAmountTarget = weiAmountTarget.div(rate);
     }
 
     /**
-     * @notice Obtiene las donaciones del presupuesto `_butgetId`.
+     * @notice Obtiene los Ids de las donaciones del presupuesto `_butgetId`.
      * @param _butgetId identificador del presuesto al cual pertenecen las donaciones.
-     * @return Donaciones del presupuesto.
+     * @return Ids de las donaciones del presupuesto.
      */
-    function _getDonationsByButget(uint256 _butgetId)
-        internal
+    function _getDonationIdsByButget(uint256 _butgetId)
+        public
+        view
         butgetExists(_butgetId)
-        returns (Donation[] storage donations)
+        returns (uint256[] memory)
     {
+        uint256[] memory donationIds = new uint256[](1);
         for (uint256 i = 0; i < donationData.ids.length; i++) {
             Donation storage donation = donationData.donations[donationData
                 .ids[i]];
             if (donation.butgetId == _butgetId) {
-                donations.push(donation);
+                donationIds[donationIds.length] = donation.id;
             }
         }
+        return donationIds;
     }
 
     // Internal functions - utils

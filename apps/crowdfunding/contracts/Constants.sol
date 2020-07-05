@@ -20,6 +20,7 @@ contract Constants is KernelNamespaceConstants {
         "EXCHANGE_RATE_ROLE"
     );
 
+    string internal constant ERROR_AUTH_FAILED = "CROWDFUNDING_AUTH_FAILED";
     string
         internal constant ERROR_VAULT_NOT_CONTRACT = "CROWDFUNDING_VAULT_NOT_CONTRACT";
     string
@@ -65,24 +66,16 @@ contract Constants is KernelNamespaceConstants {
         internal constant ERROR_TRANSFER_DONATION_NOT_BELONGS_ORIGIN = "CROWDFUNDING_TRANSFER_DONATION_NOT_BELONGS_ORIGIN";
     // Withdraw
     string
-        internal constant ERROR_WITHDRAW_NOT_AUTHORIZED = "CROWDFUNDING_WITHDRAW_NOT_AUTHORIZED";
-    string
         internal constant ERROR_WITHDRAW_NOT_APPROVED = "CROWDFUNDING_WITHDRAW_NOT_APPROVED";
     string
         internal constant ERROR_WITHDRAW_NOT_BUTGETED = "CROWDFUNDING_WITHDRAW_NOT_BUTGETED";
     // Milestone Complete
     string
-        internal constant ERROR_MILESTONE_COMPLETE_NOT_AUTHORIZED = "CROWDFUNDING_MILESTONE_COMPLETE_NOT_AUTHORIZED";
-    string
         internal constant ERROR_MILESTONE_COMPLETE_NOT_ACTIVE = "CROWDFUNDING_MILESTONE_COMPLETE_NOT_ACTIVE";
     // Milestone Approve
     string
-        internal constant ERROR_MILESTONE_APPROVE_NOT_AUTHORIZED = "CROWDFUNDING_MILESTONE_APPROVE_NOT_AUTHORIZED";
-    string
         internal constant ERROR_MILESTONE_APPROVE_NOT_COMPLETED = "CROWDFUNDING_MILESTONE_APPROVE_NOT_COMPLETED";
     // Milestone Approve
-    string
-        internal constant ERROR_MILESTONE_REJECT_NOT_AUTHORIZED = "CROWDFUNDING_MILESTONE_REJECT_NOT_AUTHORIZED";
     string
         internal constant ERROR_MILESTONE_REJECT_NOT_COMPLETED = "CROWDFUNDING_MILESTONE_REJECT_NOT_COMPLETED";
     // Exchange Rate

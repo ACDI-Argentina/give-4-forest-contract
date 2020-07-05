@@ -15,8 +15,9 @@
     "publish:patch": "buidler publish patch"
   },
   "dependencies": {
-    "@aragon/os": "^4.4.0",
     "@aragon/apps-vault": "^4.1.0",
+    "@aragon/os": "^4.4.0",
+    "bn.js": "^5.1.2",
     "buidler-deploy": "^0.4.2",
     "madr": "^2.1.2"
   },
