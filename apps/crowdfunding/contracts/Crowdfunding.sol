@@ -97,6 +97,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         uint256 entityId; // Identificación de la entidad al cual está destinado el presupuesto.
         address token; // Token del presupuesto.
         uint256 amount; // Monto del presupuesto.
+        uint256[] donationIds; // Ids de las donaciones del presupuesto.
         ButgetStatus status;
     }
 
@@ -382,6 +383,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         // Se agrega al presupuesto de la entidad.
         Butget storage butget = _getOrNewButget(_entityId, _token);
         butget.amount = butget.amount + _amount;
+        butget.donationIds.push(donation.id);
         donation.butgetId = butget.id;
 
         donationData.donations[donationId] = donation;
@@ -699,6 +701,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
             uint256 entityId,
             address token,
             uint256 amount,
+            uint256[] donationIds,
             ButgetStatus status
         )
     {
@@ -711,6 +714,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
                 entityId = butget.entityId;
                 token = butget.token;
                 amount = butget.amount;
+                donationIds = butget.donationIds;
                 status = butget.status;
                 break;
             }
@@ -911,10 +915,12 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         Butget storage butgetTo = _getOrNewButget(_entityIdTo, donation.token);
 
         uint256 amountTransfer = donation.amountRemainding;
-        //butgetFrom.amount = butgetFrom.amount - amountTransfer;
+        // Se quita la donación del presupuesto origen.
         butgetFrom.amount = butgetFrom.amount.sub(amountTransfer);
-        //butgetTo.amount = butgetTo.amount + amountTransfer;
+        _removeElement(butgetFrom.donationIds, _donationId);
+        // Se agrega la donación al presupuesto destino.
         butgetTo.amount = butgetTo.amount.add(amountTransfer);
+        butgetTo.donationIds.push(_donationId);
         donation.butgetId = butgetTo.id;
 
         emit Transfer(_entityIdFrom, _entityIdTo, _donationId, amountTransfer);
@@ -964,82 +970,30 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         Milestone storage milestone = _getMilestone(_milestoneId);
         Butget storage butget = _getButget(_butgetId);
         uint256 rate = _getExchangeRate(butget.token).rate;
-        //uint256[] memory donationIds = _getDonationIdsByButget(_butgetId);
-
-        // returns $0.01 ETH wei
-        // A cuántos Token (WEI) equivale un 0.01 USD.
-
-        // Centavos de dolar.
-        //fiatAmountTarget = _fiatAmountTarget;
-
-        // WEI objetivo
-        //uint256 weiAmountTarget = _fiatAmountTarget * rate;
-        uint256 weiAmountTarget = _fiatAmountTarget.mul(rate);
-
-        for (uint256 i = 0; i < donationData.ids.length; i++) {
-            Donation storage donation = donationData.donations[donationData
-                .ids[i]];
-
-            if (donation.butgetId != _butgetId) {
-                continue;
-            }
-
-            //uint256 fiatAmount = donation.amountRemainding * rate;
-            //if (fiatAmountTarget >= fiatAmount) {
-            if (weiAmountTarget >= donation.amountRemainding) {
+        uint256 amountTarget = _fiatAmountTarget.mul(rate);
+        for (uint256 i = 0; i < butget.donationIds.length; i++) {
+            Donation storage donation = donationData.donations[butget
+                .donationIds[i]];
+            if (amountTarget >= donation.amountRemainding) {
                 // No se superó el monto objetivo.
                 donation.amountRemainding = 0;
                 donation.status = DonationStatus.Spent;
-                //fiatAmountTarget = fiatAmountTarget - fiatAmount;
-                //weiAmountTarget = weiAmountTarget - donation.amountRemainding;
-                weiAmountTarget = weiAmountTarget.sub(
-                    donation.amountRemainding
-                );
+                amountTarget = amountTarget.sub(donation.amountRemainding);
             } else {
                 // El monto restante de la donación es superior al objetivo.
-                if (weiAmountTarget != 0) {
+                if (amountTarget != 0) {
                     // Se calculan los Token para completar el objetivo.
-                    //uint256 tokenAmountTarget = fiatAmountTarget / rate;
-                    /*donation.amountRemainding =
-                        donation.amountRemainding -
-                        tokenAmountTarget;*/
-                    /*donation.amountRemainding =
-                        donation.amountRemainding -
-                        weiAmountTarget;*/
                     donation.amountRemainding = donation.amountRemainding.sub(
-                        weiAmountTarget
+                        amountTarget
                     );
-                    weiAmountTarget = 0;
+                    amountTarget = 0;
                 }
                 // Se transfiere el fondo restante de la Donación a la Campaign del Milestone.
                 _doTransfer(milestone.id, milestone.campaignId, donation.id);
             }
         }
-
         // El redondeo favorece a la retención de fondos.
-        fiatAmountTarget = weiAmountTarget.div(rate);
-    }
-
-    /**
-     * @notice Obtiene los Ids de las donaciones del presupuesto `_butgetId`.
-     * @param _butgetId identificador del presuesto al cual pertenecen las donaciones.
-     * @return Ids de las donaciones del presupuesto.
-     */
-    function _getDonationIdsByButget(uint256 _butgetId)
-        public
-        view
-        butgetExists(_butgetId)
-        returns (uint256[] memory)
-    {
-        uint256[] memory donationIds = new uint256[](1);
-        for (uint256 i = 0; i < donationData.ids.length; i++) {
-            Donation storage donation = donationData.donations[donationData
-                .ids[i]];
-            if (donation.butgetId == _butgetId) {
-                donationIds[donationIds.length] = donation.id;
-            }
-        }
-        return donationIds;
+        fiatAmountTarget = amountTarget.div(rate);
     }
 
     // Internal functions - utils
@@ -1053,14 +1007,67 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     function _contains(uint256[] _array, uint256 _element)
         internal
         pure
-        returns (bool contains)
+        returns (bool)
     {
-        contains = false;
+        return _indexOf(_array, _element) >= 0;
+    }
+
+    /**
+     * @dev Obtiene el índice del _element en el _array. Devuelve -1 si el elemento
+     *  no es encontrado.
+     * @param _array arreglo de elementos
+     * @param _element elemento a determinar el indice
+     * @return índice del elemento dentro del arreglo. -1 si el elemento
+     *  no es encontrado.
+     */
+    function _indexOf(uint256[] _array, uint256 _element)
+        internal
+        pure
+        returns (int256)
+    {
         for (uint256 i = 0; i < _array.length; i++) {
             if (_array[i] == _element) {
-                contains = true;
-                break;
+                return int256(i);
             }
         }
+        return -1;
+    }
+
+    /**
+     * @dev Elimina el elemento del _array cuyo íncice coincide con el especificado.
+     * @param _array arreglo de elementos
+     * @param _index índice del elemento a eliminar.
+     * @return arreglo con el elemento eliminado.
+     */
+    function _remove(
+        uint256[] storage _array,
+        uint256 _index //pure //returns (uint256[])
+    ) internal {
+        if (_index >= _array.length) {
+            //return _array;
+            return;
+        }
+        for (uint256 i = _index; i < _array.length - 1; i++) {
+            _array[i] = _array[i + 1];
+        }
+        delete _array[_array.length - 1];
+        _array.length--;
+        //return _array;
+    }
+
+    /**
+     * @dev Elimina el _element del _array. Solamente elimina el primer elemento encontrado.u
+     * @param _array arreglo de elementos
+     * @param _element elemento a eliminar.
+     * @return arreglo con el elemento eliminado.
+     */
+    function _removeElement(uint256[] storage _array, uint256 _element)
+        internal
+    {
+        int256 index = _indexOf(_array, _element);
+        if (index < 0) {
+            return;
+        }
+        _remove(_array, uint256(index));
     }
 }

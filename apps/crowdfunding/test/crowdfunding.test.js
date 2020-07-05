@@ -371,6 +371,7 @@ contract('Crowdfunding App', ([
                 entityId: dacId,
                 token: ETH,
                 amount: amount,
+                donationIds: [1],
                 status: BUTGET_STATUS_BUTGETED
             });
 
@@ -414,6 +415,7 @@ contract('Crowdfunding App', ([
                 entityId: campaignId,
                 token: ETH,
                 amount: amount,
+                donationIds: [1],
                 status: BUTGET_STATUS_BUTGETED
             });
 
@@ -457,6 +459,7 @@ contract('Crowdfunding App', ([
                 entityId: milestoneId,
                 token: ETH,
                 amount: amount,
+                donationIds: [1],
                 status: BUTGET_STATUS_BUTGETED
             });
 
@@ -523,6 +526,7 @@ contract('Crowdfunding App', ([
                     entityId: dacId,
                     token: tokenInstance.address,
                     amount: amount,
+                    donationIds: [1],
                     status: BUTGET_STATUS_BUTGETED
                 });
 
@@ -566,6 +570,7 @@ contract('Crowdfunding App', ([
                     entityId: campaignId,
                     token: tokenInstance.address,
                     amount: amount,
+                    donationIds: [1],
                     status: BUTGET_STATUS_BUTGETED
                 });
 
@@ -609,6 +614,7 @@ contract('Crowdfunding App', ([
                     entityId: milestoneId,
                     token: tokenInstance.address,
                     amount: amount,
+                    donationIds: [1],
                     status: BUTGET_STATUS_BUTGETED
                 });
 
@@ -694,6 +700,7 @@ contract('Crowdfunding App', ([
                 entityId: dacId1,
                 token: ETH,
                 amount: new BN(0),
+                donationIds: [],
                 status: BUTGET_STATUS_BUTGETED
             });
 
@@ -703,6 +710,7 @@ contract('Crowdfunding App', ([
                 entityId: campaignId1,
                 token: ETH,
                 amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
+                donationIds: [donationId2, donationId1],
                 status: BUTGET_STATUS_BUTGETED
             });
         })
@@ -725,6 +733,7 @@ contract('Crowdfunding App', ([
                 entityId: dacId1,
                 token: ETH,
                 amount: new BN(0),
+                donationIds: [],
                 status: BUTGET_STATUS_BUTGETED
             });
 
@@ -733,6 +742,7 @@ contract('Crowdfunding App', ([
                 entityId: milestoneId1,
                 token: ETH,
                 amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
+                donationIds: [donationId3, donationId1],
                 status: BUTGET_STATUS_BUTGETED
             });
         })
@@ -755,6 +765,7 @@ contract('Crowdfunding App', ([
                 entityId: campaignId1,
                 token: ETH,
                 amount: new BN(0),
+                donationIds: [],
                 status: BUTGET_STATUS_BUTGETED
             });
 
@@ -763,6 +774,7 @@ contract('Crowdfunding App', ([
                 entityId: milestoneId1,
                 token: ETH,
                 amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
+                donationIds: [donationId3, donationId2],
                 status: BUTGET_STATUS_BUTGETED
             });
         })
@@ -850,7 +862,7 @@ contract('Crowdfunding App', ([
                     milestoneRecipient,
                     campaignReviewer,
                     campaignId);
-                donationAmount = 10;
+                donationAmount = new BN('10');
 
                 // Set up a new token similar to token1's distribution
                 tokenInstance = await tokenContract.new(giver, 10000 + VAULT_INITIAL_TOKEN1_BALANCE)
@@ -886,13 +898,14 @@ contract('Crowdfunding App', ([
                 assert.equal(receiptEntityIdFrom, dacId);
                 assert.equal(receiptEntityIdTo, campaignId);
                 assert.equal(receiptDonationId, donationId1);
-                assert.equal(receiptAmount, donationAmount);
+                assert.equal(receiptAmount.toString(), donationAmount.toString());
 
                 let butgetFrom = await crowdfunding.getButget(dacId, tokenInstance.address);
                 assertButget(butgetFrom, {
                     entityId: dacId,
                     token: tokenInstance.address,
                     amount: new BN(0),
+                    donationIds: [],
                     status: BUTGET_STATUS_BUTGETED
                 });
 
@@ -900,7 +913,8 @@ contract('Crowdfunding App', ([
                 assertButget(butgetTo, {
                     entityId: campaignId,
                     token: tokenInstance.address,
-                    amount: donationAmount + donationAmount, // Donación inicial + transferencia
+                    amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
+                    donationIds: [donationId2, donationId1],
                     status: BUTGET_STATUS_BUTGETED
                 });
             })
@@ -916,13 +930,14 @@ contract('Crowdfunding App', ([
                 assert.equal(receiptEntityIdFrom, dacId);
                 assert.equal(receiptEntityIdTo, milestoneId);
                 assert.equal(receiptDonationId, donationId1);
-                assert.equal(receiptAmount, donationAmount);
+                assert.equal(receiptAmount.toString(), donationAmount.toString());
 
                 let butgetFrom = await crowdfunding.getButget(dacId, tokenInstance.address);
                 assertButget(butgetFrom, {
                     entityId: dacId,
                     token: tokenInstance.address,
                     amount: 0,
+                    donationIds: [],
                     status: BUTGET_STATUS_BUTGETED
                 });
 
@@ -930,7 +945,8 @@ contract('Crowdfunding App', ([
                 assertButget(butgetTo, {
                     entityId: milestoneId,
                     token: tokenInstance.address,
-                    amount: donationAmount + donationAmount, // Donación inicial + transferencia
+                    amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
+                    donationIds: [donationId3, donationId1],
                     status: BUTGET_STATUS_BUTGETED
                 });
             })
@@ -946,13 +962,14 @@ contract('Crowdfunding App', ([
                 assert.equal(receiptEntityIdFrom, campaignId);
                 assert.equal(receiptEntityIdTo, milestoneId);
                 assert.equal(receiptDonationId, donationId2);
-                assert.equal(receiptAmount, donationAmount);
+                assert.equal(receiptAmount.toString(), donationAmount.toString());
 
                 let butgetFrom = await crowdfunding.getButget(campaignId, tokenInstance.address);
                 assertButget(butgetFrom, {
                     entityId: campaignId,
                     token: tokenInstance.address,
                     amount: 0,
+                    donationIds: [],
                     status: BUTGET_STATUS_BUTGETED
                 });
 
@@ -960,7 +977,8 @@ contract('Crowdfunding App', ([
                 assertButget(butgetTo, {
                     entityId: milestoneId,
                     token: tokenInstance.address,
-                    amount: donationAmount + donationAmount, // Donación inicial + transferencia
+                    amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
+                    donationIds: [donationId3, donationId2],
                     status: BUTGET_STATUS_BUTGETED
                 });
             })
@@ -1075,13 +1093,8 @@ contract('Crowdfunding App', ([
 
         let dacId1, campaignId1, milestoneId1;
         let donationId1, donationId2, donationId3;
-        // 10 ETH
-        //let donationAmount = 10000000000000000000;
-        //let donationAmount = new BN(10000000000000000000);
-        //const donationAmount = web3.utils.toBN('10000000000000000000');
-        //const donationAmount =         200000000000000;
+        // 10 ETH > 1E+019 Wei
         const donationAmount = new BN('10000000000000000000');
-        //const donationAmount = new BN('1000000000000000001');
 
         beforeEach(async () => {
 
@@ -1132,39 +1145,14 @@ contract('Crowdfunding App', ([
             assert.equal(milestones.length, 1);
             assert.equal(milestones[0].status, MILESTONE_STATUS_FINISHED);
 
-
-
-
-
-            /////////////
-
-            let donations = await crowdfunding.getAllDonations();
-            assert.equal(donations.length, 3);
-            console.log(donations[0]);
-            console.log(donations[1]);
-            console.log(donations[2]);
-            /*assertDonation(donations[2], {
-                id: 3,
-                idIndex: 2,
-                giver: giver,
-                token: ETH,
-                amount: donationAmount,
-                amountRemainding: donationAmount,
-                entityId: milestoneId1,
-                status: DONATION_STATUS_AVAILABLE
-            });*/
-
-
-            /////////////
-
+            // Estado de los presupuestos
 
             let butgetMilestone = await crowdfunding.getButget(milestoneId1, ETH);
-            //console.log(butgetMilestone.amount.toString());
-            //console.log(FIAT_AMOUNT_TARGET.mul(USD_ETH_RATE));
             assertButget(butgetMilestone, {
                 entityId: milestoneId1,
                 token: ETH,
                 amount: FIAT_AMOUNT_TARGET.mul(USD_ETH_RATE), // El presupuesto pagado es el target dividido la cotización.
+                donationIds: [],
                 status: BUTGET_STATUS_PAID
             });
 
@@ -1173,7 +1161,24 @@ contract('Crowdfunding App', ([
                 entityId: campaignId1,
                 token: ETH,
                 amount: donationAmount.add(donationAmount.sub(FIAT_AMOUNT_TARGET.mul(USD_ETH_RATE))), // La donación inicial + el restante del retiro del milestone.
+                donationIds: [donationId2, donationId3],
                 status: BUTGET_STATUS_BUTGETED
+            });
+
+            // Estado de la donación sobre el Milestone
+            // Se transfirió el remanente a la Campaign.
+
+            let donations = await crowdfunding.getAllDonations();
+            assert.equal(donations.length, 3);
+            assertDonation(donations[2], {
+                id: 3,
+                idIndex: 2,
+                giver: giver,
+                token: ETH,
+                amount: donationAmount,
+                amountRemainding: donationAmount.sub(FIAT_AMOUNT_TARGET.mul(USD_ETH_RATE)),
+                entityId: milestoneId1,
+                status: DONATION_STATUS_AVAILABLE
             });
         })
 
