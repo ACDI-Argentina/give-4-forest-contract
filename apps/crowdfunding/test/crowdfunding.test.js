@@ -8,6 +8,7 @@ const { newCrowdfunding,
     newMilestone,
     newDonationEther,
     newDonationToken,
+    getAllDacs,
     INFO_CID,
     FIAT_AMOUNT_TARGET } = require('./helpers/crowdfunding')
 const { assertEntity,
@@ -42,13 +43,13 @@ const ENTITY_TYPE_MILESTONE = 2;
 
 const VAULT_INITIAL_TOKEN1_BALANCE = new BN('100');
 
-// 0: DacStatus.Active;
+// 0: Status.Active;
 const DAC_STATUS_ACTIVE = 0;
 
-// 0: CampaignStatus.Active;
+// 0: Status.Active;
 const CAMPAIGN_STATUS_ACTIVE = 0;
 
-// 0: MilestoneStatus.Active;
+// 0: Status.Active;
 const MILESTONE_STATUS_ACTIVE = 0;
 const MILESTONE_STATUS_CANCELLED = 1;
 const MILESTONE_STATUS_COMPLETED = 2;
@@ -59,7 +60,7 @@ const MILESTONE_STATUS_FINISHED = 5;
 // 0: DonationStatus.Available;
 const DONATION_STATUS_AVAILABLE = 0;
 
-// 0: BudgetStatus.Budgeted;
+// 0: Status.Budgeted;
 const Budget_STATUS_BudgetED = 0;
 const Budget_STATUS_PAYING = 1;
 const Budget_STATUS_CLOSED = 2;
@@ -142,6 +143,7 @@ contract('Crowdfunding App', ([
             assert.equal(dacId, 1);
             
             let dacs = await crowdfunding.getAllDacs();
+            //let dacs = await getAllDacs(crowdfunding);
             
             assert.equal(dacs.length, 1)
             assertDac(dacs[0], {

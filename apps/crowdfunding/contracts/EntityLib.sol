@@ -1,0 +1,63 @@
+pragma solidity ^0.4.24;
+pragma experimental ABIEncoderV2;
+
+/**
+ * @title Librería de Entities.
+ * @author Mauricio Coronel
+ * @notice Librería encargada del tratamiento de Entities.
+ */
+library EntityLib {
+    enum EntityType {Dac, Campaign, Milestone}
+    /// @dev Estructura que define la base de una entidad.
+    struct Entity {
+        uint256 id; // Identificación de la entidad
+        uint256 idIndex; // Índice del Id en entityIds;
+        EntityType entityType;
+        uint256[] budgetIds; // Ids de los presupuestos.
+    }
+
+    struct Data {
+        /**
+         * @dev Almacena los ids de la entities para poder iterar
+         *  en el iterable mapping de Entities.
+         * Desde esta variable son generados todos los identificadores de entidades.
+         */
+        uint256[] ids;
+        /// @dev Iterable Mapping de Entities
+        mapping(uint256 => Entity) entities;
+    }
+
+    /**
+     * @dev Crea una entidad base del tipo `_entityType`.
+     * @param _entityType tipo de la entidad a crear.
+     * @return identificador de la entidad creada.
+     */
+    function insert(Data storage self, EntityType _entityType)
+        public
+        returns (uint256 id)
+    {
+        id = self.ids.length + 1; // Generación del Id único por entidad.
+        self.ids.push(id);
+        uint256 idIndex = self.ids.length - 1;
+        Entity memory entity;
+        entity.id = id;
+        entity.idIndex = idIndex;
+        entity.entityType = _entityType;
+        self.entities[id] = entity;
+    }
+
+    /**
+     * @notice Obtiene todas las Entities.
+     * @return Lista con todas las Entities.
+     */
+    function toArray(Data storage self)
+        public
+        view
+        returns (Entity[] memory result)
+    {
+        result = new Entity[](self.ids.length);
+        for (uint256 i = 0; i < self.ids.length; i++) {
+            result[i] = self.entities[self.ids[i]];
+        }
+    }
+}

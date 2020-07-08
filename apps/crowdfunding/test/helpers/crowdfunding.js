@@ -2,6 +2,12 @@ const { getEventArgument } = require('@aragon/test-helpers/events')
 
 const Crowdfunding = artifacts.require('Crowdfunding')
 const ArrayLib = artifacts.require('ArrayLib')
+const EntityLib = artifacts.require('EntityLib')
+const DacLib = artifacts.require('DacLib')
+const CampaignLib = artifacts.require('CampaignLib')
+const MilestoneLib = artifacts.require('MilestoneLib')
+const DonationLib = artifacts.require('DonationLib')
+const BudgetLib = artifacts.require('BudgetLib')
 const BN = require('bn.js');
 
 // Ejemplo de IPFS CID con datos JSON
@@ -16,6 +22,12 @@ const FIAT_AMOUNT_TARGET = new BN('10000');
 // https://github.com/ethereum/solidity/blob/develop/Changelog.md#050-2018-11-13
 // Commandline interface: Use hash of library name for link placeholder instead of name itself.
 const ARRAY_LIB_PLACEHOLDER = '__contracts/ArrayLib.sol:ArrayLib_______';
+const ENTITY_LIB_PLACEHOLDER = '__contracts/EntityLib.sol:EntityLib_____';
+const DAC_LIB_PLACEHOLDER = '__contracts/DacLib.sol:DacLib___________';
+const CAMPAIGN_LIB_PLACEHOLDER = '__contracts/CampaignLib.sol:CampaignLi__';
+const MILESTONE_LIB_PLACEHOLDER = '__contracts/MilestoneLib.sol:Milestone__';
+const DONATION_LIB_PLACEHOLDER = '__contracts/DonationLib.sol:DonationLi__';
+const BUDGET_LIB_PLACEHOLDER = '__contracts/BudgetLib.sol:BudgetLib_____';
 
 const linkLib = async (lib, destination, libPlaceholder) => {
   let libAddr = lib.address.replace('0x', '').toLowerCase()
@@ -26,6 +38,24 @@ const newCrowdfunding = async (deployer) => {
   // Link Crowdfunding > ArrayLib
   const arrayLib = await ArrayLib.new({ from: deployer });
   await linkLib(arrayLib, Crowdfunding, ARRAY_LIB_PLACEHOLDER);
+  // Link Crowdfunding > EntityLib
+  const entityLib = await EntityLib.new({ from: deployer });
+  await linkLib(entityLib, Crowdfunding, ENTITY_LIB_PLACEHOLDER);
+  // Link Crowdfunding > DacLib
+  const dacLib = await DacLib.new({ from: deployer });
+  await linkLib(dacLib, Crowdfunding, DAC_LIB_PLACEHOLDER);
+  // Link Crowdfunding > CampaignLib
+  const campaignLib = await CampaignLib.new({ from: deployer });
+  await linkLib(campaignLib, Crowdfunding, CAMPAIGN_LIB_PLACEHOLDER);
+  // Link Crowdfunding > MilestoneLib
+  const milestoneLib = await MilestoneLib.new({ from: deployer });
+  await linkLib(milestoneLib, Crowdfunding, MILESTONE_LIB_PLACEHOLDER);
+  // Link Crowdfunding > DonationLib
+  const donationLib = await DonationLib.new({ from: deployer });
+  await linkLib(donationLib, Crowdfunding, DONATION_LIB_PLACEHOLDER);
+  // Link Crowdfunding > BudgetLib
+  const budgetLib = await BudgetLib.new({ from: deployer });
+  await linkLib(budgetLib, Crowdfunding, BUDGET_LIB_PLACEHOLDER);
   return await Crowdfunding.new({ from: deployer });
 }
 
@@ -56,6 +86,15 @@ const newDonationToken = async (crowdfunding, token, entityId, amount, giver) =>
   return getEventArgument(receipt, 'NewDonation', 'id').toNumber();
 }
 
+const getAllDacs = async (crowdfunding) => {
+  let dacIds = await crowdfunding.dacIds();
+  let dacs = [];
+  for (i = 0; i < dacIds.length; i++) {
+    dacs.push(await crowdfunding.dacs(dacIds[i]));
+  }
+  return dacs;
+}
+
 module.exports = {
   newCrowdfunding,
   newDac,
@@ -63,6 +102,7 @@ module.exports = {
   newMilestone,
   newDonationEther,
   newDonationToken,
+  getAllDacs,
   INFO_CID,
   FIAT_AMOUNT_TARGET
 }
