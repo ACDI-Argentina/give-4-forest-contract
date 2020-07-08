@@ -110,3 +110,7 @@ Test
 ```
 npm run test
 ```
+
+Get contract size
+
+grep \"bytecode\" artifacts/* | awk '{print $1 " " length($3)/2}'

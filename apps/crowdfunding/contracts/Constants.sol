@@ -1,14 +1,10 @@
 pragma solidity ^0.4.24;
 
-import "@aragon/os/contracts/kernel/KernelConstants.sol";
-
 /**
  * @title Constantes útiles del contrato Crowdfunding.
  * @author Mauricio Coronel
  */
-contract Constants is KernelNamespaceConstants {
-    bytes32 public constant CROWDFUNDING_APP_ID = keccak256("crowdfunding");
-
+contract Constants {
     bytes32 public constant CREATE_DAC_ROLE = keccak256("CREATE_DAC_ROLE");
     bytes32 public constant CREATE_CAMPAIGN_ROLE = keccak256(
         "CREATE_CAMPAIGN_ROLE"
@@ -20,13 +16,14 @@ contract Constants is KernelNamespaceConstants {
         "EXCHANGE_RATE_ROLE"
     );
 
+    address internal constant ETH = address(0);
     string internal constant ERROR_AUTH_FAILED = "CROWDFUNDING_AUTH_FAILED";
     string
         internal constant ERROR_VAULT_NOT_CONTRACT = "CROWDFUNDING_VAULT_NOT_CONTRACT";
     string
         internal constant ERROR_ENTITY_NOT_EXISTS = "CROWDFUNDING_ENTITY_NOT_EXIST";
     string
-        internal constant ERROR_BUTGET_NOT_EXISTS = "CROWDFUNDING_BUTGET_NOT_EXIST";
+        internal constant ERROR_BUDGET_NOT_EXISTS = "CROWDFUNDING_BUDGET_NOT_EXIST";
     string
         internal constant ERROR_DAC_NOT_EXISTS = "CROWDFUNDING_DAC_NOT_EXIST";
     string
@@ -68,7 +65,7 @@ contract Constants is KernelNamespaceConstants {
     string
         internal constant ERROR_WITHDRAW_NOT_APPROVED = "CROWDFUNDING_WITHDRAW_NOT_APPROVED";
     string
-        internal constant ERROR_WITHDRAW_NOT_BUTGETED = "CROWDFUNDING_WITHDRAW_NOT_BUTGETED";
+        internal constant ERROR_WITHDRAW_NOT_BUDGETED = "CROWDFUNDING_WITHDRAW_NOT_BUDGETED";
     // Milestone Complete
     string
         internal constant ERROR_MILESTONE_COMPLETE_NOT_ACTIVE = "CROWDFUNDING_MILESTONE_COMPLETE_NOT_ACTIVE";

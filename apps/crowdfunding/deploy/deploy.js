@@ -1,111 +1,74 @@
-const ACL = artifacts.require('ACL')
-const Kernel = artifacts.require('Kernel')
-const DAOFactory = artifacts.require('DAOFactory')
-const EVMScriptRegistryFactory = artifacts.require('EVMScriptRegistryFactory')
+const { newDao, newApp } = require('../scripts/dao')
+const { setPermission } = require('../scripts/permissions')
 const Crowdfunding = artifacts.require('Crowdfunding')
-const DacCrowdfunding = artifacts.require('DacCrowdfunding')
+const ArrayLib = artifacts.require('ArrayLib')
+const Vault = artifacts.require('Vault')
+
+// Por versión de Solidity (0.4.24), el placeholder de la libraría aún se arma
+// con el nombre y no el hash.
+// En la versión 0.5.0 este mecanismo se reemplaza por el hast del nombre de la librería.
+// https://github.com/ethereum/solidity/blob/develop/Changelog.md#050-2018-11-13
+// Commandline interface: Use hash of library name for link placeholder instead of name itself.
+const ARRAY_LIB_PLACEHOLDER = '__contracts/ArrayLib.sol:ArrayLib_______';
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
 
     const { log } = deployments;
-    const { deployer, delegate } = await getNamedAccounts();
+    const { deployer, delegate, campaignManager, milestoneManager } = await getNamedAccounts();
 
     log(`Aragon deploy`);
 
-    const kernelBase = await Kernel.new(true, { from: deployer }); // petrify immediately
+    // Deploy de la DAO
+    const { kernelBase, aclBase, dao, acl } = await newDao(deployer);
+
     log(` - Kernel Base: ${kernelBase.address}`);
-
-    const aclBase = await ACL.new({ from: deployer });
     log(` - ACL Base: ${aclBase.address}`);
-
-    const regFact = await EVMScriptRegistryFactory.new({ from: deployer });
-    //log(` - EVM Script Registry Factory: ${regFact.address}`);
-
-    let daoFact = await DAOFactory.new(
-        kernelBase.address,
-        aclBase.address,
-        regFact.address, { from: deployer });
-    //log(` - DAO Factory: ${daoFact.address}`);
-
-    const daoReceipt = await daoFact.newDAO(deployer);
-    const dao = await Kernel.at(getEventArgument(daoReceipt, 'DeployDAO', 'dao'));
     log(` - DAO: ${dao.address}`);
-
-    const acl = await ACL.at(await dao.acl());
     log(` - ACL: ${acl.address}`);
-
-    let APP_MANAGER_ROLE = await kernelBase.APP_MANAGER_ROLE()
-
-    // ACL
-    await acl.createPermission(
-        deployer,
-        dao.address,
-        APP_MANAGER_ROLE,
-        deployer,
-        { from: deployer }
-    );
 
     log(`Crowdfunding deploy`);
 
-    const crowdfundingBase = await Crowdfunding.new({ from: deployer });
-    log(` - Crowdfunding Base: ${crowdfundingBase.address}`);
+    // Link Crowdfunding > ArrayLib
+    const arrayLib = await ArrayLib.new({ from: deployer });
+    await linkLib(arrayLib, Crowdfunding, ARRAY_LIB_PLACEHOLDER);
 
-    const crowdfundingReceipt = await dao.newAppInstance(
-        await crowdfundingBase.CROWDFUNDING_APP_ID(),
-        crowdfundingBase.address,
-        '0x',
-        false,
-        { from: deployer }
-    );
-    const crowdfunding = await Crowdfunding.at(
-        getEventArgument(
-            crowdfundingReceipt,
-            'NewAppProxy',
-            'proxy'));
+    const crowdfundingBase = await Crowdfunding.new({ from: deployer });
+    const crowdfundingAddress = await newApp(dao, 'crowdfunding', crowdfundingBase.address, deployer);
+    const crowdfunding = await Crowdfunding.at(crowdfundingAddress);
+
+    log(` - Crowdfunding Base: ${crowdfundingBase.address}`);
     log(` - Crowdfunding: ${crowdfunding.address}`);
 
-    const dacCrowdfundingBase = await DacCrowdfunding.new({ from: deployer });
-    log(` - DAC Crowdfunding Base: ${dacCrowdfundingBase.address}`);
+    const vaultBase = await Vault.new({ from: deployer });
+    const vaultAddress = await newApp(dao, 'vault', vaultBase.address, deployer);
+    const vault = await Vault.at(vaultAddress);
 
-    const dacCrowdfundingReceipt = await dao.newAppInstance(
-        await dacCrowdfundingBase.DAC_CROWDFUNDING_APP_ID(),
-        dacCrowdfundingBase.address,
-        '0x',
-        false,
-        { from: deployer }
-    );
-    const dacCrowdfunding = await DacCrowdfunding.at(
-        getEventArgument(
-            dacCrowdfundingReceipt,
-            'NewAppProxy',
-            'proxy'));
-    log(` - DAC Crowdfunding: ${dacCrowdfunding.address}`);
+    log(` - Vault Base: ${vaultBase.address}`);
+    log(` - Vault: ${vault.address}`);
 
-    let CREATE_ENTITY_ROLE = await crowdfundingBase.CREATE_ENTITY_ROLE()
-    let CREATE_DAC_ROLE = await dacCrowdfundingBase.CREATE_DAC_ROLE()
+    // Set permissions
 
-    // Se permite al delegate poder crear DACss.
-    await acl.createPermission(
-        delegate,
-        dacCrowdfunding.address,
-        CREATE_DAC_ROLE,
-        deployer,
-        { from: deployer }
-    );
+    let CREATE_DAC_ROLE = await crowdfundingBase.CREATE_DAC_ROLE()
+    let CREATE_CAMPAIGN_ROLE = await crowdfundingBase.CREATE_CAMPAIGN_ROLE();
+    let CREATE_MILESTONE_ROLE = await crowdfundingBase.CREATE_MILESTONE_ROLE();
+    let EXCHANGE_RATE_ROLE = await crowdfundingBase.EXCHANGE_RATE_ROLE();
+    let TRANSFER_ROLE = await vaultBase.TRANSFER_ROLE()
+    await setPermission(acl, delegate, crowdfunding.address, CREATE_DAC_ROLE, deployer);
+    await setPermission(acl, campaignManager, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
+    await setPermission(acl, milestoneManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
+    await setPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
+    await setPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
 
-    // Se permite al DacCrowdfunding poder crear entities.
-    await acl.createPermission(
-        dacCrowdfunding.address,
-        crowdfunding.address,
-        CREATE_ENTITY_ROLE,
-        deployer,
-        { from: deployer }
-    );
+    log(` - Set permissions`);
 
-    await crowdfunding.initialize();
-    await dacCrowdfunding.initialize(crowdfunding.address);
+    // Inicialización
+    await vault.initialize()
+    await crowdfunding.initialize(vault.address);
+
+    log(` - Initialized`);
 }
 
-const getEventArgument = (receipt, event, arg) => {
-    return receipt.logs.filter(l => l.event === event)[0].args[arg]
-};
+const linkLib = async (lib, destination, libPlaceholder) => {
+    let libAddr = lib.address.replace('0x', '').toLowerCase()
+    destination.bytecode = destination.bytecode.replace(new RegExp(libPlaceholder, 'g'), libAddr)
+}

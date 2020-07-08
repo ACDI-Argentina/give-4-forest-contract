@@ -9,11 +9,11 @@ const DAOFactory = artifacts.require(
   '@aragon/os/build/contracts/factory/DAOFactory'
 )
 
-const newDao = async (rootAccount) => {
+const newDao = async (deployer) => {
   // Deploy a DAOFactory.
-  const kernelBase = await Kernel.new(true)
-  const aclBase = await ACL.new()
-  const registryFactory = await EVMScriptRegistryFactory.new()
+  const kernelBase = await Kernel.new(true, { from: deployer })
+  const aclBase = await ACL.new({ from: deployer })
+  const registryFactory = await EVMScriptRegistryFactory.new({ from: deployer })
   const daoFactory = await DAOFactory.new(
     kernelBase.address,
     aclBase.address,
@@ -21,30 +21,30 @@ const newDao = async (rootAccount) => {
   )
 
   // Create a DAO instance.
-  const daoReceipt = await daoFactory.newDAO(rootAccount)
+  const daoReceipt = await daoFactory.newDAO(deployer)
   const dao = await Kernel.at(getEventArgument(daoReceipt, 'DeployDAO', 'dao'))
 
-  // Grant the rootAccount address permission to install apps in the DAO.
+  // Grant the deployer address permission to install apps in the DAO.
   const acl = await ACL.at(await dao.acl())
   const APP_MANAGER_ROLE = await kernelBase.APP_MANAGER_ROLE()
   await acl.createPermission(
-    rootAccount,
+    deployer,
     dao.address,
     APP_MANAGER_ROLE,
-    rootAccount,
-    { from: rootAccount }
+    deployer,
+    { from: deployer }
   )
 
-  return { dao, acl }
+  return { kernelBase, aclBase, dao, acl }
 }
 
-const newApp = async (dao, appName, baseAppAddress, rootAccount) => {
+const newApp = async (dao, appName, baseAppAddress, deployer) => {
   const receipt = await dao.newAppInstance(
-    hash(`${appName}.aragonpm.test`), // appId - Unique identifier for each app installed in the DAO; can be any bytes32 string in the tests.
+    hash(`${appName}`), // appId - Unique identifier for each app installed in the DAO; can be any bytes32 string in the tests.
     baseAppAddress, // appBase - Location of the app's base implementation.
     '0x', // initializePayload - Used to instantiate and initialize the proxy in the same call (if given a non-empty bytes string).
     false, // setDefault - Whether the app proxy is the default proxy.
-    { from: rootAccount }
+    { from: deployer }
   )
 
   // Find the deployed proxy address in the tx logs.
@@ -57,5 +57,5 @@ const newApp = async (dao, appName, baseAppAddress, rootAccount) => {
 
 module.exports = {
   newDao,
-  newApp,
+  newApp
 }

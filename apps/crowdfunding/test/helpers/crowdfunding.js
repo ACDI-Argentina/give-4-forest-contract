@@ -1,6 +1,7 @@
 const { getEventArgument } = require('@aragon/test-helpers/events')
 
 const Crowdfunding = artifacts.require('Crowdfunding')
+const ArrayLib = artifacts.require('ArrayLib')
 const BN = require('bn.js');
 
 // Ejemplo de IPFS CID con datos JSON
@@ -9,12 +10,22 @@ const INFO_CID = 'Qmd4PvCKbFbbB8krxajCSeHdLXQamdt7yFxFxzTbedwiYM';
 // 100 USD = 10000 Centavos USD
 const FIAT_AMOUNT_TARGET = new BN('10000');
 
+// Por versión de Solidity (0.4.24), el placeholder de la libraría aún se arma
+// con el nombre y no el hash.
+// En la versión 0.5.0 este mecanismo se reemplaza por el hast del nombre de la librería.
+// https://github.com/ethereum/solidity/blob/develop/Changelog.md#050-2018-11-13
+// Commandline interface: Use hash of library name for link placeholder instead of name itself.
+const ARRAY_LIB_PLACEHOLDER = '__contracts/ArrayLib.sol:ArrayLib_______';
+
 const linkLib = async (lib, destination, libPlaceholder) => {
   let libAddr = lib.address.replace('0x', '').toLowerCase()
   destination.bytecode = destination.bytecode.replace(new RegExp(libPlaceholder, 'g'), libAddr)
 }
 
 const newCrowdfunding = async (deployer) => {
+  // Link Crowdfunding > ArrayLib
+  const arrayLib = await ArrayLib.new({ from: deployer });
+  await linkLib(arrayLib, Crowdfunding, ARRAY_LIB_PLACEHOLDER);
   return await Crowdfunding.new({ from: deployer });
 }
 

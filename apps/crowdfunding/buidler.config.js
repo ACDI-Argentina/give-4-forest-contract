@@ -11,7 +11,7 @@ module.exports = {
   networks: {
     localhost: {
       url: 'http://localhost:8545',
-      timeout: 60000      
+      timeout: 60000
     },
     buidlerevm: {
       allowUnlimitedContractSize: true
@@ -27,7 +27,7 @@ module.exports = {
     version: '0.4.24',
     optimizer: {
       enabled: true,
-      runs: 10000,
+      runs: 200
     },
   },
   // Etherscan plugin configuration. Learn more at https://github.com/nomiclabs/buidler/tree/master/packages/buidler-etherscan
@@ -54,10 +54,16 @@ module.exports = {
   // Deploy plugin configuration
   namedAccounts: {
     deployer: {
-      default: 0, // here this will by default take the first account as deployer
+      default: 0 // here this will by default take the first account as deployer
     },
     delegate: {
-      default: 1, // DAC Dalegate
+      default: 1 // DAC Dalegate
+    },
+    campaignManager: {
+      default: 2 // Campaign Manager
+    },
+    milestoneManager: {
+      default: 3 // Milestone Manager
     }
   },
   paths: {

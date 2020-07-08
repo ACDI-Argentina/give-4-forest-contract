@@ -3,7 +3,7 @@ const assertEntity = (entity, entityExpected) => {
   assert.equal(entity.id, entityExpected.id);
   assert.equal(entity.idIndex, entityExpected.idIndex);
   assert.equal(entity.entityType, entityExpected.entityType);
-  assert.equal(entity.butgetIds.length, entityExpected.butgetIdsLength);
+  assert.equal(entity.budgetIds.length, entityExpected.budgetIdsLength);
 }
 
 const assertDac = (dac, dacExpected) => {
@@ -59,22 +59,22 @@ const assertDonation = (donation, donationExpected) => {
   assert.equal(donation.status, donationExpected.status);
 }
 
-const assertButget = (butget, butgetExpected) => {
-  if (butgetExpected.id != undefined) {
-    assert.equal(butget.id, butgetExpected.id);
+const assertBudget = (budget, budgetExpected) => {
+  if (budgetExpected.id != undefined) {
+    assert.equal(budget.id, budgetExpected.id);
   }
-  if (butgetExpected.idIndex != undefined) {
-    assert.equal(butget.idIndex, butgetExpected.idIndex);
+  if (budgetExpected.idIndex != undefined) {
+    assert.equal(budget.idIndex, budgetExpected.idIndex);
   }
-  assert.equal(butget.entityId, butgetExpected.entityId);
-  assert.equal(butget.token, butgetExpected.token);
-  //assert.equal(butget.amount, butgetExpected.amount);
-  assert.equal(butget.amount.toString(), butgetExpected.amount.toString());
-  assert.equal(butget.donationIds.length, butgetExpected.donationIds.length);
-  for (i = 0; i < butget.donationIds.length; i++) {
-    assert.equal(butget.donationIds[i], butgetExpected.donationIds[i]);
+  assert.equal(budget.entityId, budgetExpected.entityId);
+  assert.equal(budget.token, budgetExpected.token);
+  //assert.equal(budget.amount, budgetExpected.amount);
+  assert.equal(budget.amount.toString(), budgetExpected.amount.toString());
+  assert.equal(budget.donationIds.length, budgetExpected.donationIds.length);
+  for (i = 0; i < budget.donationIds.length; i++) {
+    assert.equal(budget.donationIds[i], budgetExpected.donationIds[i]);
   }
-  assert.equal(butget.status, butgetExpected.status);
+  assert.equal(budget.status, budgetExpected.status);
 }
 
 module.exports = {
@@ -83,5 +83,5 @@ module.exports = {
   assertCampaign,
   assertMilestone,
   assertDonation,
-  assertButget
+  assertBudget
 }

@@ -5,13 +5,14 @@ import "@aragon/os/contracts/apps/AragonApp.sol";
 import "@aragon/os/contracts/lib/math/SafeMath.sol";
 import "@aragon/apps-vault/contracts/Vault.sol";
 import "./Constants.sol";
+import "./ArrayLib.sol";
 
 /**
  * @title Crowdfunding
  * @author Mauricio Coronel
  * @notice Contrato encargado de las principales operaciones de manejo de entidades y fondos.
  */
-contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
+contract Crowdfunding is AragonApp, Constants {
     using SafeMath for uint256;
     enum EntityType {Dac, Campaign, Milestone}
     enum DacStatus {Active, Cancelled}
@@ -25,8 +26,8 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         Finished // Se finalizó y se retiraron los fondos.
     }
     enum DonationStatus {Available, Spent, Returned}
-    enum ButgetStatus {
-        Butgeted, // Los fondos del presupuesto están comprometidos.
+    enum BudgetStatus {
+        Budgeted, // Los fondos del presupuesto están comprometidos.
         Paying, // No utilizado por el momento. Se utiliza si se utiliza una aprobación de pago antes de hacerlo efectivo-
         Closed, // EL presupuesto se cierra sin realizarse el pago.
         Paid // El presupuesto fue pagado.
@@ -37,7 +38,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         uint256 id; // Identificación de la entidad
         uint256 idIndex; // Índice del Id en entityIds;
         EntityType entityType;
-        uint256[] butgetIds; // Ids de los presupuestos.
+        uint256[] budgetIds; // Ids de los presupuestos.
     }
 
     /// @dev Estructura que define los datos de una DAC.
@@ -86,19 +87,19 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         uint256 amount; // Monto donado.
         uint256 amountRemainding; // Monto donado restante de consumir.
         uint256 entityId; // Identificación de la entidad a la cual se destinó el fondo inicialmente.
-        uint256 butgetId; // Identificación del presupuesto al cual está asignada la donación.
+        uint256 budgetId; // Identificación del presupuesto al cual está asignada la donación.
         DonationStatus status;
     }
 
     /// @dev Estructura que define los datos de un Presupuesto para una Entidad.
-    struct Butget {
+    struct Budget {
         uint256 id; // Identificación del presupuesto.
         uint256 idIndex; // Índice del Id en butguIds;
         uint256 entityId; // Identificación de la entidad al cual está destinado el presupuesto.
         address token; // Token del presupuesto.
         uint256 amount; // Monto del presupuesto.
         uint256[] donationIds; // Ids de las donaciones del presupuesto.
-        ButgetStatus status;
+        BudgetStatus status;
     }
 
     /// @dev Estructura que almacena el tipo de cambio en USD de un token para una fecha y hora.
@@ -151,12 +152,12 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         mapping(uint256 => Donation) donations;
     }
 
-    struct ButgetData {
+    struct BudgetData {
         /// @dev Almacena los ids de las presupuestos para poder iterar
         /// en el iterable mapping de presupuestos.
         uint256[] ids;
         /// @dev Iterable Mapping de Presupuesto
-        mapping(uint256 => Butget) butgets;
+        mapping(uint256 => Budget) budgets;
     }
 
     EntityData entityData;
@@ -164,7 +165,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
     CampaignData campaignData;
     MilestoneData milestoneData;
     DonationData donationData;
-    ButgetData butgetData;
+    BudgetData budgetData;
     mapping(address => ExchangeRate) public exchangeRates;
 
     modifier entityExists(uint256 _id) {
@@ -198,8 +199,8 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         _;
     }
 
-    modifier butgetExists(uint256 _id) {
-        require(butgetData.butgets[_id].id != 0, ERROR_BUTGET_NOT_EXISTS);
+    modifier budgetExists(uint256 _id) {
+        require(budgetData.budgets[_id].id != 0, ERROR_BUDGET_NOT_EXISTS);
         _;
     }
 
@@ -381,10 +382,10 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         donation.status = DonationStatus.Available;
 
         // Se agrega al presupuesto de la entidad.
-        Butget storage butget = _getOrNewButget(_entityId, _token);
-        butget.amount = butget.amount + _amount;
-        butget.donationIds.push(donation.id);
-        donation.butgetId = butget.id;
+        Budget storage budget = _getOrNewBudget(_entityId, _token);
+        budget.amount = budget.amount + _amount;
+        budget.donationIds.push(donation.id);
+        donation.budgetId = budget.id;
 
         donationData.donations[donationId] = donation;
 
@@ -424,7 +425,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
             if (entityTo.entityType == EntityType.Campaign) {
                 // Transferencia DAC > Campaign
                 // La entidad de destino debe estar entre las Campaigns de la Dac.
-                if (!_contains(dacFrom.campaignIds, entityTo.id)) {
+                if (!ArrayLib.contains(dacFrom.campaignIds, entityTo.id)) {
                     revert(ERROR_TRANSFER_CAMPAIGN_NOT_BELONGS_DAC);
                 }
                 // La Campaign debe estar Activa.
@@ -438,7 +439,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
                 bool found = false;
                 for (uint256 i1 = 0; i1 < dacFrom.campaignIds.length; i1++) {
                     if (
-                        _contains(
+                        ArrayLib.contains(
                             _getCampaign(dacFrom.campaignIds[i1]).milestoneIds,
                             entityTo.id
                         )
@@ -472,7 +473,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
                 ERROR_TRANSFER_CAMPAIGN_NOT_ACTIVE
             );
             // La entidad de destino debe estar entre los Milestone de la Campaign.
-            if (!_contains(campaignFrom.milestoneIds, entityTo.id)) {
+            if (!ArrayLib.contains(campaignFrom.milestoneIds, entityTo.id)) {
                 revert(ERROR_TRANSFER_MILESTONE_NOT_BELONGS_CAMPAIGN);
             }
             // Transferencia Campaign > Milestone
@@ -510,13 +511,13 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         // El retiro superó las validaciones del Milestones
         uint256 fiatAmountTarget = milestone.fiatAmountTarget;
         Entity storage entity = _getEntity(_milestoneId);
-        for (uint256 i = 0; i < entity.butgetIds.length; i++) {
-            fiatAmountTarget = _fitButget(
+        for (uint256 i = 0; i < entity.budgetIds.length; i++) {
+            fiatAmountTarget = _fitBudget(
                 _milestoneId,
-                entity.butgetIds[i],
+                entity.budgetIds[i],
                 fiatAmountTarget
             );
-            _doWithdraw(_milestoneId, entity.butgetIds[i]);
+            _doWithdraw(_milestoneId, entity.budgetIds[i]);
         }
         milestone.status = MilestoneStatus.Finished;
     }
@@ -661,10 +662,10 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
      * @notice Obtiene todas las Presupuestos.
      * @return Lista con todos los Presupuestos.
      */
-    function getAllButgets() public view returns (Butget[] memory) {
-        Butget[] memory result = new Butget[](butgetData.ids.length);
-        for (uint256 i = 0; i < butgetData.ids.length; i++) {
-            result[i] = butgetData.butgets[butgetData.ids[i]];
+    function getAllBudgets() public view returns (Budget[] memory) {
+        Budget[] memory result = new Budget[](budgetData.ids.length);
+        for (uint256 i = 0; i < budgetData.ids.length; i++) {
+            result[i] = budgetData.budgets[budgetData.ids[i]];
         }
         return result;
     }
@@ -674,15 +675,15 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
      * @param _entityId identificador de la entidad.
      * @return Presupuestos del entity con los diferentes tokens.
      */
-    function getButgets(uint256 _entityId)
+    function getBudgets(uint256 _entityId)
         public
         view
-        returns (Butget[] butgets)
+        returns (Budget[] budgets)
     {
         Entity storage entity = _getEntity(_entityId);
-        for (uint256 i = 0; i < entity.butgetIds.length; i++) {
-            Butget storage butget = butgetData.butgets[entity.butgetIds[i]];
-            butgets[i] = butget;
+        for (uint256 i = 0; i < entity.budgetIds.length; i++) {
+            Budget storage budget = budgetData.budgets[entity.budgetIds[i]];
+            budgets[i] = budget;
         }
     }
 
@@ -692,7 +693,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
      * @param _token token del presupuesto.
      * @return Presupuesto del entity y token especificado.
      */
-    function getButget(uint256 _entityId, address _token)
+    function getBudget(uint256 _entityId, address _token)
         public
         view
         returns (
@@ -702,20 +703,20 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
             address token,
             uint256 amount,
             uint256[] donationIds,
-            ButgetStatus status
+            BudgetStatus status
         )
     {
         Entity storage entity = _getEntity(_entityId);
-        for (uint256 i = 0; i < entity.butgetIds.length; i++) {
-            Butget storage butget = butgetData.butgets[entity.butgetIds[i]];
-            if (butget.token == _token) {
-                id = butget.id;
-                idIndex = butget.idIndex;
-                entityId = butget.entityId;
-                token = butget.token;
-                amount = butget.amount;
-                donationIds = butget.donationIds;
-                status = butget.status;
+        for (uint256 i = 0; i < entity.budgetIds.length; i++) {
+            Budget storage budget = budgetData.budgets[entity.budgetIds[i]];
+            if (budget.token == _token) {
+                id = budget.id;
+                idIndex = budget.idIndex;
+                entityId = budget.entityId;
+                token = budget.token;
+                amount = budget.amount;
+                donationIds = budget.donationIds;
+                status = budget.status;
                 break;
             }
         }
@@ -741,32 +742,6 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         entity.idIndex = idIndex;
         entity.entityType = _entityType;
         entityData.entities[entityId] = entity;
-    }
-
-    /**
-     * @dev crea un nuevo presupuesto para la entidad `_entityId`.
-     * @param _entityId Identificador de la entidad a la cual se asociará el presupuesto.
-     * @param _token Token del presupuesto.
-     * @return presupuesto creado.
-     */
-    function _newButget(uint256 _entityId, address _token)
-        internal
-        entityExists(_entityId)
-        returns (Butget storage butget)
-    {
-        uint256 butgetId = butgetData.ids.length + 1; // Generación del Id único por presupuesto.
-        butgetData.ids.push(butgetId);
-        uint256 idIndex = butgetData.ids.length - 1;
-        butget = butgetData.butgets[butgetId];
-        butget.id = butgetId;
-        butget.idIndex = idIndex;
-        butget.entityId = _entityId;
-        butget.token = _token;
-        // El presupuesto se inicializa en 0 tokens.
-        butget.amount = 0;
-        butget.status = ButgetStatus.Butgeted;
-        // Se asocia el presupuesto a la entidad
-        entityData.entities[_entityId].butgetIds.push(butgetId);
     }
 
     /**
@@ -825,13 +800,13 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
      * @notice Obtiene el presupuesto `_id`
      * @return Presupuesto cuya identificación coincide con la especificada.
      */
-    function _getButget(uint256 _id)
+    function _getBudget(uint256 _id)
         internal
         view
-        butgetExists(_id)
-        returns (Butget storage)
+        budgetExists(_id)
+        returns (Budget storage)
     {
-        return butgetData.butgets[_id];
+        return budgetData.budgets[_id];
     }
 
     /**
@@ -867,20 +842,32 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
      * @param _token token del presupuesto.
      * @return Presupuesto del entity y token especificado.
      */
-    function _getOrNewButget(uint256 _entityId, address _token)
+    function _getOrNewBudget(uint256 _entityId, address _token)
         internal
-        returns (Butget storage butget)
+        returns (Budget storage budget)
     {
         Entity storage entity = _getEntity(_entityId);
-        for (uint256 i = 0; i < entity.butgetIds.length; i++) {
-            butget = butgetData.butgets[entity.butgetIds[i]];
-            if (butget.token == _token) {
+        for (uint256 i = 0; i < entity.budgetIds.length; i++) {
+            budget = budgetData.budgets[entity.budgetIds[i]];
+            if (budget.token == _token) {
                 return;
             }
         }
         // No existe un presupuesto de la entidad para el token especificado,
         // por lo que se crea un nuevo presupuesto para el token.
-        butget = _newButget(_entityId, _token);
+        uint256 budgetId = budgetData.ids.length + 1; // Generación del Id único por presupuesto.
+        budgetData.ids.push(budgetId);
+        uint256 idIndex = budgetData.ids.length - 1;
+        budget = budgetData.budgets[budgetId];
+        budget.id = budgetId;
+        budget.idIndex = idIndex;
+        budget.entityId = _entityId;
+        budget.token = _token;
+        // El presupuesto se inicializa en 0 tokens.
+        budget.amount = 0;
+        budget.status = BudgetStatus.Budgeted;
+        // Se asocia el presupuesto a la entidad
+        entityData.entities[_entityId].budgetIds.push(budgetId);
     }
 
     /**
@@ -897,7 +884,7 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         uint256 _donationId
     ) internal {
         Donation storage donation = _getDonation(_donationId);
-        Butget storage butgetFrom = _getOrNewButget(
+        Budget storage budgetFrom = _getOrNewBudget(
             _entityIdFrom,
             donation.token
         );
@@ -908,71 +895,71 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         );
         // La donación debe pertenecer al presupuesto de la entidad origen.
         require(
-            donation.butgetId == butgetFrom.id,
+            donation.budgetId == budgetFrom.id,
             ERROR_TRANSFER_DONATION_NOT_BELONGS_ORIGIN
         );
 
-        Butget storage butgetTo = _getOrNewButget(_entityIdTo, donation.token);
+        Budget storage budgetTo = _getOrNewBudget(_entityIdTo, donation.token);
 
         uint256 amountTransfer = donation.amountRemainding;
         // Se quita la donación del presupuesto origen.
-        butgetFrom.amount = butgetFrom.amount.sub(amountTransfer);
-        _removeElement(butgetFrom.donationIds, _donationId);
+        budgetFrom.amount = budgetFrom.amount.sub(amountTransfer);
+        ArrayLib.removeElement(budgetFrom.donationIds, _donationId);
         // Se agrega la donación al presupuesto destino.
-        butgetTo.amount = butgetTo.amount.add(amountTransfer);
-        butgetTo.donationIds.push(_donationId);
-        donation.butgetId = butgetTo.id;
+        budgetTo.amount = budgetTo.amount.add(amountTransfer);
+        budgetTo.donationIds.push(_donationId);
+        donation.budgetId = budgetTo.id;
 
         emit Transfer(_entityIdFrom, _entityIdTo, _donationId, amountTransfer);
     }
 
     /**
-     * @notice Realiza el retiro de fondos desde el presupuesto `_butgetId` del Milestone `_milestoneId`.
+     * @notice Realiza el retiro de fondos desde el presupuesto `_budgetId` del Milestone `_milestoneId`.
      * @param _milestoneId Id del Milestone para el cual se retiran los fondos.
-     * @param _butgetId Id del presupuesto desde el cual se retiran los fondos.
+     * @param _budgetId Id del presupuesto desde el cual se retiran los fondos.
      */
-    function _doWithdraw(uint256 _milestoneId, uint256 _butgetId) internal {
+    function _doWithdraw(uint256 _milestoneId, uint256 _budgetId) internal {
         Milestone storage milestone = _getMilestone(_milestoneId);
-        Butget storage butget = _getButget(_butgetId);
-        if (butget.amount == 0) {
+        Budget storage budget = _getBudget(_budgetId);
+        if (budget.amount == 0) {
             // No se continúa con el retiro porque no hay monto por transferir.
             // El presupuesto es cerrado.
-            butget.status = ButgetStatus.Closed;
+            budget.status = BudgetStatus.Closed;
             return;
         }
         // El presupuesto debe estar comprometido.
         require(
-            butget.status == ButgetStatus.Butgeted,
-            ERROR_WITHDRAW_NOT_BUTGETED
+            budget.status == BudgetStatus.Budgeted,
+            ERROR_WITHDRAW_NOT_BUDGETED
         );
         // Se realiza la transferencia desde el Vault al destinatario.
-        vault.transfer(butget.token, milestone.recipient, butget.amount);
+        vault.transfer(budget.token, milestone.recipient, budget.amount);
         // El presupuesto es finalizado.
-        butget.status = ButgetStatus.Paid;
+        budget.status = BudgetStatus.Paid;
 
-        emit Withdraw(_milestoneId, butget.token, butget.amount);
+        emit Withdraw(_milestoneId, budget.token, budget.amount);
     }
 
     /**
-     * @notice Ajusta el presupuesto `_butgetId` del Milestone `_milestoneId`
+     * @notice Ajusta el presupuesto `_budgetId` del Milestone `_milestoneId`
      *  según el monto objetivo `_fiatAmountTarget`.
      *  @dev Los cálculos de valores restantes de las donaciones del presupuesto,
      *  ajustan el presupuesto en sí.
      * @param _milestoneId Id del Milestone para el cual se ajusta el presupuesto.
-     * @param _butgetId Id del presupuesto del Milestone que se ajusta.
+     * @param _budgetId Id del presupuesto del Milestone que se ajusta.
      * @param _fiatAmountTarget Monto en dinero fiat objetivo a alcanzar por el presupuesto.
      */
-    function _fitButget(
+    function _fitBudget(
         uint256 _milestoneId,
-        uint256 _butgetId,
+        uint256 _budgetId,
         uint256 _fiatAmountTarget
     ) internal returns (uint256 fiatAmountTarget) {
         Milestone storage milestone = _getMilestone(_milestoneId);
-        Butget storage butget = _getButget(_butgetId);
-        uint256 rate = _getExchangeRate(butget.token).rate;
+        Budget storage budget = _getBudget(_budgetId);
+        uint256 rate = _getExchangeRate(budget.token).rate;
         uint256 amountTarget = _fiatAmountTarget.mul(rate);
-        for (uint256 i = 0; i < butget.donationIds.length; i++) {
-            Donation storage donation = donationData.donations[butget
+        for (uint256 i = 0; i < budget.donationIds.length; i++) {
+            Donation storage donation = donationData.donations[budget
                 .donationIds[i]];
             if (amountTarget >= donation.amountRemainding) {
                 // No se superó el monto objetivo.
@@ -994,80 +981,5 @@ contract Crowdfunding is EtherTokenConstant, AragonApp, Constants {
         }
         // El redondeo favorece a la retención de fondos.
         fiatAmountTarget = amountTarget.div(rate);
-    }
-
-    // Internal functions - utils
-
-    /**
-     * @dev Determina si una arreglo contiene un elemento o no.
-     * @param _array arreglo de elementos
-     * @param _element elemento a determinar si se encuentra dentro del arreglo o no.
-     * @return si elemento existe o no dentro del arreglo.
-     */
-    function _contains(uint256[] _array, uint256 _element)
-        internal
-        pure
-        returns (bool)
-    {
-        return _indexOf(_array, _element) >= 0;
-    }
-
-    /**
-     * @dev Obtiene el índice del _element en el _array. Devuelve -1 si el elemento
-     *  no es encontrado.
-     * @param _array arreglo de elementos
-     * @param _element elemento a determinar el indice
-     * @return índice del elemento dentro del arreglo. -1 si el elemento
-     *  no es encontrado.
-     */
-    function _indexOf(uint256[] _array, uint256 _element)
-        internal
-        pure
-        returns (int256)
-    {
-        for (uint256 i = 0; i < _array.length; i++) {
-            if (_array[i] == _element) {
-                return int256(i);
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * @dev Elimina el elemento del _array cuyo íncice coincide con el especificado.
-     * @param _array arreglo de elementos
-     * @param _index índice del elemento a eliminar.
-     * @return arreglo con el elemento eliminado.
-     */
-    function _remove(
-        uint256[] storage _array,
-        uint256 _index //pure //returns (uint256[])
-    ) internal {
-        if (_index >= _array.length) {
-            //return _array;
-            return;
-        }
-        for (uint256 i = _index; i < _array.length - 1; i++) {
-            _array[i] = _array[i + 1];
-        }
-        delete _array[_array.length - 1];
-        _array.length--;
-        //return _array;
-    }
-
-    /**
-     * @dev Elimina el _element del _array. Solamente elimina el primer elemento encontrado.u
-     * @param _array arreglo de elementos
-     * @param _element elemento a eliminar.
-     * @return arreglo con el elemento eliminado.
-     */
-    function _removeElement(uint256[] storage _array, uint256 _element)
-        internal
-    {
-        int256 index = _indexOf(_array, _element);
-        if (index < 0) {
-            return;
-        }
-        _remove(_array, uint256(index));
     }
 }

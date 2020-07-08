@@ -1,7 +1,7 @@
 const { assertRevert } = require('@aragon/test-helpers/assertThrow')
 const { getEventArgument } = require('@aragon/test-helpers/events')
-const { newDao, newApp } = require('./helpers/dao')
-const { setPermission } = require('./helpers/permissions')
+const { newDao, newApp } = require('../scripts/dao')
+const { setPermission } = require('../scripts/permissions')
 const { newCrowdfunding,
     newDac,
     newCampaign,
@@ -15,7 +15,7 @@ const { assertEntity,
     assertCampaign,
     assertMilestone,
     assertDonation,
-    assertButget } = require('./helpers/asserts')
+    assertBudget } = require('./helpers/asserts')
 const { errors } = require('./helpers/errors')
 const Crowdfunding = artifacts.require('Crowdfunding')
 const Vault = artifacts.require('Vault')
@@ -59,11 +59,11 @@ const MILESTONE_STATUS_FINISHED = 5;
 // 0: DonationStatus.Available;
 const DONATION_STATUS_AVAILABLE = 0;
 
-// 0: ButgetStatus.Butgeted;
-const BUTGET_STATUS_BUTGETED = 0;
-const BUTGET_STATUS_PAYING = 1;
-const BUTGET_STATUS_CLOSED = 2;
-const BUTGET_STATUS_PAID = 3;
+// 0: BudgetStatus.Budgeted;
+const Budget_STATUS_BudgetED = 0;
+const Budget_STATUS_PAYING = 1;
+const Budget_STATUS_CLOSED = 2;
+const Budget_STATUS_PAID = 3;
 
 // Equivalencia de 0.01 USD en Ether (Wei)
 // 1 ETH = 1E+18 Wei = 100 USD > 0.01 USD = 1E+14 Wei
@@ -140,8 +140,9 @@ contract('Crowdfunding App', ([
 
             let dacId = getEventArgument(receipt, 'NewDac', 'id');
             assert.equal(dacId, 1);
-
+            
             let dacs = await crowdfunding.getAllDacs();
+            
             assert.equal(dacs.length, 1)
             assertDac(dacs[0], {
                 id: 1,
@@ -158,7 +159,7 @@ contract('Crowdfunding App', ([
                 id: 1,
                 idIndex: 0,
                 entityType: ENTITY_TYPE_DAC,
-                butgetIdsLength: 0
+                budgetIdsLength: 0
             });
         });
 
@@ -201,7 +202,7 @@ contract('Crowdfunding App', ([
                 id: 2,
                 idIndex: 1,
                 entityType: ENTITY_TYPE_CAMPAIGN,
-                butgetIdsLength: 0
+                budgetIdsLength: 0
             });
         });
 
@@ -274,7 +275,7 @@ contract('Crowdfunding App', ([
                 id: 3,
                 idIndex: 2,
                 entityType: ENTITY_TYPE_MILESTONE,
-                butgetIdsLength: 0
+                budgetIdsLength: 0
             });
         });
 
@@ -363,16 +364,16 @@ contract('Crowdfunding App', ([
                 status: DONATION_STATUS_AVAILABLE
             });
 
-            let butgets = await crowdfunding.getAllButgets();
-            assert.equal(butgets.length, 1)
-            assertButget(butgets[0], {
+            let budgets = await crowdfunding.getAllBudgets();
+            assert.equal(budgets.length, 1)
+            assertBudget(budgets[0], {
                 id: 1,
                 idIndex: 0,
                 entityId: dacId,
                 token: ETH,
                 amount: amount,
                 donationIds: [1],
-                status: BUTGET_STATUS_BUTGETED
+                status: Budget_STATUS_BudgetED
             });
 
             // Assert desde el Vault
@@ -407,16 +408,16 @@ contract('Crowdfunding App', ([
                 status: DONATION_STATUS_AVAILABLE
             });
 
-            let butgets = await crowdfunding.getAllButgets();
-            assert.equal(butgets.length, 1)
-            assertButget(butgets[0], {
+            let budgets = await crowdfunding.getAllBudgets();
+            assert.equal(budgets.length, 1)
+            assertBudget(budgets[0], {
                 id: 1,
                 idIndex: 0,
                 entityId: campaignId,
                 token: ETH,
                 amount: amount,
                 donationIds: [1],
-                status: BUTGET_STATUS_BUTGETED
+                status: Budget_STATUS_BudgetED
             });
 
             // Assert desde el Vault
@@ -451,16 +452,16 @@ contract('Crowdfunding App', ([
                 status: DONATION_STATUS_AVAILABLE
             });
 
-            let butgets = await crowdfunding.getAllButgets();
-            assert.equal(butgets.length, 1)
-            assertButget(butgets[0], {
+            let budgets = await crowdfunding.getAllBudgets();
+            assert.equal(budgets.length, 1)
+            assertBudget(budgets[0], {
                 id: 1,
                 idIndex: 0,
                 entityId: milestoneId,
                 token: ETH,
                 amount: amount,
                 donationIds: [1],
-                status: BUTGET_STATUS_BUTGETED
+                status: Budget_STATUS_BudgetED
             });
 
             // Assert desde el Vault
@@ -518,16 +519,16 @@ contract('Crowdfunding App', ([
                     status: DONATION_STATUS_AVAILABLE
                 });
 
-                let butgets = await crowdfunding.getAllButgets();
-                assert.equal(butgets.length, 1)
-                assertButget(butgets[0], {
+                let budgets = await crowdfunding.getAllBudgets();
+                assert.equal(budgets.length, 1)
+                assertBudget(budgets[0], {
                     id: 1,
                     idIndex: 0,
                     entityId: dacId,
                     token: tokenInstance.address,
                     amount: amount,
                     donationIds: [1],
-                    status: BUTGET_STATUS_BUTGETED
+                    status: Budget_STATUS_BudgetED
                 });
 
                 // Assert desde el Vault
@@ -562,16 +563,16 @@ contract('Crowdfunding App', ([
                     status: DONATION_STATUS_AVAILABLE
                 });
 
-                let butgets = await crowdfunding.getAllButgets();
-                assert.equal(butgets.length, 1)
-                assertButget(butgets[0], {
+                let budgets = await crowdfunding.getAllBudgets();
+                assert.equal(budgets.length, 1)
+                assertBudget(budgets[0], {
                     id: 1,
                     idIndex: 0,
                     entityId: campaignId,
                     token: tokenInstance.address,
                     amount: amount,
                     donationIds: [1],
-                    status: BUTGET_STATUS_BUTGETED
+                    status: Budget_STATUS_BudgetED
                 });
 
                 // Assert desde el Vault
@@ -606,16 +607,16 @@ contract('Crowdfunding App', ([
                     status: DONATION_STATUS_AVAILABLE
                 });
 
-                let butgets = await crowdfunding.getAllButgets();
-                assert.equal(butgets.length, 1)
-                assertButget(butgets[0], {
+                let budgets = await crowdfunding.getAllBudgets();
+                assert.equal(budgets.length, 1)
+                assertBudget(budgets[0], {
                     id: 1,
                     idIndex: 0,
                     entityId: milestoneId,
                     token: tokenInstance.address,
                     amount: amount,
                     donationIds: [1],
-                    status: BUTGET_STATUS_BUTGETED
+                    status: Budget_STATUS_BudgetED
                 });
 
                 // Assert desde el Vault
@@ -695,23 +696,23 @@ contract('Crowdfunding App', ([
             assert.equal(receiptDonationId, donationId1);
             assert.equal(receiptAmount.toString(), donationAmount.toString());
 
-            let butgetFrom = await crowdfunding.getButget(dacId1, ETH);
-            assertButget(butgetFrom, {
+            let budgetFrom = await crowdfunding.getBudget(dacId1, ETH);
+            assertBudget(budgetFrom, {
                 entityId: dacId1,
                 token: ETH,
                 amount: new BN(0),
                 donationIds: [],
-                status: BUTGET_STATUS_BUTGETED
+                status: Budget_STATUS_BudgetED
             });
 
-            let butgetTo = await crowdfunding.getButget(campaignId1, ETH);
+            let budgetTo = await crowdfunding.getBudget(campaignId1, ETH);
 
-            assertButget(butgetTo, {
+            assertBudget(budgetTo, {
                 entityId: campaignId1,
                 token: ETH,
                 amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
                 donationIds: [donationId2, donationId1],
-                status: BUTGET_STATUS_BUTGETED
+                status: Budget_STATUS_BudgetED
             });
         })
 
@@ -728,22 +729,22 @@ contract('Crowdfunding App', ([
             assert.equal(receiptDonationId, donationId1);
             assert.equal(receiptAmount.toString(), donationAmount.toString());
 
-            let butgetFrom = await crowdfunding.getButget(dacId1, ETH);
-            assertButget(butgetFrom, {
+            let budgetFrom = await crowdfunding.getBudget(dacId1, ETH);
+            assertBudget(budgetFrom, {
                 entityId: dacId1,
                 token: ETH,
                 amount: new BN(0),
                 donationIds: [],
-                status: BUTGET_STATUS_BUTGETED
+                status: Budget_STATUS_BudgetED
             });
 
-            let butgetTo = await crowdfunding.getButget(milestoneId1, ETH);
-            assertButget(butgetTo, {
+            let budgetTo = await crowdfunding.getBudget(milestoneId1, ETH);
+            assertBudget(budgetTo, {
                 entityId: milestoneId1,
                 token: ETH,
                 amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
                 donationIds: [donationId3, donationId1],
-                status: BUTGET_STATUS_BUTGETED
+                status: Budget_STATUS_BudgetED
             });
         })
 
@@ -760,22 +761,22 @@ contract('Crowdfunding App', ([
             assert.equal(receiptDonationId, donationId2);
             assert.equal(receiptAmount.toString(), donationAmount.toString());
 
-            let butgetFrom = await crowdfunding.getButget(campaignId1, ETH);
-            assertButget(butgetFrom, {
+            let budgetFrom = await crowdfunding.getBudget(campaignId1, ETH);
+            assertBudget(budgetFrom, {
                 entityId: campaignId1,
                 token: ETH,
                 amount: new BN(0),
                 donationIds: [],
-                status: BUTGET_STATUS_BUTGETED
+                status: Budget_STATUS_BudgetED
             });
 
-            let butgetTo = await crowdfunding.getButget(milestoneId1, ETH);
-            assertButget(butgetTo, {
+            let budgetTo = await crowdfunding.getBudget(milestoneId1, ETH);
+            assertBudget(budgetTo, {
                 entityId: milestoneId1,
                 token: ETH,
                 amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
                 donationIds: [donationId3, donationId2],
-                status: BUTGET_STATUS_BUTGETED
+                status: Budget_STATUS_BudgetED
             });
         })
 
@@ -900,22 +901,22 @@ contract('Crowdfunding App', ([
                 assert.equal(receiptDonationId, donationId1);
                 assert.equal(receiptAmount.toString(), donationAmount.toString());
 
-                let butgetFrom = await crowdfunding.getButget(dacId, tokenInstance.address);
-                assertButget(butgetFrom, {
+                let budgetFrom = await crowdfunding.getBudget(dacId, tokenInstance.address);
+                assertBudget(budgetFrom, {
                     entityId: dacId,
                     token: tokenInstance.address,
                     amount: new BN(0),
                     donationIds: [],
-                    status: BUTGET_STATUS_BUTGETED
+                    status: Budget_STATUS_BudgetED
                 });
 
-                let butgetTo = await crowdfunding.getButget(campaignId, tokenInstance.address);
-                assertButget(butgetTo, {
+                let budgetTo = await crowdfunding.getBudget(campaignId, tokenInstance.address);
+                assertBudget(budgetTo, {
                     entityId: campaignId,
                     token: tokenInstance.address,
                     amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
                     donationIds: [donationId2, donationId1],
-                    status: BUTGET_STATUS_BUTGETED
+                    status: Budget_STATUS_BudgetED
                 });
             })
 
@@ -932,22 +933,22 @@ contract('Crowdfunding App', ([
                 assert.equal(receiptDonationId, donationId1);
                 assert.equal(receiptAmount.toString(), donationAmount.toString());
 
-                let butgetFrom = await crowdfunding.getButget(dacId, tokenInstance.address);
-                assertButget(butgetFrom, {
+                let budgetFrom = await crowdfunding.getBudget(dacId, tokenInstance.address);
+                assertBudget(budgetFrom, {
                     entityId: dacId,
                     token: tokenInstance.address,
                     amount: 0,
                     donationIds: [],
-                    status: BUTGET_STATUS_BUTGETED
+                    status: Budget_STATUS_BudgetED
                 });
 
-                let butgetTo = await crowdfunding.getButget(milestoneId, tokenInstance.address);
-                assertButget(butgetTo, {
+                let budgetTo = await crowdfunding.getBudget(milestoneId, tokenInstance.address);
+                assertBudget(budgetTo, {
                     entityId: milestoneId,
                     token: tokenInstance.address,
                     amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
                     donationIds: [donationId3, donationId1],
-                    status: BUTGET_STATUS_BUTGETED
+                    status: Budget_STATUS_BudgetED
                 });
             })
 
@@ -964,22 +965,22 @@ contract('Crowdfunding App', ([
                 assert.equal(receiptDonationId, donationId2);
                 assert.equal(receiptAmount.toString(), donationAmount.toString());
 
-                let butgetFrom = await crowdfunding.getButget(campaignId, tokenInstance.address);
-                assertButget(butgetFrom, {
+                let budgetFrom = await crowdfunding.getBudget(campaignId, tokenInstance.address);
+                assertBudget(budgetFrom, {
                     entityId: campaignId,
                     token: tokenInstance.address,
                     amount: 0,
                     donationIds: [],
-                    status: BUTGET_STATUS_BUTGETED
+                    status: Budget_STATUS_BudgetED
                 });
 
-                let butgetTo = await crowdfunding.getButget(milestoneId, tokenInstance.address);
-                assertButget(butgetTo, {
+                let budgetTo = await crowdfunding.getBudget(milestoneId, tokenInstance.address);
+                assertBudget(budgetTo, {
                     entityId: milestoneId,
                     token: tokenInstance.address,
                     amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
                     donationIds: [donationId3, donationId2],
-                    status: BUTGET_STATUS_BUTGETED
+                    status: Budget_STATUS_BudgetED
                 });
             })
         })
@@ -1147,22 +1148,22 @@ contract('Crowdfunding App', ([
 
             // Estado de los presupuestos
 
-            let butgetMilestone = await crowdfunding.getButget(milestoneId1, ETH);
-            assertButget(butgetMilestone, {
+            let budgetMilestone = await crowdfunding.getBudget(milestoneId1, ETH);
+            assertBudget(budgetMilestone, {
                 entityId: milestoneId1,
                 token: ETH,
                 amount: FIAT_AMOUNT_TARGET.mul(USD_ETH_RATE), // El presupuesto pagado es el target dividido la cotización.
                 donationIds: [],
-                status: BUTGET_STATUS_PAID
+                status: Budget_STATUS_PAID
             });
 
-            let butgetCampaign = await crowdfunding.getButget(campaignId1, ETH);
-            assertButget(butgetCampaign, {
+            let budgetCampaign = await crowdfunding.getBudget(campaignId1, ETH);
+            assertBudget(budgetCampaign, {
                 entityId: campaignId1,
                 token: ETH,
                 amount: donationAmount.add(donationAmount.sub(FIAT_AMOUNT_TARGET.mul(USD_ETH_RATE))), // La donación inicial + el restante del retiro del milestone.
                 donationIds: [donationId2, donationId3],
-                status: BUTGET_STATUS_BUTGETED
+                status: Budget_STATUS_BudgetED
             });
 
             // Estado de la donación sobre el Milestone
