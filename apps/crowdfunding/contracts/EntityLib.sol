@@ -27,6 +27,9 @@ library EntityLib {
         mapping(uint256 => Entity) entities;
     }
 
+    string
+        internal constant ERROR_ENTITY_NOT_EXISTS = "CROWDFUNDING_ENTITY_NOT_EXIST";
+
     /**
      * @dev Crea una entidad base del tipo `_entityType`.
      * @param _entityType tipo de la entidad a crear.
@@ -59,5 +62,21 @@ library EntityLib {
         for (uint256 i = 0; i < self.ids.length; i++) {
             result[i] = self.entities[self.ids[i]];
         }
+    }
+
+    /**
+     * @notice Obtiene el Entity `_id`
+     * @return Entity cuya identificación coincide con la especificada.
+     */
+    function getEntity(Data storage self, uint256 _id)
+        public
+        view
+        returns (
+            //entityExists(_id)
+            Entity storage
+        )
+    {
+        require(self.entities[_id].id != 0, ERROR_ENTITY_NOT_EXISTS);
+        return self.entities[_id];
     }
 }

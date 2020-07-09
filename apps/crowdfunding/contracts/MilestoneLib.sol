@@ -37,6 +37,9 @@ library MilestoneLib {
         mapping(uint256 => Milestone) milestones;
     }
 
+    string
+        internal constant ERROR_MILESTONE_NOT_EXISTS = "CROWDFUNDING_MILESTONE_NOT_EXIST";
+
     function insert(
         Data storage self,
         uint256 id,
@@ -78,5 +81,21 @@ library MilestoneLib {
         for (uint256 i = 0; i < self.ids.length; i++) {
             result[i] = self.milestones[self.ids[i]];
         }
+    }
+
+    /**
+     * @notice Obtiene el Milestone `_id`
+     * @return Milestone cuya identificación coincide con la especificada.
+     */
+    function getMilestone(Data storage self, uint256 _id)
+        public
+        view
+        returns (
+            //milestoneExists(_id)
+            Milestone storage
+        )
+    {
+        require(self.milestones[_id].id != 0, ERROR_MILESTONE_NOT_EXISTS);
+        return self.milestones[_id];
     }
 }

@@ -21,18 +21,6 @@ contract Constants {
     string
         internal constant ERROR_VAULT_NOT_CONTRACT = "CROWDFUNDING_VAULT_NOT_CONTRACT";
     string
-        internal constant ERROR_ENTITY_NOT_EXISTS = "CROWDFUNDING_ENTITY_NOT_EXIST";
-    string
-        internal constant ERROR_BUDGET_NOT_EXISTS = "CROWDFUNDING_BUDGET_NOT_EXIST";
-    /*string
-        internal constant ERROR_DAC_NOT_EXISTS = "CROWDFUNDING_DAC_NOT_EXIST";*/
-    string
-        internal constant ERROR_CAMPAIGN_NOT_EXISTS = "CROWDFUNDING_CAMPAIGN_NOT_EXIST";
-    string
-        internal constant ERROR_MILESTONE_NOT_EXISTS = "CROWDFUNDING_MILESTONE_NOT_EXIST";
-    string
-        internal constant ERROR_DONATION_NOT_EXISTS = "CROWDFUNDING_DONATION_NOT_EXIST";
-    string
         internal constant ERROR_DONATE_AMOUNT_ZERO = "CROWDFUNDING_DONATE_AMOUNT_ZERO";
     string
         internal constant ERROR_ETH_VALUE_MISMATCH = "CROWDFUNDING_ETH_VALUE_MISMATCH";

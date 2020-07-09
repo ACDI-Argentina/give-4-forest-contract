@@ -29,6 +29,9 @@ library CampaignLib {
         mapping(uint256 => Campaign) campaigns;
     }
 
+    string
+        internal constant ERROR_CAMPAIGN_NOT_EXISTS = "CROWDFUNDING_CAMPAIGN_NOT_EXIST";
+
     function insert(
         Data storage self,
         uint256 id,
@@ -70,5 +73,21 @@ library CampaignLib {
         for (uint256 i = 0; i < self.ids.length; i++) {
             result[i] = self.campaigns[self.ids[i]];
         }
+    }
+
+    /**
+     * @notice Obtiene la Campaign `_id`
+     * @return Campaign cuya identificación coincide con la especificada.
+     */
+    function getCampaign(Data storage self, uint256 _id)
+        public
+        view
+        returns (
+            //campaignExists(_id)
+            Campaign storage
+        )
+    {
+        require(self.campaigns[_id].id != 0, ERROR_CAMPAIGN_NOT_EXISTS);
+        return self.campaigns[_id];
     }
 }

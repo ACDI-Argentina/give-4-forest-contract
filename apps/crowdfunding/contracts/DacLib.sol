@@ -7,10 +7,6 @@ pragma experimental ABIEncoderV2;
  * @notice Librería encargada del tratamiento de Dacs.
  */
 library DacLib {
-
-    string
-        internal constant ERROR_DAC_NOT_EXISTS = "CROWDFUNDING_DAC_NOT_EXIST";
-        
     enum Status {Active, Cancelled}
     /// @dev Estructura que define los datos de una DAC.
     struct Dac {
@@ -29,6 +25,9 @@ library DacLib {
         /// @dev Iterable Mapping de Dacs
         mapping(uint256 => Dac) dacs;
     }
+
+    string
+        internal constant ERROR_DAC_NOT_EXISTS = "CROWDFUNDING_DAC_NOT_EXIST";
 
     function insert(
         Data storage self,
@@ -65,8 +64,10 @@ library DacLib {
     function getDac(Data storage self, uint256 _id)
         public
         view
-        //dacExists(_id)
-        returns (Dac storage)
+        returns (
+            //dacExists(_id)
+            Dac storage
+        )
     {
         require(self.dacs[_id].id != 0, ERROR_DAC_NOT_EXISTS);
         return self.dacs[_id];

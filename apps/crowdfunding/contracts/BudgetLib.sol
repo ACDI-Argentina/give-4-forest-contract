@@ -33,6 +33,9 @@ library BudgetLib {
         mapping(uint256 => Budget) budgets;
     }
 
+    string
+        internal constant ERROR_BUDGET_NOT_EXISTS = "CROWDFUNDING_BUDGET_NOT_EXIST";
+
     function insert(
         Data storage self,
         uint256 _entityId,
@@ -68,5 +71,21 @@ library BudgetLib {
         for (uint256 i = 0; i < self.ids.length; i++) {
             result[i] = self.budgets[self.ids[i]];
         }
+    }
+
+    /**
+     * @notice Obtiene el presupuesto `_id`
+     * @return Presupuesto cuya identificación coincide con la especificada.
+     */
+    function getBudget(Data storage self, uint256 _id)
+        public
+        view
+        returns (
+            //budgetExists(_id)
+            Budget storage
+        )
+    {
+        require(self.budgets[_id].id != 0, ERROR_BUDGET_NOT_EXISTS);
+        return self.budgets[_id];
     }
 }
