@@ -1,5 +1,4 @@
 pragma solidity ^0.4.24;
-pragma experimental ABIEncoderV2;
 
 /**
  * @title Librería de Dacs.
@@ -46,21 +45,7 @@ library DacLib {
         self.dacs[id] = dac;
     }
 
-    /**
-     * @notice Obtiene todas las DAC.
-     * @return Lista con todas las DACs.
-     */
-    function toArray(Data storage self)
-        public
-        view
-        returns (Dac[] memory result)
-    {
-        result = new Dac[](self.ids.length);
-        for (uint256 i = 0; i < self.ids.length; i++) {
-            result[i] = self.dacs[self.ids[i]];
-        }
-    }
-
+  
     function getDac(Data storage self, uint256 _id)
         public
         view

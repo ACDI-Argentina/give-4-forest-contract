@@ -1,5 +1,4 @@
 pragma solidity ^0.4.24;
-pragma experimental ABIEncoderV2;
 
 /**
  * @title Librería de Campaigns.
@@ -60,20 +59,7 @@ library CampaignLib {
         //emit NewCampaign(entityId);
     }
 
-    /**
-     * @notice Obtiene todas las Campaigns.
-     * @return Lista con todas las Campaigns.
-     */
-    function toArray(Data storage self)
-        public
-        view
-        returns (Campaign[] memory result)
-    {
-        result = new Campaign[](self.ids.length);
-        for (uint256 i = 0; i < self.ids.length; i++) {
-            result[i] = self.campaigns[self.ids[i]];
-        }
-    }
+   
 
     /**
      * @notice Obtiene la Campaign `_id`

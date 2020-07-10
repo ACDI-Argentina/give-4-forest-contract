@@ -1,5 +1,4 @@
 pragma solidity ^0.4.24;
-pragma experimental ABIEncoderV2;
 
 /**
  * @title Librería de Donaciones.
@@ -53,20 +52,7 @@ library DonationLib {
         self.donations[id] = donation;
     }
 
-    /**
-     * @notice Obtiene todas las Donaciones.
-     * @return Lista con todas las Donaciones.
-     */
-    function toArray(Data storage self)
-        public
-        view
-        returns (Donation[] memory result)
-    {
-        result = new Donation[](self.ids.length);
-        for (uint256 i = 0; i < self.ids.length; i++) {
-            result[i] = self.donations[self.ids[i]];
-        }
-    }
+   
 
     /**
      * @notice Obtiene la donación `_id`

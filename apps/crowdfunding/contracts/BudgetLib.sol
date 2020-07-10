@@ -1,5 +1,4 @@
 pragma solidity ^0.4.24;
-pragma experimental ABIEncoderV2;
 
 /**
  * @title Librería de Presupuestos.
@@ -56,21 +55,6 @@ library BudgetLib {
         self.budgets[id] = budget;
         // Se asocia el presupuesto a la entidad
         //entityData.entities[_entityId].budgetIds.push(budgetId);
-    }
-
-    /**
-     * @notice Obtiene todos los Presupuestos.
-     * @return Lista con todos los Presupuestos.
-     */
-    function toArray(Data storage self)
-        public
-        view
-        returns (Budget[] memory result)
-    {
-        result = new Budget[](self.ids.length);
-        for (uint256 i = 0; i < self.ids.length; i++) {
-            result[i] = self.budgets[self.ids[i]];
-        }
     }
 
     /**

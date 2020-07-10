@@ -1,5 +1,4 @@
 pragma solidity ^0.4.24;
-pragma experimental ABIEncoderV2;
 
 /**
  * @title Librería de Milestones.
@@ -68,21 +67,7 @@ library MilestoneLib {
         self.milestones[id] = milestone;
     }
 
-    /**
-     * @notice Obtiene todos los Milestones.
-     * @return Lista con todos los Milestones.
-     */
-    function toArray(Data storage self)
-        public
-        view
-        returns (Milestone[] memory result)
-    {
-        result = new Milestone[](self.ids.length);
-        for (uint256 i = 0; i < self.ids.length; i++) {
-            result[i] = self.milestones[self.ids[i]];
-        }
-    }
-
+   
     /**
      * @notice Obtiene el Milestone `_id`
      * @return Milestone cuya identificación coincide con la especificada.

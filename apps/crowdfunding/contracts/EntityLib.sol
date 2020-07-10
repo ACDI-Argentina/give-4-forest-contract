@@ -1,5 +1,4 @@
 pragma solidity ^0.4.24;
-pragma experimental ABIEncoderV2;
 
 /**
  * @title Librería de Entities.
@@ -47,21 +46,6 @@ library EntityLib {
         entity.idIndex = idIndex;
         entity.entityType = _entityType;
         self.entities[id] = entity;
-    }
-
-    /**
-     * @notice Obtiene todas las Entities.
-     * @return Lista con todas las Entities.
-     */
-    function toArray(Data storage self)
-        public
-        view
-        returns (Entity[] memory result)
-    {
-        result = new Entity[](self.ids.length);
-        for (uint256 i = 0; i < self.ids.length; i++) {
-            result[i] = self.entities[self.ids[i]];
-        }
     }
 
     /**
