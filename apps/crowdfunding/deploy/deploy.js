@@ -2,6 +2,12 @@ const { newDao, newApp } = require('../scripts/dao')
 const { setPermission } = require('../scripts/permissions')
 const Crowdfunding = artifacts.require('Crowdfunding')
 const ArrayLib = artifacts.require('ArrayLib')
+const EntityLib = artifacts.require('EntityLib')
+const DacLib = artifacts.require('DacLib')
+const CampaignLib = artifacts.require('CampaignLib')
+const MilestoneLib = artifacts.require('MilestoneLib')
+const DonationLib = artifacts.require('DonationLib')
+const BudgetLib = artifacts.require('BudgetLib')
 const Vault = artifacts.require('Vault')
 
 // Por versión de Solidity (0.4.24), el placeholder de la libraría aún se arma
@@ -10,6 +16,12 @@ const Vault = artifacts.require('Vault')
 // https://github.com/ethereum/solidity/blob/develop/Changelog.md#050-2018-11-13
 // Commandline interface: Use hash of library name for link placeholder instead of name itself.
 const ARRAY_LIB_PLACEHOLDER = '__contracts/ArrayLib.sol:ArrayLib_______';
+const ENTITY_LIB_PLACEHOLDER = '__contracts/EntityLib.sol:EntityLib_____';
+const DAC_LIB_PLACEHOLDER = '__contracts/DacLib.sol:DacLib___________';
+const CAMPAIGN_LIB_PLACEHOLDER = '__contracts/CampaignLib.sol:CampaignLi__';
+const MILESTONE_LIB_PLACEHOLDER = '__contracts/MilestoneLib.sol:Milestone__';
+const DONATION_LIB_PLACEHOLDER = '__contracts/DonationLib.sol:DonationLi__';
+const BUDGET_LIB_PLACEHOLDER = '__contracts/BudgetLib.sol:BudgetLib_____';
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
 
@@ -31,11 +43,37 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     // Link Crowdfunding > ArrayLib
     const arrayLib = await ArrayLib.new({ from: deployer });
     await linkLib(arrayLib, Crowdfunding, ARRAY_LIB_PLACEHOLDER);
+    // Link Crowdfunding > EntityLib
+    const entityLib = await EntityLib.new({ from: deployer });
+    await linkLib(entityLib, Crowdfunding, ENTITY_LIB_PLACEHOLDER);
+    // Link Crowdfunding > DacLib
+    const dacLib = await DacLib.new({ from: deployer });
+    await linkLib(dacLib, Crowdfunding, DAC_LIB_PLACEHOLDER);
+    // Link Crowdfunding > CampaignLib
+    const campaignLib = await CampaignLib.new({ from: deployer });
+    await linkLib(campaignLib, Crowdfunding, CAMPAIGN_LIB_PLACEHOLDER);
+    // Link Crowdfunding > MilestoneLib
+    const milestoneLib = await MilestoneLib.new({ from: deployer });
+    await linkLib(milestoneLib, Crowdfunding, MILESTONE_LIB_PLACEHOLDER);
+    // Link Crowdfunding > DonationLib
+    const donationLib = await DonationLib.new({ from: deployer });
+    await linkLib(donationLib, Crowdfunding, DONATION_LIB_PLACEHOLDER);
+    // Link Crowdfunding > BudgetLib
+    const budgetLib = await BudgetLib.new({ from: deployer });
+    await linkLib(budgetLib, Crowdfunding, BUDGET_LIB_PLACEHOLDER);
 
     const crowdfundingBase = await Crowdfunding.new({ from: deployer });
     const crowdfundingAddress = await newApp(dao, 'crowdfunding', crowdfundingBase.address, deployer);
     const crowdfunding = await Crowdfunding.at(crowdfundingAddress);
 
+    log(` - Libraries`);
+    log(`   - Entity Lib: ${entityLib.address}`);
+    log(`   - Dac Lib: ${dacLib.address}`);
+    log(`   - Campaign Lib: ${campaignLib.address}`);
+    log(`   - Milestone Lib: ${milestoneLib.address}`);
+    log(`   - Budget Lib: ${budgetLib.address}`);
+    log(`   - Donation Lib: ${donationLib.address}`);
+    log(`   - Array Lib: ${arrayLib.address}`);
     log(` - Crowdfunding Base: ${crowdfundingBase.address}`);
     log(` - Crowdfunding: ${crowdfunding.address}`);
 
