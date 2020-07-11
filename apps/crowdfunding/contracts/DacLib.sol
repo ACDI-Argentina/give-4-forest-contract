@@ -28,6 +28,9 @@ library DacLib {
     string
         internal constant ERROR_DAC_NOT_EXISTS = "CROWDFUNDING_DAC_NOT_EXIST";
 
+    /**
+     * @notice Inserta una nueva Dac.
+     */
     function insert(
         Data storage self,
         uint256 id,
@@ -45,14 +48,10 @@ library DacLib {
         self.dacs[id] = dac;
     }
 
-  
     function getDac(Data storage self, uint256 _id)
         public
         view
-        returns (
-            //dacExists(_id)
-            Dac storage
-        )
+        returns (Dac storage)
     {
         require(self.dacs[_id].id != 0, ERROR_DAC_NOT_EXISTS);
         return self.dacs[_id];

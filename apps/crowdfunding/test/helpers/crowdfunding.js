@@ -86,13 +86,58 @@ const newDonationToken = async (crowdfunding, token, entityId, amount, giver) =>
   return getEventArgument(receipt, 'NewDonation', 'id').toNumber();
 }
 
-const getAllDacs = async (crowdfunding) => {
-  let dacIds = await crowdfunding.dacIds();
+const getDacs = async (crowdfunding) => {
+  let ids = await crowdfunding.getDacIds();
   let dacs = [];
-  for (i = 0; i < dacIds.length; i++) {
-    dacs.push(await crowdfunding.dacs(dacIds[i]));
+  for (i = 0; i < ids.length; i++) {
+    dacs.push(await crowdfunding.getDac(ids[i]));
   }
   return dacs;
+}
+
+const getCampaigns = async (crowdfunding) => {
+  let ids = await crowdfunding.getCampaignIds();
+  let campaigns = [];
+  for (i = 0; i < ids.length; i++) {
+    campaigns.push(await crowdfunding.getCampaign(ids[i]));
+  }
+  return campaigns;
+}
+
+const getMilestones = async (crowdfunding) => {
+  let ids = await crowdfunding.getMilestoneIds();
+  let milestones = [];
+  for (i = 0; i < ids.length; i++) {
+    milestones.push(await crowdfunding.getMilestone(ids[i]));
+  }
+  return milestones;
+}
+
+const getBudgets = async (crowdfunding, entity) => {
+  let budgets = [];
+  for (i = 0; i < entity.budgetIds.length; i++) {
+    budgets.push(await crowdfunding.getBudget(entity.budgetIds[i]));
+  }
+  return budgets;
+}
+
+const getBudget = async (crowdfunding, entityId, token) => {
+  let entity = await crowdfunding.getEntity(entityId);
+  for (i = 0; i < entity.budgetIds.length; i++) {
+    let budget = await crowdfunding.getBudget(entity.budgetIds[i]);
+    if (budget.token == token) {
+      return budget;
+    }
+  }
+  return null;
+}
+
+const getDonations = async (crowdfunding, budget) => {
+  let donations = [];
+  for (i = 0; i < budget.donationIds.length; i++) {
+    donations.push(await crowdfunding.getDonation(budget.donationIds[i]));
+  }
+  return donations;
 }
 
 module.exports = {
@@ -102,7 +147,12 @@ module.exports = {
   newMilestone,
   newDonationEther,
   newDonationToken,
-  getAllDacs,
+  getDacs,
+  getCampaigns,
+  getMilestones,
+  getBudgets,
+  getBudget,
+  getDonations,
   INFO_CID,
   FIAT_AMOUNT_TARGET
 }

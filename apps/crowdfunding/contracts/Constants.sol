@@ -21,6 +21,8 @@ contract Constants {
     string
         internal constant ERROR_VAULT_NOT_CONTRACT = "CROWDFUNDING_VAULT_NOT_CONTRACT";
     string
+        internal constant ERROR_ENTITY_NOT_EXISTS = "CROWDFUNDING_ENTITY_NOT_EXIST";
+    string
         internal constant ERROR_DONATE_AMOUNT_ZERO = "CROWDFUNDING_DONATE_AMOUNT_ZERO";
     string
         internal constant ERROR_ETH_VALUE_MISMATCH = "CROWDFUNDING_ETH_VALUE_MISMATCH";
@@ -60,9 +62,6 @@ contract Constants {
     // Milestone Approve
     string
         internal constant ERROR_MILESTONE_APPROVE_NOT_COMPLETED = "CROWDFUNDING_MILESTONE_APPROVE_NOT_COMPLETED";
-    // Milestone Approve
-    string
-        internal constant ERROR_MILESTONE_REJECT_NOT_COMPLETED = "CROWDFUNDING_MILESTONE_REJECT_NOT_COMPLETED";
     // Exchange Rate
     string
         internal constant ERROR_EXCHANGE_RATE_NOT_EXISTS = "CROWDFUNDING_EXCHANGE_RATE_NOT_EXISTS";

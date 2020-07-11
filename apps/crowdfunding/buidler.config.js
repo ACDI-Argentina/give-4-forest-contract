@@ -14,7 +14,7 @@ module.exports = {
       timeout: 60000
     },
     buidlerevm: {
-      allowUnlimitedContractSize: true
+      allowUnlimitedContractSize: false
     },
     rsk: {
       url: 'http://localhost:4444',

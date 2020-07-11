@@ -42,21 +42,8 @@ contract Crowdfunding is AragonApp, Constants {
 
     mapping(address => ExchangeRate) public exchangeRates;
 
-    /*modifier entityExists(uint256 _id) {
+    modifier entityExists(uint256 _id) {
         require(entityData.entities[_id].id != 0, ERROR_ENTITY_NOT_EXISTS);
-        _;
-    }*/
-
-    /*modifier campaignExists(uint256 _id) {
-        require(campaignData.campaigns[_id].id != 0, ERROR_CAMPAIGN_NOT_EXISTS);
-        _;
-    }*/
-
-    modifier exchangeRateExists(address _token) {
-        require(
-            exchangeRates[_token].date != 0,
-            ERROR_EXCHANGE_RATE_NOT_EXISTS
-        );
         _;
     }
 
@@ -117,13 +104,12 @@ contract Crowdfunding is AragonApp, Constants {
         string _infoCid,
         uint256 _dacId,
         address _reviewer
-    )
-        external
-        auth(CREATE_CAMPAIGN_ROLE) /*dacExists(_dacId)*/
-    {
+    ) external auth(CREATE_CAMPAIGN_ROLE) {
+        // Se comprueba que la Dac exista.
+        DacLib.Dac storage dac = _getDac(_dacId);
         uint256 entityId = newEntity(EntityLib.EntityType.Campaign);
         campaignData.insert(entityId, _infoCid, _dacId, msg.sender, _reviewer);
-        dacData.dacs[_dacId].campaignIds.push(entityId);
+        dac.campaignIds.push(entityId);
         emit NewCampaign(entityId);
     }
 
@@ -144,11 +130,9 @@ contract Crowdfunding is AragonApp, Constants {
         address _reviewer,
         address _recipient,
         address _campaignReviewer
-    )
-        external
-        auth(CREATE_MILESTONE_ROLE) /*campaignExists(_campaignId)*/
-    {
-        // TODO Validar _campaignId
+    ) external auth(CREATE_MILESTONE_ROLE) {
+        // Se comprueba que la Campaign exista.
+        CampaignLib.Campaign storage campaign = _getCampaign(_campaignId);
         uint256 entityId = newEntity(EntityLib.EntityType.Milestone);
         milestoneData.insert(
             entityId,
@@ -160,7 +144,7 @@ contract Crowdfunding is AragonApp, Constants {
             _recipient,
             _campaignReviewer
         );
-        campaignData.campaigns[_campaignId].milestoneIds.push(entityId);
+        campaign.milestoneIds.push(entityId);
         emit NewMilestone(entityId);
     }
 
@@ -176,12 +160,7 @@ contract Crowdfunding is AragonApp, Constants {
         uint256 _entityId,
         address _token,
         uint256 _amount
-    )
-        external
-        payable
-        isInitialized /*entityExists(_entityId)*/
-    {
-        // TODO Validar _entityId
+    ) external payable isInitialized entityExists(_entityId) {
         require(_amount > 0, ERROR_DONATE_AMOUNT_ZERO);
         if (_token == ETH) {
             // Asegura que la cantidad de ETH enviada coincida con el valor
@@ -216,10 +195,9 @@ contract Crowdfunding is AragonApp, Constants {
 
         // Se agrega al presupuesto de la entidad.
         BudgetLib.Budget storage budget = _getOrNewBudget(_entityId, _token);
-        budget.amount = budget.amount + _amount;
+        budget.amount = budget.amount.add(_amount);
         budget.donationIds.push(donationId);
 
-        // TODO Mejorar.
         DonationLib.Donation storage donation = _getDonation(donationId);
         donation.budgetId = budget.id;
 
@@ -377,8 +355,10 @@ contract Crowdfunding is AragonApp, Constants {
     }
 
     /**
-     * @notice Marca el Milestone `_milestoneId` como aprobado o no en función de `_approve`.
-     * @param _milestoneId Id del milestone que se marca como aprobado.
+     * @notice Marca el Milestone `_milestoneId` como aprobado si `_approve` es true.
+     *  Marca el Milestone como rechazado si `_approve` es false.
+     * @param _milestoneId Id del milestone que se marca como aprobado o rechazado.
+     * @param _approve Especifica si se aprueba o no el Milestone.
      */
     function milestoneApprove(uint256 _milestoneId, bool _approve)
         external
@@ -422,40 +402,206 @@ contract Crowdfunding is AragonApp, Constants {
 
     // Getters functions
 
-    function _getDacIds() public view returns (uint256[]) {
+    /**
+     * @notice Obtiene todos los identificadores de Dacs.
+     * @return Arreglo con todos los identificadores de Dacs.
+     */
+    function getDacIds() external view returns (uint256[]) {
         return dacData.ids;
     }
 
-    function _getCampaignIds() public view returns (uint256[]) {
+    /**
+     * @notice Obtiene todos los identificadores de Campaigns.
+     * @return Arreglo con todos los identificadores de Campaigns.
+     */
+    function getCampaignIds() external view returns (uint256[]) {
         return campaignData.ids;
     }
 
-    function _getMilestonesIds() public view returns (uint256[]) {
+    /**
+     * @notice Obtiene todos los identificadores de Milestones.
+     * @return Arreglo con todos los identificadores de Milestones.
+     */
+    function getMilestoneIds() external view returns (uint256[]) {
         return milestoneData.ids;
     }
 
-    function _getDonationIds() public view returns (uint256[]) {
-        return donationData.ids;
+    /**
+     * @notice Obtiene el Entity cuyo identificador coincide con `_id`.
+     * @return Datos del Entity.
+     */
+    function getEntity(uint256 _id)
+        external
+        view
+        returns (
+            uint256 id,
+            uint256 idIndex,
+            EntityLib.EntityType entityType,
+            uint256[] budgetIds
+        )
+    {
+        EntityLib.Entity storage entity = _getEntity(_id);
+        id = entity.id;
+        idIndex = entity.idIndex;
+        entityType = entity.entityType;
+        budgetIds = entity.budgetIds;
     }
 
-    function getBudgetIds() public view returns (uint256[]) {
-        return budgetData.ids;
+    /**
+     * @notice Obtiene la Dac cuyo identificador coincide con `_id`.
+     * @return Datos de la Dac.
+     */
+    function getDac(uint256 _id)
+        external
+        view
+        returns (
+            uint256 id,
+            uint256 idIndex,
+            string infoCid,
+            address delegate,
+            uint256[] campaignIds,
+            uint256[] budgetIds,
+            DacLib.Status status
+        )
+    {
+        EntityLib.Entity storage entity = _getEntity(_id);
+        DacLib.Dac storage dac = _getDac(_id);
+        id = dac.id;
+        idIndex = dac.idIndex;
+        infoCid = dac.infoCid;
+        delegate = dac.delegate;
+        campaignIds = dac.campaignIds;
+        budgetIds = entity.budgetIds;
+        status = dac.status;
+    }
+
+    /**
+     * @notice Obtiene la Campaign cuyo identificador coincide con `_id`.
+     * @return Datos de la Campaign.
+     */
+    function getCampaign(uint256 _id)
+        external
+        view
+        returns (
+            uint256 id,
+            uint256 idIndex,
+            string infoCid,
+            address manager,
+            address reviewer,
+            uint256[] dacIds,
+            uint256[] milestoneIds,
+            uint256[] budgetIds,
+            CampaignLib.Status status
+        )
+    {
+        EntityLib.Entity storage entity = _getEntity(_id);
+        CampaignLib.Campaign storage campaign = _getCampaign(_id);
+        id = campaign.id;
+        idIndex = campaign.idIndex;
+        infoCid = campaign.infoCid;
+        manager = campaign.manager;
+        reviewer = campaign.reviewer;
+        dacIds = campaign.dacIds;
+        milestoneIds = campaign.milestoneIds;
+        budgetIds = entity.budgetIds;
+        status = campaign.status;
+    }
+
+    /**
+     * @notice Obtiene el Milestone cuyo identificador coincide con `_id`.
+     * @return Datos del Milestone.
+     */
+    function getMilestone(uint256 _id)
+        external
+        view
+        returns (
+            uint256 id,
+            uint256 idIndex,
+            string infoCid,
+            uint256 fiatAmountTarget,
+            address manager,
+            address reviewer,
+            address recipient,
+            address campaignReviewer,
+            uint256 campaignId,
+            uint256[] budgetIds,
+            MilestoneLib.Status status
+        )
+    {
+        EntityLib.Entity storage entity = _getEntity(_id);
+        MilestoneLib.Milestone storage milestone = _getMilestone(_id);
+        id = milestone.id;
+        idIndex = milestone.idIndex;
+        infoCid = milestone.infoCid;
+        fiatAmountTarget = milestone.fiatAmountTarget;
+        manager = milestone.manager;
+        reviewer = milestone.reviewer;
+        recipient = milestone.recipient;
+        campaignReviewer = milestone.campaignReviewer;
+        campaignId = milestone.campaignId;
+        budgetIds = entity.budgetIds;
+        status = milestone.status;
+    }
+
+    /**
+     * @notice Obtiene el Presupuesto cuyo identificador coincide con `_id`.
+     * @return Datos del Presupuesto.
+     */
+    function getBudget(uint256 _id)
+        external
+        view
+        returns (
+            uint256 id,
+            uint256 idIndex,
+            uint256 entityId,
+            address token,
+            uint256 amount,
+            uint256[] donationIds,
+            BudgetLib.Status status
+        )
+    {
+        BudgetLib.Budget storage budget = _getBudget(_id);
+        id = budget.id;
+        idIndex = budget.idIndex;
+        entityId = budget.entityId;
+        token = budget.token;
+        amount = budget.amount;
+        donationIds = budget.donationIds;
+        status = budget.status;
+    }
+
+    /**
+     * @notice Obtiene la Donación cuyo identificador coincide con `_id`.
+     * @return Datos de la Donación.
+     */
+    function getDonation(uint256 _id)
+        external
+        view
+        returns (
+            uint256 id,
+            uint256 idIndex,
+            address giver,
+            address token,
+            uint256 amount,
+            uint256 amountRemainding,
+            uint256 entityId,
+            uint256 budgetId,
+            DonationLib.Status status
+        )
+    {
+        DonationLib.Donation storage donation = _getDonation(_id);
+        id = donation.id;
+        idIndex = donation.idIndex;
+        giver = donation.giver;
+        token = donation.token;
+        amount = donation.amount;
+        amountRemainding = donation.amountRemainding;
+        entityId = donation.entityId;
+        budgetId = donation.budgetId;
+        status = donation.status;
     }
 
     // Internal functions
-
-    /**
-     * @notice Obtiene el Exchange Rate del Token `_token`
-     * @return Exchange Rate del Token.
-     */
-    function _getExchangeRate(address _token)
-        internal
-        view
-        exchangeRateExists(_token)
-        returns (ExchangeRate storage)
-    {
-        return exchangeRates[_token];
-    }
 
     /**
      * @notice Obtiene el Presupuesto de la Entity `_entityId` del token `_token`.
@@ -466,23 +612,22 @@ contract Crowdfunding is AragonApp, Constants {
      */
     function _getOrNewBudget(uint256 _entityId, address _token)
         internal
-        returns (BudgetLib.Budget storage budget)
+        returns (BudgetLib.Budget storage)
     {
         EntityLib.Entity storage entity = _getEntity(_entityId);
         for (uint256 i = 0; i < entity.budgetIds.length; i++) {
-            budget = budgetData.budgets[entity.budgetIds[i]];
+            BudgetLib.Budget storage budget = budgetData.budgets[entity
+                .budgetIds[i]];
             if (budget.token == _token) {
-                return;
+                return budget;
             }
         }
         // No existe un presupuesto de la entidad para el token especificado,
         // por lo que se crea un nuevo presupuesto para el token.
         uint256 budgetId = budgetData.insert(_entityId, _token);
-        // TODO Mejorar
-        budget = budgetData.budgets[budgetId];
-
         // Se asocia el presupuesto a la entidad
         entityData.entities[_entityId].budgetIds.push(budgetId);
+        return _getBudget(budgetId);
     }
 
     /**
@@ -615,52 +760,6 @@ contract Crowdfunding is AragonApp, Constants {
         return dacData.getDac(_id);
     }
 
-    function getDac(uint256 _id)
-        public
-        view
-        returns (
-            uint256 id,
-            uint256 idIndex,
-            string infoCid,
-            address delegate,
-            uint256[] campaignIds,
-            DacLib.Status status
-        )
-    {
-        DacLib.Dac storage dac = _getDac(_id);
-        id = dac.id;
-        idIndex = dac.idIndex;
-        infoCid = dac.infoCid;
-        delegate = dac.delegate;
-        campaignIds = dac.campaignIds;
-        status = dac.status;
-    }
-
-    function getCampaign(uint256 _id)
-        public
-        view
-        returns (
-            uint256 id,
-            uint256 idIndex,
-            string infoCid,
-            address manager,
-            address reviewer,
-            uint256[] dacIds,
-            uint256[] milestoneIds,
-            CampaignLib.Status status
-        )
-    {
-        CampaignLib.Campaign storage campaign = _getCampaign(_id);
-        id = campaign.id;
-        idIndex = campaign.idIndex;
-        infoCid = campaign.infoCid;
-        manager = campaign.manager;
-        reviewer = campaign.reviewer;
-        dacIds = campaign.dacIds;
-        milestoneIds = campaign.milestoneIds;
-        status = campaign.status;
-    }
-
     function _getCampaign(uint256 _id)
         private
         returns (CampaignLib.Campaign storage)
@@ -675,62 +774,11 @@ contract Crowdfunding is AragonApp, Constants {
         return milestoneData.getMilestone(_id);
     }
 
-    function getMilestone(uint256 _id)
-        public
-        view
-        returns (
-            uint256 id,
-            uint256 idIndex,
-            string infoCid,
-            uint256 fiatAmountTarget,
-            address manager,
-            address reviewer,
-            address recipient,
-            address campaignReviewer,
-            uint256 campaignId,
-            MilestoneLib.Status status
-        )
-    {
-        MilestoneLib.Milestone storage milestone = _getMilestone(_id);
-        id = milestone.id;
-        idIndex = milestone.idIndex;
-        infoCid = milestone.infoCid;
-        fiatAmountTarget = milestone.fiatAmountTarget;
-        manager = milestone.manager;
-        reviewer = milestone.reviewer;
-        recipient = milestone.recipient;
-        campaignReviewer = milestone.campaignReviewer;
-        campaignId = milestone.campaignId;
-        status = milestone.status;
-    }
-
     function _getBudget(uint256 _id)
         private
         returns (BudgetLib.Budget storage)
     {
         return budgetData.getBudget(_id);
-    }
-
-    function getBudget(uint256 _id)
-        public
-        returns (
-            uint256 id,
-            uint256 idIndex,
-            uint256 entityId,
-            address token,
-            uint256 amount,
-            uint256[] donationIds,
-            BudgetLib.Status status
-        )
-    {
-        BudgetLib.Budget storage budget = _getBudget(_id);
-        id = budget.id;
-        idIndex = budget.idIndex;
-        entityId = budget.entityId;
-        token = budget.token;
-        amount = budget.amount;
-        donationIds = budget.donationIds;
-        status = budget.status;
     }
 
     function _getDonation(uint256 _id)
@@ -740,31 +788,18 @@ contract Crowdfunding is AragonApp, Constants {
         return donationData.getDonation(_id);
     }
 
-    function getDonation(uint256 _id)
-        public
-        view
-        returns (
-            uint256 id,
-            uint256 idIndex,
-            address giver,
-            address token,
-            uint256 amount,
-            uint256 amountRemainding,
-            uint256 entityId,
-            uint256 budgetId,
-            DonationLib.Status status
-        )
+    /**
+     * @notice Obtiene el Exchange Rate del Token `_token`
+     * @return Exchange Rate del Token.
+     */
+    function _getExchangeRate(address _token)
+        private
+        returns (ExchangeRate storage)
     {
-        DonationLib.Donation storage donation = _getDonation(_id);
-        id = donation.id;
-        idIndex = donation.idIndex;
-        giver = donation.giver;
-        token = donation.token;
-        amount = donation.amount;
-        amountRemainding = donation.amountRemainding;
-        status = donation.status;
-        entityId = donation.entityId;
-        budgetId = donation.budgetId;
-        status = donation.status;
+        require(
+            exchangeRates[_token].date != 0,
+            ERROR_EXCHANGE_RATE_NOT_EXISTS
+        );
+        return exchangeRates[_token];
     }
 }

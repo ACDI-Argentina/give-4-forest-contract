@@ -30,6 +30,10 @@ library DonationLib {
     string
         internal constant ERROR_DONATION_NOT_EXISTS = "CROWDFUNDING_DONATION_NOT_EXIST";
 
+    /**
+     * @notice Inserta una nueva Donación.
+     * @return Identificador de la Donación.
+     */
     function insert(
         Data storage self,
         uint256 _entityId,
@@ -52,8 +56,6 @@ library DonationLib {
         self.donations[id] = donation;
     }
 
-   
-
     /**
      * @notice Obtiene la donación `_id`
      * @return Donación cuya identificación coincide con la especificada.
@@ -61,10 +63,7 @@ library DonationLib {
     function getDonation(Data storage self, uint256 _id)
         public
         view
-        returns (
-            //donationExists(_id)
-            Donation storage
-        )
+        returns (Donation storage)
     {
         require(self.donations[_id].id != 0, ERROR_DONATION_NOT_EXISTS);
         return self.donations[_id];

@@ -55,10 +55,7 @@ library EntityLib {
     function getEntity(Data storage self, uint256 _id)
         public
         view
-        returns (
-            //entityExists(_id)
-            Entity storage
-        )
+        returns (Entity storage)
     {
         require(self.entities[_id].id != 0, ERROR_ENTITY_NOT_EXISTS);
         return self.entities[_id];

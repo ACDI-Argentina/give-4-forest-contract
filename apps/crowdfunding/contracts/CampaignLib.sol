@@ -31,6 +31,9 @@ library CampaignLib {
     string
         internal constant ERROR_CAMPAIGN_NOT_EXISTS = "CROWDFUNDING_CAMPAIGN_NOT_EXIST";
 
+    /**
+     * @notice Inserta una nueva Campaign.
+     */
     function insert(
         Data storage self,
         uint256 id,
@@ -55,11 +58,7 @@ library CampaignLib {
         dacIdsTmp[0] = _dacId;
         campaign.dacIds = dacIdsTmp;
         self.campaigns[id] = campaign;
-        //dacData.dacs[_dacId].campaignIds.push(entityId);
-        //emit NewCampaign(entityId);
     }
-
-   
 
     /**
      * @notice Obtiene la Campaign `_id`
@@ -68,10 +67,7 @@ library CampaignLib {
     function getCampaign(Data storage self, uint256 _id)
         public
         view
-        returns (
-            //campaignExists(_id)
-            Campaign storage
-        )
+        returns (Campaign storage)
     {
         require(self.campaigns[_id].id != 0, ERROR_CAMPAIGN_NOT_EXISTS);
         return self.campaigns[_id];
