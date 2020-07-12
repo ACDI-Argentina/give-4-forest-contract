@@ -81,16 +81,9 @@ contract Crowdfunding is AragonApp, Constants {
      * @param _infoCid Content ID de las información (JSON) de la Dac. IPFS Cid.
      */
     function newDac(string _infoCid) external auth(CREATE_DAC_ROLE) {
-        uint256 entityId = newEntity(EntityLib.EntityType.Dac);
+        uint256 entityId = _newEntity(EntityLib.EntityType.Dac);
         dacData.insert(entityId, _infoCid, msg.sender);
         emit NewDac(entityId);
-    }
-
-    function newEntity(EntityLib.EntityType _entityType)
-        private
-        returns (uint256)
-    {
-        return entityData.insert(_entityType);
     }
 
     /**
@@ -107,7 +100,7 @@ contract Crowdfunding is AragonApp, Constants {
     ) external auth(CREATE_CAMPAIGN_ROLE) {
         // Se comprueba que la Dac exista.
         DacLib.Dac storage dac = _getDac(_dacId);
-        uint256 entityId = newEntity(EntityLib.EntityType.Campaign);
+        uint256 entityId = _newEntity(EntityLib.EntityType.Campaign);
         campaignData.insert(entityId, _infoCid, _dacId, msg.sender, _reviewer);
         dac.campaignIds.push(entityId);
         emit NewCampaign(entityId);
@@ -133,7 +126,7 @@ contract Crowdfunding is AragonApp, Constants {
     ) external auth(CREATE_MILESTONE_ROLE) {
         // Se comprueba que la Campaign exista.
         CampaignLib.Campaign storage campaign = _getCampaign(_campaignId);
-        uint256 entityId = newEntity(EntityLib.EntityType.Milestone);
+        uint256 entityId = _newEntity(EntityLib.EntityType.Milestone);
         milestoneData.insert(
             entityId,
             _infoCid,
@@ -602,6 +595,17 @@ contract Crowdfunding is AragonApp, Constants {
     }
 
     // Internal functions
+
+    /**
+     * @notice Crea una nueva entidad del tipo `_entityType`.
+     * @return Identificador de la nueva entidad creada.
+     */
+    function _newEntity(EntityLib.EntityType _entityType)
+        private
+        returns (uint256)
+    {
+        return entityData.insert(_entityType);
+    }
 
     /**
      * @notice Obtiene el Presupuesto de la Entity `_entityId` del token `_token`.
