@@ -1,11 +1,46 @@
-# Aragon Buidler Boilerplate
+# Crowdfunding Smart Contract
 
-> 🕵️ [Find more boilerplates using GitHub](https://github.com/search?q=topic:aragon-boilerplate) |
-> ✨ [Official boilerplates](https://github.com/search?q=topic:aragon-boilerplate+org:aragon)
+Smart contract de Crowdfunding.
 
-> ▶️ To use this boilerplate, run `npx create-aragon-app <app-name>`
+Se utiliza [Buidler](https://buidler.dev) como herramienta de ejecución de las tareas de compilación, testing y despliegue del smart contract.
 
-Buidler + React boilerplate for Aragon applications.
+En la sección [Architectural Decision Log](docs/adr/index.md) se encuentran los registros de decisiones de arquitectura que han sido tomadas.
+
+## Compilación
+
+Para compilar el smart contract, debe ejecutarse el siguiente comando.
+
+```
+npm run compile
+```
+
+Se requiere mantener reducido el bytecode generado por el smart contract para no superar la restricción [EIP 170](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-170.md). El siguiente comando mide la cantidad de bytes generados para cada contrato compilado.
+
+```
+grep \"bytecode\" artifacts/* | awk '{print $1 " " length($3)/2}'
+```
+
+## Testing
+
+Para ejecutar los tests del smart contract, debe ejecutarse el siguiente comando.
+
+```
+npm run test
+```
+
+Los test se ejecutan por defecto sobre la blockchain *buidlerevm*.
+
+## Despliegue
+
+Para desplegar el smart contract sobre la blockchain de RSK, debe ejecutarse el siguiente comando con el nodo RSK accesible desde *http://localhost:4444*.
+
+```
+npm run deploy:rsk
+```
+
+Junto con el smart contract de Crowdfunding se despliegan los smart contract de Aragon y librerías por lo que este proceso puede demandar algunos minutos.
+
+Las direcciones que aparecen en el log deben utilizarse para configurar la aplicación de Crowdfunding.
 
 ## Running your app
 
@@ -94,23 +129,3 @@ root
 - [**@aragon/api**](https://github.com/aragon/aragon.js/tree/master/packages/aragon-api): Aragon client application API.
 - [**@aragon/ui**](https://github.com/aragon/aragon-ui): Aragon UI components (in React).
 - [**@aragon/buidler-aragon**](https://github.com/aragon/buidler-aragon): Aragon Buidler plugin.
-
-## EFEM
-
-- [Architectural Decision Log](docs/adr/index.md)
-
-Run
-
-```
-npm start
-```
-
-Test
-
-```
-npm run test
-```
-
-Get contract size
-
-grep \"bytecode\" artifacts/* | awk '{print $1 " " length($3)/2}'
