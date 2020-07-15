@@ -42,6 +42,14 @@ Junto con el smart contract de Crowdfunding se despliegan los smart contract de 
 
 Las direcciones que aparecen en el log deben utilizarse para configurar la aplicación de Crowdfunding.
 
+## Principios de desarrollo
+
+Para el desarrollo del smart contract se deben seguir los siguientes principios:
+
+- Seguir la [guía de estilos](https://solidity.readthedocs.io/en/v0.6.11/style-guide.html) de desarrollo de Solidity.
+- El orden los metodos debe ser: *external*, *public*, *internal* y *private*.
+- Siempre que sea posible, el tratamiento sobre las entidades debe delegarse en las librerías para mantener el bytecode del smart contract reducido.
+
 ## Running your app
 
 To run the app in a browser with frontend and contract hot-reloading, simply run `npm start`.
