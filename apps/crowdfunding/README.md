@@ -47,7 +47,7 @@ Las direcciones que aparecen en el log deben utilizarse para configurar la aplic
 Para el desarrollo del smart contract se deben seguir los siguientes principios:
 
 - Seguir la [guía de estilos](https://solidity.readthedocs.io/en/v0.6.11/style-guide.html) de desarrollo de Solidity.
-- El orden los metodos debe ser: *external*, *public*, *internal* y *private*.
+- El orden los metodos debe ser: *external*, *public*, *internal* y *private*; Deben seguir un orden de relevancia.
 - Siempre que sea posible, el tratamiento sobre las entidades debe delegarse en las librerías para mantener el bytecode del smart contract reducido.
 - Sebe realizarse testing automático de las funcionalidades expuestas al exterior.
 
