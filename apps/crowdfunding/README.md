@@ -42,6 +42,8 @@ Junto con el smart contract de Crowdfunding se despliegan los smart contract de 
 
 Las direcciones que aparecen en el log deben utilizarse para configurar la aplicación de Crowdfunding.
 
+Algunas veces el script anterior falla al no encontrar algunos smart contracts de Aragon desplegados, por ejemplo, es posible encontrarse con el siguiente error: *Error: BDLR700: Artifact for contract "Kernel" not found.* En este caso ejecutamos ```npm start```. Esto último a menudo muestra algún error, pero lo que nos interesa es que despliegue los smart contracts faltantes. Una vez hecho esto volver a ejecutar ```npm run deploy:rsk```
+
 ## Principios de desarrollo
 
 Para el desarrollo del smart contract se deben seguir los siguientes principios:
