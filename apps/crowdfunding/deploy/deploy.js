@@ -1,5 +1,5 @@
 const { newDao, newApp } = require('../scripts/dao')
-const { setPermission } = require('../scripts/permissions')
+const { createPermission, grantPermission } = require('../scripts/permissions')
 const Crowdfunding = artifacts.require('Crowdfunding')
 const ArrayLib = artifacts.require('ArrayLib')
 const EntityLib = artifacts.require('EntityLib')
@@ -86,18 +86,25 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     // Set permissions
 
+    log(` - Set permissions`);
+
     let CREATE_DAC_ROLE = await crowdfundingBase.CREATE_DAC_ROLE()
     let CREATE_CAMPAIGN_ROLE = await crowdfundingBase.CREATE_CAMPAIGN_ROLE();
     let CREATE_MILESTONE_ROLE = await crowdfundingBase.CREATE_MILESTONE_ROLE();
     let EXCHANGE_RATE_ROLE = await crowdfundingBase.EXCHANGE_RATE_ROLE();
     let TRANSFER_ROLE = await vaultBase.TRANSFER_ROLE()
-    await setPermission(acl, delegate, crowdfunding.address, CREATE_DAC_ROLE, deployer);
-    await setPermission(acl, campaignManager, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
-    await setPermission(acl, milestoneManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
-    await setPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
-    await setPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
-
-    log(` - Set permissions`);
+    await createPermission(acl, delegate, crowdfunding.address, CREATE_DAC_ROLE, deployer);
+    log(`   - CREATE_DAC_ROLE: Delegate ${delegate}`);
+    await createPermission(acl, campaignManager, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
+    log(`   - CREATE_CAMPAIGN_ROLE: Campaign Manager ${campaignManager}`);
+    await grantPermission(acl, delegate, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
+    log(`   - CREATE_CAMPAIGN_ROLE: Delegate ${delegate}`);
+    await createPermission(acl, milestoneManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
+    log(`   - CREATE_MILESTONE_ROLE: Milestone Manager ${milestoneManager}`);
+    await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
+    log(`   - EXCHANGE_RATE_ROLE: Deployer ${deployer}`);
+    await createPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
+    log(`   - TRANSFER_ROLE: Crowdfunding ${crowdfunding.address}`);
 
     // Inicialización
     await vault.initialize()

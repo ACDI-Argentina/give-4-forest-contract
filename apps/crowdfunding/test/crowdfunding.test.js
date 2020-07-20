@@ -1,7 +1,7 @@
 const { assertRevert } = require('@aragon/test-helpers/assertThrow')
 const { getEventArgument } = require('@aragon/test-helpers/events')
 const { newDao, newApp } = require('../scripts/dao')
-const { setPermission } = require('../scripts/permissions')
+const { createPermission } = require('../scripts/permissions')
 const { newCrowdfunding,
     newDac,
     newCampaign,
@@ -120,11 +120,11 @@ contract('Crowdfunding App', ([
         vault = await Vault.at(vaultAddress);
 
         // Configuración de permisos
-        await setPermission(acl, delegate, crowdfunding.address, CREATE_DAC_ROLE, deployer);
-        await setPermission(acl, campaignManager, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
-        await setPermission(acl, milestoneManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
-        await setPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
-        await setPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
+        await createPermission(acl, delegate, crowdfunding.address, CREATE_DAC_ROLE, deployer);
+        await createPermission(acl, campaignManager, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
+        await createPermission(acl, milestoneManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
+        await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
+        await createPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
 
         // Inicialización
         await vault.initialize()

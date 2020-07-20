@@ -30,6 +30,17 @@ npm run test
 
 Los test se ejecutan por defecto sobre la blockchain *buidlerevm*.
 
+## Publicar en NPM
+
+Para que el módulo quede públicamente accecible y pueda utilizarse por los demás módulos de la aplicación, es necesario publicar de la siguiente manera:
+
+```
+npm login
+npm publish --access public
+```
+
+El módulo se publica con el scope de la organización **@acdi**.
+
 ## Despliegue
 
 Para desplegar el smart contract sobre la blockchain de RSK, debe ejecutarse el siguiente comando con el nodo RSK accesible desde *http://localhost:4444*.

@@ -18,6 +18,7 @@ module.exports = {
     },
     rsk: {
       url: 'http://localhost:4444',
+      chainId: 33,
       accounts: 'remote',
       gas: 6000000,
       timeout: 60000
@@ -52,18 +53,26 @@ module.exports = {
     } */
   },
   // Deploy plugin configuration
+  // Network Ids
+  // https://chainid.network/
+  // 30: RSK Mainnet
+  // 31: RSK Testnet
+  // 33: RSK Regtest (según configuración)
   namedAccounts: {
     deployer: {
       default: 0 // here this will by default take the first account as deployer
     },
     delegate: {
-      default: 1 // DAC Dalegate
+      default: 1,
+      33: '0xee4b388fb98420811C9e04AE8378330C05A2735a'
     },
     campaignManager: {
-      default: 2 // Campaign Manager
+      default: 2,
+      33: '0x0bfA3B6b0E799F2eD34444582187B2cDf2fB11a7'
     },
     milestoneManager: {
-      default: 3 // Milestone Manager
+      default: 3,
+      33: '0x36d1d3c43422EF3B1d7d23F20a25977c29BC3f0e'
     }
   },
   paths: {
