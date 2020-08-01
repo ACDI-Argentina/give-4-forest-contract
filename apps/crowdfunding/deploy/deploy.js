@@ -101,6 +101,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(`   - CREATE_CAMPAIGN_ROLE: Delegate ${delegate}`);
     await createPermission(acl, milestoneManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
     log(`   - CREATE_MILESTONE_ROLE: Milestone Manager ${milestoneManager}`);
+    await grantPermission(acl, delegate, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
+    log(`   - CREATE_MILESTONE_ROLE: Delegate ${delegate}`);
     await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
     log(`   - EXCHANGE_RATE_ROLE: Deployer ${deployer}`);
     await createPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
