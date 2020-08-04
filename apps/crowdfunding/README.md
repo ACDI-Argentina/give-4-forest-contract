@@ -6,6 +6,20 @@ Se utiliza [Buidler](https://buidler.dev) como herramienta de ejecución de las 
 
 En la sección [Architectural Decision Log](docs/adr/index.md) se encuentran los registros de decisiones de arquitectura que han sido tomadas.
 
+## Requisitos sobre sistema operativo
+
+### Windows
+
+Instalar Python.
+
+## Instalación de dependencias
+
+Primero deben instalarse las dependencias del proyecto con el siguiente comando:
+
+```
+npm install
+```
+
 ## Compilación
 
 Para compilar el smart contract, debe ejecutarse el siguiente comando.
