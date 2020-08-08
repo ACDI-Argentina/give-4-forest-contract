@@ -132,10 +132,10 @@ const getBudget = async (crowdfunding, entityId, token) => {
   return null;
 }
 
-const getDonations = async (crowdfunding, budget) => {
+const getDonations = async (crowdfunding, donationIds) => {
   let donations = [];
-  for (i = 0; i < budget.donationIds.length; i++) {
-    donations.push(await crowdfunding.getDonation(budget.donationIds[i]));
+  for (i = 0; i < donationIds.length; i++) {
+    donations.push(await crowdfunding.getDonation(donationIds[i]));
   }
   return donations;
 }

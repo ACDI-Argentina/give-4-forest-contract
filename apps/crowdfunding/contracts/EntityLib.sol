@@ -12,6 +12,7 @@ library EntityLib {
         uint256 id; // Identificación de la entidad
         uint256 idIndex; // Índice del Id en entityIds;
         EntityType entityType;
+        uint256[] donationIds; // Ids de las donaciones de la entidad.
         uint256[] budgetIds; // Ids de los presupuestos.
     }
 

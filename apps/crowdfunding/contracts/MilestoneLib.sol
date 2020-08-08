@@ -19,7 +19,7 @@ library MilestoneLib {
         uint256 id; // Identificación de la entidad
         uint256 idIndex; // Índice del Id en MilestoneIds;
         string infoCid; // IPFS Content ID de las información (JSON) del Milestone.
-        uint256 fiatAmountTarget; // Cantidad de dinero Fiat necesario para el Milestone.
+        uint256 fiatAmountTarget; // Cantidad de dinero Fiat necesario para el Milestone medido en centavos.
         address manager;
         address reviewer;
         address recipient;

@@ -15,6 +15,7 @@ library DonationLib {
         address token; // Token donado.
         uint256 amount; // Monto donado.
         uint256 amountRemainding; // Monto donado restante de consumir.
+        uint256 createdAt; // Fecha y hora de la donación.
         uint256 entityId; // Identificación de la entidad a la cual se destinó el fondo inicialmente.
         uint256 budgetId; // Identificación del presupuesto al cual está asignada la donación.
         Status status;
@@ -51,6 +52,7 @@ library DonationLib {
         donation.token = _token;
         donation.amount = _amount;
         donation.amountRemainding = _amount;
+        donation.createdAt = block.timestamp;
         donation.entityId = _entityId;
         donation.status = Status.Available;
         self.donations[id] = donation;

@@ -42,11 +42,6 @@ contract Crowdfunding is AragonApp, Constants {
 
     mapping(address => ExchangeRate) public exchangeRates;
 
-    modifier entityExists(uint256 _id) {
-        require(entityData.entities[_id].id != 0, ERROR_ENTITY_NOT_EXISTS);
-        _;
-    }
-
     Vault public vault;
 
     /**
@@ -153,7 +148,7 @@ contract Crowdfunding is AragonApp, Constants {
         uint256 _entityId,
         address _token,
         uint256 _amount
-    ) external payable isInitialized entityExists(_entityId) {
+    ) external payable isInitialized {
         require(_amount > 0, ERROR_DONATE_AMOUNT_ZERO);
         if (_token == ETH) {
             // Asegura que la cantidad de ETH enviada coincida con el valor
@@ -185,6 +180,10 @@ contract Crowdfunding is AragonApp, Constants {
             _amount,
             msg.sender
         );
+
+        // Se agrega a las donaciones de la entidad.
+        EntityLib.Entity storage entity = _getEntity(_entityId);
+        entity.donationIds.push(donationId);
 
         // Se agrega al presupuesto de la entidad.
         BudgetLib.Budget storage budget = _getOrNewBudget(_entityId, _token);
@@ -420,6 +419,14 @@ contract Crowdfunding is AragonApp, Constants {
     }
 
     /**
+     * @notice Obtiene todos los identificadores de Donaciones.
+     * @return Arreglo con todos los identificadores de Donaciones.
+     */
+    function getDonationIds() external view returns (uint256[]) {
+        return donationData.ids;
+    }
+
+    /**
      * @notice Obtiene el Entity cuyo identificador coincide con `_id`.
      * @return Datos del Entity.
      */
@@ -453,6 +460,7 @@ contract Crowdfunding is AragonApp, Constants {
             string infoCid,
             address delegate,
             uint256[] campaignIds,
+            uint256[] donationIds,
             uint256[] budgetIds,
             DacLib.Status status
         )
@@ -464,6 +472,7 @@ contract Crowdfunding is AragonApp, Constants {
         infoCid = dac.infoCid;
         delegate = dac.delegate;
         campaignIds = dac.campaignIds;
+        donationIds = entity.donationIds;
         budgetIds = entity.budgetIds;
         status = dac.status;
     }
@@ -483,6 +492,7 @@ contract Crowdfunding is AragonApp, Constants {
             address reviewer,
             uint256[] dacIds,
             uint256[] milestoneIds,
+            uint256[] donationIds,
             uint256[] budgetIds,
             CampaignLib.Status status
         )
@@ -496,6 +506,7 @@ contract Crowdfunding is AragonApp, Constants {
         reviewer = campaign.reviewer;
         dacIds = campaign.dacIds;
         milestoneIds = campaign.milestoneIds;
+        donationIds = entity.donationIds;
         budgetIds = entity.budgetIds;
         status = campaign.status;
     }
@@ -517,6 +528,7 @@ contract Crowdfunding is AragonApp, Constants {
             address recipient,
             address campaignReviewer,
             uint256 campaignId,
+            uint256[] donationIds,
             uint256[] budgetIds,
             MilestoneLib.Status status
         )
@@ -532,6 +544,7 @@ contract Crowdfunding is AragonApp, Constants {
         recipient = milestone.recipient;
         campaignReviewer = milestone.campaignReviewer;
         campaignId = milestone.campaignId;
+        donationIds = entity.donationIds;
         budgetIds = entity.budgetIds;
         status = milestone.status;
     }
@@ -577,6 +590,7 @@ contract Crowdfunding is AragonApp, Constants {
             address token,
             uint256 amount,
             uint256 amountRemainding,
+            uint256 createdAt,
             uint256 entityId,
             uint256 budgetId,
             DonationLib.Status status
@@ -589,6 +603,7 @@ contract Crowdfunding is AragonApp, Constants {
         token = donation.token;
         amount = donation.amount;
         amountRemainding = donation.amountRemainding;
+        createdAt = donation.createdAt;
         entityId = donation.entityId;
         budgetId = donation.budgetId;
         status = donation.status;
