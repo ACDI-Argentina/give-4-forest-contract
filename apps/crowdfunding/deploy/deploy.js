@@ -1,5 +1,6 @@
 const { newDao, newApp } = require('../scripts/dao')
 const { createPermission, grantPermission } = require('../scripts/permissions')
+const BN = require('bn.js');
 const Crowdfunding = artifacts.require('Crowdfunding')
 const ArrayLib = artifacts.require('ArrayLib')
 const EntityLib = artifacts.require('EntityLib')
@@ -111,6 +112,21 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     // Inicialización
     await vault.initialize()
     await crowdfunding.initialize(vault.address);
+
+    // Exchange Rate
+
+    log(` - ETH Exchange Rate`);
+
+    // Temporal hasta que exista la integración con un Oracle de cotización.
+
+    // Se carga cotización de ETH
+    // TODO Esto debiera hacerse a través de un Oracle.
+    const ETH = '0x0000000000000000000000000000000000000000';
+    // Equivalencia de 0.01 USD en Ether (Wei)
+    // 1 ETH = 1E+18 Wei = 100 USD > 0.01 USD = 1E+14 Wei
+    // TODO Este valor debe establerse por un Oracle.
+    const USD_ETH_RATE = new BN('100000000000000');
+    await crowdfunding.setExchangeRate(ETH, USD_ETH_RATE, { from: deployer });
 
     log(` - Initialized`);
 }

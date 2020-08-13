@@ -12,7 +12,7 @@ library MilestoneLib {
         Completed, // Fue marcado completado.
         Approved, // Se aprobó una vez completado. Listo para el retiro de fondos.
         Rejected, // Se rechazó una vez completado. Debe volver a completarse.
-        Finished // Se finalizó y se retiraron los fondos.
+        Paid // Se finalizó y se retiraron los fondos.
     }
     /// @dev Estructura que define los datos de una Milestone.
     struct Milestone {
@@ -64,7 +64,12 @@ library MilestoneLib {
         milestone.reviewer = _reviewer;
         milestone.recipient = _recipient;
         milestone.campaignReviewer = _campaignReviewer;
-        milestone.status = Status.Active;
+        
+        // TODO El estado inicial es Active, pero hasta tando no se implementen las
+        // acciones de Completar, Aprobar y Rechazar, se inicia el Milestone como Aprobado
+        //milestone.status = Status.Active;
+        milestone.status = Status.Approved;
+        
         // Asociación entre Campaign y Milestone
         milestone.campaignId = _campaignId;
         self.milestones[id] = milestone;

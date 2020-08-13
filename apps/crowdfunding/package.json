@@ -1,6 +1,6 @@
 {
   "name": "@acdi/efem-crowdfunding",
-  "version": "1.0.0-alfa.8",
+  "version": "1.0.0-alfa.9",
   "description": "Crowdfunding Smart Contract de El Futuro está en el Monte",
   "main": "index.js",
   "scripts": {
@@ -20,7 +20,7 @@
     "bn.js": "^5.1.2",
     "buidler-deploy": "^0.4.2",
     "madr": "^2.1.2",
-    "eth-contract-class": "^0.0.12"
+    "@acdi/eth-contract-class": "^1.0.0-alfa.1"
   },
   "devDependencies": {
     "@aragon/buidler-aragon": "^0.2.0",

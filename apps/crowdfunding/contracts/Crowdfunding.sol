@@ -308,14 +308,19 @@ contract Crowdfunding is AragonApp, Constants {
      */
     function withdraw(uint256 _milestoneId) external isInitialized {
         MilestoneLib.Milestone storage milestone = _getMilestone(_milestoneId);
-        // Solamente el destinatario de los fondos puede hacer el retiro.
+        // Solamente el destinatario de los fondos o el manager pueden hacer el retiro.
         // Withdraw Pattern
-        require(milestone.recipient == msg.sender, ERROR_AUTH_FAILED);
-        // El Milestone debe estar Aprobado.
         require(
+            milestone.recipient == msg.sender ||
+                milestone.manager == msg.sender,
+            ERROR_AUTH_FAILED
+        );
+        // El Milestone debe estar Aprobado.
+        // TODO Volver a colocar restricción se implemente que el Milestone está completo.
+        /*require(
             milestone.status == MilestoneLib.Status.Approved,
             ERROR_WITHDRAW_NOT_APPROVED
-        );
+        );*/
         // El retiro superó las validaciones del Milestones
         uint256 fiatAmountTarget = milestone.fiatAmountTarget;
         EntityLib.Entity storage entity = _getEntity(_milestoneId);
@@ -327,7 +332,7 @@ contract Crowdfunding is AragonApp, Constants {
             );
             _doWithdraw(_milestoneId, entity.budgetIds[i]);
         }
-        milestone.status = MilestoneLib.Status.Finished;
+        milestone.status = MilestoneLib.Status.Paid;
     }
 
     /**
