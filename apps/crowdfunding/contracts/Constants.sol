@@ -7,6 +7,25 @@ import "@aragon/os/contracts/common/EtherTokenConstant.sol";
  * @author Mauricio Coronel
  */
 contract Constants is EtherTokenConstant {
+    // Grupos
+    bytes32 public constant GIVER_ROLE = keccak256("GIVER_ROLE");
+    bytes32 public constant DELEGATE_ROLE = keccak256("DELEGATE_ROLE");
+    bytes32 public constant CAMPAIGN_MANAGER_ROLE = keccak256(
+        "CAMPAIGN_MANAGER_ROLE"
+    );
+    bytes32 public constant CAMPAIGN_REVIEWER_ROLE = keccak256(
+        "CAMPAIGN_REVIEWER_ROLE"
+    );
+    bytes32 public constant MILESTONE_MANAGER_ROLE = keccak256(
+        "MILESTONE_MANAGER_ROLE"
+    );
+    bytes32 public constant MILESTONE_REVIEWER_ROLE = keccak256(
+        "MILESTONE_REVIEWER_ROLE"
+    );
+    bytes32 public constant RECIPIENT_ROLE = keccak256("RECIPIENT_ROLE");
+
+    // Permisos
+
     bytes32 public constant CREATE_DAC_ROLE = keccak256("CREATE_DAC_ROLE");
     bytes32 public constant CREATE_CAMPAIGN_ROLE = keccak256(
         "CREATE_CAMPAIGN_ROLE"
@@ -17,6 +36,9 @@ contract Constants is EtherTokenConstant {
     bytes32 public constant EXCHANGE_RATE_ROLE = keccak256(
         "EXCHANGE_RATE_ROLE"
     );
+
+    // Errores
+
     string internal constant ERROR_AUTH_FAILED = "CROWDFUNDING_AUTH_FAILED";
     string
         internal constant ERROR_VAULT_NOT_CONTRACT = "CROWDFUNDING_VAULT_NOT_CONTRACT";

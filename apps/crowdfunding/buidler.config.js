@@ -62,17 +62,25 @@ module.exports = {
     deployer: {
       default: 0 // here this will by default take the first account as deployer
     },
-    delegate: {
+    account1: {
       default: 1,
       33: '0xee4b388fb98420811C9e04AE8378330C05A2735a'
     },
-    campaignManager: {
+    account2: {
       default: 2,
       33: '0x0bfA3B6b0E799F2eD34444582187B2cDf2fB11a7'
     },
-    milestoneManager: {
+    account3: {
       default: 3,
       33: '0x36d1d3c43422EF3B1d7d23F20a25977c29BC3f0e'
+    },
+    account4: {
+      default: 4,
+      33: '0x9063541acBD959baeB6Bf64158944b7e5844534a'
+    },
+    account5: {
+      default: 5,
+      33: '0xd703eE823B2A2466F22147bfE74a0F605EbB20a4'
     }
   },
   paths: {

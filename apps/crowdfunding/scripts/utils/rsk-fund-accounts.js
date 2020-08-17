@@ -13,6 +13,7 @@ var web3 = new Web3(network);
 var from = '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826';
 var value = web3.utils.toWei('1');
 
+// Account 1
 web3.eth.sendTransaction({
     from: from,
     to: '0xee4b388fb98420811C9e04AE8378330C05A2735a',
@@ -22,6 +23,7 @@ web3.eth.sendTransaction({
     console.log(`Receipt`, receipt);
 });*/
 
+// Account 2
 web3.eth.sendTransaction({
     from: from,
     to: '0x0bfA3B6b0E799F2eD34444582187B2cDf2fB11a7',
@@ -31,9 +33,30 @@ web3.eth.sendTransaction({
     console.log(`Receipt`, receipt);
 });*/
 
+// Account 3
 web3.eth.sendTransaction({
     from: from,
     to: '0x36d1d3c43422EF3B1d7d23F20a25977c29BC3f0e',
+    value: value
+})/*.once('confirmation', function (confNumber, receipt) {
+    console.log(`Confirmation Number: ${confNumber}`);
+    console.log(`Receipt`, receipt);
+});*/
+
+// Account 4
+web3.eth.sendTransaction({
+    from: from,
+    to: '0x9063541acBD959baeB6Bf64158944b7e5844534a',
+    value: value
+})/*.once('confirmation', function (confNumber, receipt) {
+    console.log(`Confirmation Number: ${confNumber}`);
+    console.log(`Receipt`, receipt);
+});*/
+
+// Account 5
+web3.eth.sendTransaction({
+    from: from,
+    to: '0xd703eE823B2A2466F22147bfE74a0F605EbB20a4',
     value: value
 })/*.once('confirmation', function (confNumber, receipt) {
     console.log(`Confirmation Number: ${confNumber}`);

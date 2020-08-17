@@ -27,7 +27,7 @@ const BUDGET_LIB_PLACEHOLDER = '__contracts/BudgetLib.sol:BudgetLib_____';
 module.exports = async ({ getNamedAccounts, deployments }) => {
 
     const { log } = deployments;
-    const { deployer, delegate, campaignManager, milestoneManager } = await getNamedAccounts();
+    const { deployer, account1, account2, account3, account4, account5 } = await getNamedAccounts();
 
     log(`Aragon deploy`);
 
@@ -85,29 +85,80 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(` - Vault Base: ${vaultBase.address}`);
     log(` - Vault: ${vault.address}`);
 
-    // Set permissions
+    // Configuración de grupos y permisos
+
+    log(` - Set groups`);
+
+    let GIVER_ROLE = await crowdfundingBase.GIVER_ROLE();
+    let DELEGATE_ROLE = await crowdfundingBase.DELEGATE_ROLE();
+    let CAMPAIGN_MANAGER_ROLE = await crowdfundingBase.CAMPAIGN_MANAGER_ROLE();
+    let CAMPAIGN_REVIEWER_ROLE = await crowdfundingBase.CAMPAIGN_REVIEWER_ROLE();
+    let MILESTONE_MANAGER_ROLE = await crowdfundingBase.MILESTONE_MANAGER_ROLE();
+    let MILESTONE_REVIEWER_ROLE = await crowdfundingBase.MILESTONE_REVIEWER_ROLE();
+    let RECIPIENT_ROLE = await crowdfundingBase.RECIPIENT_ROLE();
+    log(`   - DELEGATE_ROLE`);
+    await createPermission(acl, account1, crowdfunding.address, DELEGATE_ROLE, deployer);
+    log(`       - Account1: ${account1}`);
+    log(`   - CAMPAIGN_MANAGER_ROLE`);
+    await createPermission(acl, account2, crowdfunding.address, CAMPAIGN_MANAGER_ROLE, deployer);
+    log(`       - Account2: ${account2}`);
+    log(`   - CAMPAIGN_REVIEWER_ROLE`);
+    await createPermission(acl, account3, crowdfunding.address, CAMPAIGN_REVIEWER_ROLE, deployer);
+    log(`       - Account3: ${account3}`);
+    await grantPermission(acl, account4, crowdfunding.address, CAMPAIGN_REVIEWER_ROLE, deployer);
+    log(`       - Account4: ${account4}`);
+    await grantPermission(acl, account5, crowdfunding.address, CAMPAIGN_REVIEWER_ROLE, deployer);
+    log(`       - Account5: ${account5}`);
+    await grantPermission(acl, account1, crowdfunding.address, CAMPAIGN_REVIEWER_ROLE, deployer);
+    log(`       - Account1: ${account1}`);
+    log(`   - MILESTONE_MANAGER_ROLE`);
+    await createPermission(acl, account3, crowdfunding.address, MILESTONE_MANAGER_ROLE, deployer);
+    log(`       - Account3: ${account3}`);
+    log(`   - MILESTONE_REVIEWER_ROLE`);
+    await createPermission(acl, account3, crowdfunding.address, MILESTONE_REVIEWER_ROLE, deployer);
+    log(`       - Account3: ${account3}`);
+    await grantPermission(acl, account4, crowdfunding.address, MILESTONE_REVIEWER_ROLE, deployer);
+    log(`       - Account4: ${account4}`);
+    await grantPermission(acl, account5, crowdfunding.address, MILESTONE_REVIEWER_ROLE, deployer);
+    log(`       - Account5: ${account5}`);
+    await grantPermission(acl, account1, crowdfunding.address, MILESTONE_REVIEWER_ROLE, deployer);
+    log(`       - Account1: ${account1}`);
+    log(`   - RECIPIENT_ROLE`);
+    await createPermission(acl, account3, crowdfunding.address, RECIPIENT_ROLE, deployer);
+    log(`       - Account3: ${account3}`);
+    await grantPermission(acl, account4, crowdfunding.address, RECIPIENT_ROLE, deployer);
+    log(`       - Account4: ${account4}`);
+    await grantPermission(acl, account5, crowdfunding.address, RECIPIENT_ROLE, deployer);
+    log(`       - Account5: ${account5}`);
+    await grantPermission(acl, account1, crowdfunding.address, RECIPIENT_ROLE, deployer);
+    log(`       - Account1: ${account1}`);
 
     log(` - Set permissions`);
 
-    let CREATE_DAC_ROLE = await crowdfundingBase.CREATE_DAC_ROLE()
+    let CREATE_DAC_ROLE = await crowdfundingBase.CREATE_DAC_ROLE();
     let CREATE_CAMPAIGN_ROLE = await crowdfundingBase.CREATE_CAMPAIGN_ROLE();
     let CREATE_MILESTONE_ROLE = await crowdfundingBase.CREATE_MILESTONE_ROLE();
     let EXCHANGE_RATE_ROLE = await crowdfundingBase.EXCHANGE_RATE_ROLE();
     let TRANSFER_ROLE = await vaultBase.TRANSFER_ROLE()
-    await createPermission(acl, delegate, crowdfunding.address, CREATE_DAC_ROLE, deployer);
-    log(`   - CREATE_DAC_ROLE: Delegate ${delegate}`);
-    await createPermission(acl, campaignManager, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
-    log(`   - CREATE_CAMPAIGN_ROLE: Campaign Manager ${campaignManager}`);
-    await grantPermission(acl, delegate, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
-    log(`   - CREATE_CAMPAIGN_ROLE: Delegate ${delegate}`);
-    await createPermission(acl, milestoneManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
-    log(`   - CREATE_MILESTONE_ROLE: Milestone Manager ${milestoneManager}`);
-    await grantPermission(acl, delegate, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
-    log(`   - CREATE_MILESTONE_ROLE: Delegate ${delegate}`);
+    log(`   - CREATE_DAC_ROLE`);
+    await createPermission(acl, account1, crowdfunding.address, CREATE_DAC_ROLE, deployer);
+    log(`       - Account1: ${account1}`);
+    log(`   - CREATE_CAMPAIGN_ROLE`);
+    await createPermission(acl, account2, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
+    log(`       - Account2: ${account2}`);
+    await grantPermission(acl, account1, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
+    log(`       - Account1: ${account1}`);
+    log(`   - CREATE_MILESTONE_ROLE`);
+    await createPermission(acl, account3, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
+    log(`       - Account3: ${account3}`);
+    await grantPermission(acl, account1, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
+    log(`       - Account1: ${account1}`);
+    log(`   - EXCHANGE_RATE_ROLE`);
     await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
-    log(`   - EXCHANGE_RATE_ROLE: Deployer ${deployer}`);
+    log(`       - Deployer: ${deployer}`);
+    log(`   - TRANSFER_ROLE`);
     await createPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
-    log(`   - TRANSFER_ROLE: Crowdfunding ${crowdfunding.address}`);
+    log(`       - Crowdfunding: ${crowdfunding.address}`);
 
     // Inicialización
     await vault.initialize()
