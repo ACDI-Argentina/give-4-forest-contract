@@ -1,6 +1,6 @@
 {
-  "name": "@acdi/efem-crowdfunding",
-  "version": "1.0.0-alfa.9",
+  "name": "@acdi/give4forests-crowdfunding-contract",
+  "version": "1.0.0-alpha.1",
   "description": "Crowdfunding Smart Contract de El Futuro está en el Monte",
   "main": "index.js",
   "scripts": {
@@ -8,8 +8,9 @@
     "compile": "buidler compile --force",
     "test": "buidler test --network buidlerevm",
     "start": "buidler start",
-    "test:rsk": "buidler test --network rsk",
-    "deploy:rsk": "buidler deploy --network rsk",
+    "test:rsk": "buidler test --network rskRegtest",
+    "deploy:rsk-regtest": "buidler deploy --network rskRegtest",
+    "deploy:rsk-testnet": "buidler deploy --network rskTestnet",
     "publish:major": "buidler publish major",
     "publish:minor": "buidler publish minor",
     "publish:patch": "buidler publish patch"

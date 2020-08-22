@@ -7,7 +7,6 @@ usePlugin('buidler-deploy');
 module.exports = {
   // Default Buidler configurations. Read more about it at https://buidler.dev/config/
   defaultNetwork: 'localhost',
-  //defaultNetwork: 'rsk',
   networks: {
     localhost: {
       url: 'http://localhost:8545',
@@ -16,13 +15,25 @@ module.exports = {
     buidlerevm: {
       allowUnlimitedContractSize: false
     },
-    rsk: {
+    rskRegtest: {
       url: 'http://localhost:4444',
       chainId: 33,
       accounts: 'remote',
       gas: 6000000,
       timeout: 60000
     },
+    rskTestnet: {
+      url: 'https://public-node.testnet.rsk.co',
+      chainId: 31,
+      from: '0x41ba2e6eF76ABFd57fC0DD03e696c711EC4002Ca',
+      // a list of local accounts (by setting it to an array of hex-encoded private keys)
+      // Public Key: 0x41ba2e6eF76ABFd57fC0DD03e696c711EC4002Ca
+      // Private Key: da87821735850d8165de05b6c20d8c71d33b700d8fa8c3480b3d8b7318f1bb89
+      accounts: ['0xda87821735850d8165de05b6c20d8c71d33b700d8fa8c3480b3d8b7318f1bb89'],
+      gas: 6000000
+      // Explorer: https://explorer.testnet.rsk.co
+      // Faucet: https://faucet.rsk.co
+    }
   },
   solc: {
     version: '0.4.24',
@@ -60,26 +71,32 @@ module.exports = {
   // 33: RSK Regtest (según configuración)
   namedAccounts: {
     deployer: {
-      default: 0 // here this will by default take the first account as deployer
+      default: 0, // here this will by default take the first account as deployer
+      31: '0x41ba2e6eF76ABFd57fC0DD03e696c711EC4002Ca'
     },
     account1: {
       default: 1,
+      31: '0x9deC90af27E95299D56Cef85eE1aD7E77353dDBB',
       33: '0xee4b388fb98420811C9e04AE8378330C05A2735a'
     },
     account2: {
       default: 2,
-      33: '0x0bfA3B6b0E799F2eD34444582187B2cDf2fB11a7'
+      31: '0xdEC19efEEf1962D82FfAA3FC8C9A8064BF5Bbe3c',
+      33: '0x0bfA3B6b0E799F2eD34444582187B2cDf2fB11a7'      
     },
     account3: {
       default: 3,
+      31: '0x8B5Ea78bfa461b81DFFd032D1e5Ed38b9b62651b',
       33: '0x36d1d3c43422EF3B1d7d23F20a25977c29BC3f0e'
     },
     account4: {
       default: 4,
+      31: '0xd97f0f2b7a96099dB0863B8313D83086d1E01292',
       33: '0x9063541acBD959baeB6Bf64158944b7e5844534a'
     },
     account5: {
       default: 5,
+      31: '0x768C06E270491c03D86f5fC2B9E1ba9E837067eB',
       33: '0xd703eE823B2A2466F22147bfE74a0F605EbB20a4'
     }
   },

@@ -1,5 +1,6 @@
 var Web3 = require('web3');
 var network = "http://localhost:4444";
+//var network = "https://public-node.testnet.rsk.co";
 
 console.log('');
 console.log('RSK Node Status');
@@ -25,11 +26,15 @@ web3.eth.getAccounts().then(accounts => {
     });
 });
 
-/*
 web3.eth.getBlockNumber().then(blockNumber => {
     console.log('Block Number: ' + blockNumber);
 });
 
+web3.eth.getBlock(1000).then(block => {
+    //console.log('Block', block);
+});
+
+/*
 web3.eth.getAccounts().then(accounts => {
     console.log('Balances');
     accounts.forEach(account => {
