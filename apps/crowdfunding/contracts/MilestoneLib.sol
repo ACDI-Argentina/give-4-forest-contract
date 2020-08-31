@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 /**
  * @title Librería de Milestones.
- * @author Mauricio Coronel
+ * @author ACDI
  * @notice Librería encargada del tratamiento de Milestones.
  */
 library MilestoneLib {
@@ -25,7 +25,7 @@ library MilestoneLib {
         address recipient;
         address campaignReviewer;
         uint256 campaignId; // Id de las campaign relacionada.
-        // TODO Agregar Items
+        uint256[] activityIds; // Ids de las actividades del milestone.
         Status status;
     }
     struct Data {
@@ -34,7 +34,7 @@ library MilestoneLib {
         uint256[] ids;
         /// @dev Iterable Mapping de Milestones
         mapping(uint256 => Milestone) milestones;
-    }
+    }    
 
     string
         internal constant ERROR_MILESTONE_NOT_EXISTS = "CROWDFUNDING_MILESTONE_NOT_EXIST";
@@ -64,12 +64,7 @@ library MilestoneLib {
         milestone.reviewer = _reviewer;
         milestone.recipient = _recipient;
         milestone.campaignReviewer = _campaignReviewer;
-        
-        // TODO El estado inicial es Active, pero hasta tando no se implementen las
-        // acciones de Completar, Aprobar y Rechazar, se inicia el Milestone como Aprobado
-        //milestone.status = Status.Active;
-        milestone.status = Status.Approved;
-        
+        milestone.status = Status.Active;
         // Asociación entre Campaign y Milestone
         milestone.campaignId = _campaignId;
         self.milestones[id] = milestone;

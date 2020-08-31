@@ -20,6 +20,7 @@ const { assertEntity,
     assertDac,
     assertCampaign,
     assertMilestone,
+    assertActivity,
     assertDonation,
     assertBudget } = require('./helpers/asserts')
 const { errors } = require('./helpers/errors')
@@ -154,7 +155,7 @@ contract('Crowdfunding App', ([
                 id: 1,
                 idIndex: 0,
                 infoCid: INFO_CID,
-                delegate: delegate,
+                users: [delegate],
                 campaignIds: [],
                 budgetIdsLength: 0,
                 status: DAC_STATUS_ACTIVE
@@ -193,10 +194,8 @@ contract('Crowdfunding App', ([
             assert.equal(campaigns.length, 1)
             assertCampaign(campaigns[0], {
                 id: 2,
-                idIndex: 0,
                 infoCid: INFO_CID,
-                manager: campaignManager,
-                reviewer: campaignReviewer,
+                users: [campaignManager, campaignReviewer],
                 dacIds: [dacId],
                 milestoneIds: [],
                 budgetIdsLength: 0,
@@ -264,15 +263,12 @@ contract('Crowdfunding App', ([
             assert.equal(milestones.length, 1)
             assertMilestone(milestones[0], {
                 id: 3,
-                idIndex: 0,
                 infoCid: INFO_CID,
                 fiatAmountTarget: fiatAmountTarget,
-                manager: milestoneManager,
-                reviewer: milestoneReviewer,
-                recipient: milestoneRecipient,
-                campaignReviewer: campaignReviewer,
+                users: [milestoneManager, milestoneReviewer, campaignReviewer, milestoneRecipient],
                 campaignId: campaignId,
                 budgetIdsLength: 0,
+                activityIdsLength: 0,
                 status: MILESTONE_STATUS_ACTIVE
             });
 
@@ -1100,19 +1096,29 @@ contract('Crowdfunding App', ([
                 campaignId1);
         });
 
-        it.skip('Milestone Completado', async () => {
+        it('Milestone Completado', async () => {
 
-            await crowdfunding.milestoneComplete(milestoneId1, { from: milestoneManager });
+            await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
 
             let milestone = await crowdfunding.getMilestone(milestoneId1);
             assert.equal(milestone.status, MILESTONE_STATUS_COMPLETED);
+
+            let activityId = 1;
+            assert.equal(milestone.activityIds.length, 1);
+            let activity = await crowdfunding.getActivity(activityId);
+            assertActivity(activity, {
+                id: activityId,
+                infoCid: INFO_CID,
+                user: milestoneManager,
+                milestoneId: milestoneId1
+            });
         })
 
         it('Milestone Completado no autorizado', async () => {
 
             // notAuthorized account no es el manager del milestone.
             await assertRevert(
-                crowdfunding.milestoneComplete(milestoneId1, { from: notAuthorized }),
+                crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: notAuthorized }),
                 errors.CROWDFUNDING_AUTH_FAILED);
         })
 
@@ -1277,7 +1283,7 @@ contract('Crowdfunding App', ([
 
             // notAuthorized account no es el destinatario del milestone.
             await assertRevert(
-                crowdfunding.withdraw(milestoneId1, { from: notAuthorized }),
+                crowdfunding.milestoneWithdraw(milestoneId1, { from: notAuthorized }),
                 errors.CROWDFUNDING_AUTH_FAILED);
         })
 

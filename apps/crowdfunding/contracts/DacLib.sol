@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 /**
  * @title Librería de Dacs.
- * @author Mauricio Coronel
+ * @author ACDI
  * @notice Librería encargada del tratamiento de Dacs.
  */
 library DacLib {

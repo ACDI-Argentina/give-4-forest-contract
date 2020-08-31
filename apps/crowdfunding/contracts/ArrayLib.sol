@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 /**
  * @title Array Library
- * @author Mauricio Coronel
+ * @author ACDI
  * @notice Librería encargada de mantener utilidades sobre Arrays.
  */
 library ArrayLib {

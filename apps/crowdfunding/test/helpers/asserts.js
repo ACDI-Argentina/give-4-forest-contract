@@ -6,9 +6,10 @@ const assertEntity = (entity, entityExpected) => {
 }
 const assertDac = (dac, dacExpected) => {
   assert.equal(dac.id, dacExpected.id);
-  assert.equal(dac.idIndex, dacExpected.idIndex);
   assert.equal(dac.infoCid, dacExpected.infoCid);
-  assert.equal(dac.delegate, dacExpected.delegate);
+  for (let i = 0; i < dacExpected.users.length; i++) {
+    assert.equal(dac.users[i], dacExpected.users[i]);
+  }
   assert.equal(dac.campaignIds.length, dacExpected.campaignIds.length);
   for (i = 0; i < dac.campaignIds.length; i++) {
     assert.equal(dac.campaignIds[i], dacExpected.campaignIds[i]);
@@ -19,10 +20,10 @@ const assertDac = (dac, dacExpected) => {
 
 const assertCampaign = (campaign, campaignExpected) => {
   assert.equal(campaign.id, campaignExpected.id);
-  assert.equal(campaign.idIndex, campaignExpected.idIndex);
   assert.equal(campaign.infoCid, campaignExpected.infoCid);
-  assert.equal(campaign.manager, campaignExpected.manager);
-  assert.equal(campaign.reviewer, campaignExpected.reviewer);
+  for (let i = 0; i < campaignExpected.users.length; i++) {
+    assert.equal(campaign.users[i], campaignExpected.users[i]);
+  }
   assert.equal(campaign.dacIds.length, campaignExpected.dacIds.length);
   for (i = 0; i < campaign.dacIds.length; i++) {
     assert.equal(campaign.dacIds[i], campaignExpected.dacIds[i]);
@@ -37,16 +38,22 @@ const assertCampaign = (campaign, campaignExpected) => {
 
 const assertMilestone = (milestone, milestoneExpected) => {
   assert.equal(milestone.id, milestoneExpected.id);
-  assert.equal(milestone.idIndex, milestoneExpected.idIndex);
   assert.equal(milestone.infoCid, milestoneExpected.infoCid);
   assert.equal(milestone.fiatAmountTarget, milestoneExpected.fiatAmountTarget);
-  assert.equal(milestone.manager, milestoneExpected.manager);
-  assert.equal(milestone.reviewer, milestoneExpected.reviewer);
-  assert.equal(milestone.recipient, milestoneExpected.recipient);
-  assert.equal(milestone.campaignReviewer, milestoneExpected.campaignReviewer);
+  for (let i = 0; i < milestoneExpected.users.length; i++) {
+    assert.equal(milestone.users[i], milestoneExpected.users[i]);
+  }
   assert.equal(milestone.campaignId, milestoneExpected.campaignId);
   assert.equal(milestone.budgetIds.length, milestoneExpected.budgetIdsLength);
+  assert.equal(milestone.activityIds.length, milestoneExpected.activityIdsLength);
   assert.equal(milestone.status, milestoneExpected.status);
+}
+
+const assertActivity = (activity, activityExpected) => {
+  assert.equal(activity.id, activityExpected.id);
+  assert.equal(activity.infoCid, activityExpected.infoCid);
+  assert.equal(activity.user, activityExpected.user);
+  assert.equal(activity.milestoneId, activityExpected.milestoneId);
 }
 
 const assertDonation = (donation, donationExpected) => {
@@ -82,6 +89,7 @@ module.exports = {
   assertDac,
   assertCampaign,
   assertMilestone,
+  assertActivity,
   assertDonation,
   assertBudget
 }

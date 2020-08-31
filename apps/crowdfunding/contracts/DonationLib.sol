@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 /**
  * @title Librería de Donaciones.
- * @author Mauricio Coronel
+ * @author ACDI
  * @notice Librería encargada del tratamiento de Donaciones.
  */
 library DonationLib {

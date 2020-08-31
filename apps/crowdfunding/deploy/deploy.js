@@ -7,6 +7,7 @@ const EntityLib = artifacts.require('EntityLib')
 const DacLib = artifacts.require('DacLib')
 const CampaignLib = artifacts.require('CampaignLib')
 const MilestoneLib = artifacts.require('MilestoneLib')
+const ActivityLib = artifacts.require('ActivityLib')
 const DonationLib = artifacts.require('DonationLib')
 const BudgetLib = artifacts.require('BudgetLib')
 const Vault = artifacts.require('Vault')
@@ -21,6 +22,7 @@ const ENTITY_LIB_PLACEHOLDER = '__contracts/EntityLib.sol:EntityLib_____';
 const DAC_LIB_PLACEHOLDER = '__contracts/DacLib.sol:DacLib___________';
 const CAMPAIGN_LIB_PLACEHOLDER = '__contracts/CampaignLib.sol:CampaignLi__';
 const MILESTONE_LIB_PLACEHOLDER = '__contracts/MilestoneLib.sol:Milestone__';
+const ACTIVITY_LIB_PLACEHOLDER = '__contracts/ActivityLib.sol:ActivityLi__';
 const DONATION_LIB_PLACEHOLDER = '__contracts/DonationLib.sol:DonationLi__';
 const BUDGET_LIB_PLACEHOLDER = '__contracts/BudgetLib.sol:BudgetLib_____';
 
@@ -56,6 +58,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     // Link Crowdfunding > MilestoneLib
     const milestoneLib = await MilestoneLib.new({ from: deployer });
     await linkLib(milestoneLib, Crowdfunding, MILESTONE_LIB_PLACEHOLDER);
+    // Link Crowdfunding > ActivityLib
+    const activityLib = await ActivityLib.new({ from: deployer });
+    await linkLib(activityLib, Crowdfunding, ACTIVITY_LIB_PLACEHOLDER);
     // Link Crowdfunding > DonationLib
     const donationLib = await DonationLib.new({ from: deployer });
     await linkLib(donationLib, Crowdfunding, DONATION_LIB_PLACEHOLDER);
@@ -72,6 +77,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(`   - Dac Lib: ${dacLib.address}`);
     log(`   - Campaign Lib: ${campaignLib.address}`);
     log(`   - Milestone Lib: ${milestoneLib.address}`);
+    log(`   - Activity Lib: ${activityLib.address}`);
     log(`   - Budget Lib: ${budgetLib.address}`);
     log(`   - Donation Lib: ${donationLib.address}`);
     log(`   - Array Lib: ${arrayLib.address}`);

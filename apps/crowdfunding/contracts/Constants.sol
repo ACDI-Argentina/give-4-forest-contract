@@ -4,7 +4,7 @@ import "@aragon/os/contracts/common/EtherTokenConstant.sol";
 
 /**
  * @title Constantes útiles del contrato Crowdfunding.
- * @author Mauricio Coronel
+ * @author ACDI
  */
 contract Constants is EtherTokenConstant {
     // Grupos

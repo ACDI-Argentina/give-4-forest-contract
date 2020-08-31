@@ -9,12 +9,13 @@ import "./EntityLib.sol";
 import "./DacLib.sol";
 import "./CampaignLib.sol";
 import "./MilestoneLib.sol";
+import "./ActivityLib.sol";
 import "./DonationLib.sol";
 import "./BudgetLib.sol";
 
 /**
  * @title Crowdfunding
- * @author Mauricio Coronel
+ * @author ACDI
  * @notice Contrato encargado de las principales operaciones de manejo de entidades y fondos.
  */
 contract Crowdfunding is AragonApp, Constants {
@@ -22,6 +23,7 @@ contract Crowdfunding is AragonApp, Constants {
     using DacLib for DacLib.Data;
     using CampaignLib for CampaignLib.Data;
     using MilestoneLib for MilestoneLib.Data;
+    using ActivityLib for ActivityLib.Data;
     using DonationLib for DonationLib.Data;
     using BudgetLib for BudgetLib.Data;
     using SafeMath for uint256;
@@ -37,6 +39,7 @@ contract Crowdfunding is AragonApp, Constants {
     DacLib.Data dacData;
     CampaignLib.Data campaignData;
     MilestoneLib.Data milestoneData;
+    ActivityLib.Data activityData;
     DonationLib.Data donationData;
     BudgetLib.Data budgetData;
 
@@ -69,7 +72,8 @@ contract Crowdfunding is AragonApp, Constants {
         uint256 donationId,
         uint256 amount
     );
-    event Withdraw(uint256 milestoneId, address token, uint256 amount);
+    event MilestoneComplete(uint256 milestoneId);
+    event MilestoneWithdraw(uint256 milestoneId, address token, uint256 amount);
 
     /**
      * @notice Crea la DAC `title`. Quien envía la transacción es el delegate de la Dac.
@@ -302,44 +306,15 @@ contract Crowdfunding is AragonApp, Constants {
     }
 
     /**
-     * @notice Retira los fondos del Milestone `_milestoneId`.
-     * @dev Implementación de Withdraw Pattern.
-     * @param _milestoneId Id del milestone sobre el cual se retiran los fondos.
-     */
-    function withdraw(uint256 _milestoneId) external isInitialized {
-        MilestoneLib.Milestone storage milestone = _getMilestone(_milestoneId);
-        // Solamente el destinatario de los fondos o el manager pueden hacer el retiro.
-        // Withdraw Pattern
-        require(
-            milestone.recipient == msg.sender ||
-                milestone.manager == msg.sender,
-            ERROR_AUTH_FAILED
-        );
-        // El Milestone debe estar Aprobado.
-        // TODO Volver a colocar restricción se implemente que el Milestone está completo.
-        /*require(
-            milestone.status == MilestoneLib.Status.Approved,
-            ERROR_WITHDRAW_NOT_APPROVED
-        );*/
-        // El retiro superó las validaciones del Milestones
-        uint256 fiatAmountTarget = milestone.fiatAmountTarget;
-        EntityLib.Entity storage entity = _getEntity(_milestoneId);
-        for (uint256 i = 0; i < entity.budgetIds.length; i++) {
-            fiatAmountTarget = _fitBudget(
-                _milestoneId,
-                entity.budgetIds[i],
-                fiatAmountTarget
-            );
-            _doWithdraw(_milestoneId, entity.budgetIds[i]);
-        }
-        milestone.status = MilestoneLib.Status.Paid;
-    }
-
-    /**
      * @notice Marca el Milestone `_milestoneId` como completado.
      * @param _milestoneId Id del milestone que se marca como completado.
+     * @param _activityInfoCid Content ID de las información (JSON) de la actividad
+     * que prueba las completitud del Milestone. IPFS Cid.
      */
-    function milestoneComplete(uint256 _milestoneId) external isInitialized {
+    function milestoneComplete(uint256 _milestoneId, string _activityInfoCid)
+        external
+        isInitialized
+    {
         MilestoneLib.Milestone storage milestone = _getMilestone(_milestoneId);
         // Solamente el Milestone Manager puede marcar el Milestone como completado.
         require(milestone.manager == msg.sender, ERROR_AUTH_FAILED);
@@ -348,7 +323,15 @@ contract Crowdfunding is AragonApp, Constants {
             milestone.status == MilestoneLib.Status.Active,
             ERROR_MILESTONE_COMPLETE_NOT_ACTIVE
         );
+        // Registración de la actividad.
+        uint256 activityId = activityData.insert(
+            _activityInfoCid,
+            msg.sender,
+            _milestoneId
+        );
         milestone.status = MilestoneLib.Status.Completed;
+        milestone.activityIds.push(activityId);
+        emit MilestoneComplete(_milestoneId);
     }
 
     /**
@@ -381,6 +364,40 @@ contract Crowdfunding is AragonApp, Constants {
             // Milestone Rechazado
             milestone.status = MilestoneLib.Status.Rejected;
         }
+    }
+
+    /**
+     * @notice Retira los fondos del Milestone `_milestoneId`.
+     * @dev Implementación de Withdraw Pattern.
+     * @param _milestoneId Id del milestone sobre el cual se retiran los fondos.
+     */
+    function milestoneWithdraw(uint256 _milestoneId) external isInitialized {
+        MilestoneLib.Milestone storage milestone = _getMilestone(_milestoneId);
+        // Solamente el destinatario de los fondos o el manager pueden hacer el retiro.
+        // Withdraw Pattern
+        require(
+            milestone.recipient == msg.sender ||
+                milestone.manager == msg.sender,
+            ERROR_AUTH_FAILED
+        );
+        // El Milestone debe estar Aprobado.
+        // TODO Volver a colocar restricción se implemente que el Milestone está completo.
+        /*require(
+            milestone.status == MilestoneLib.Status.Approved,
+            ERROR_WITHDRAW_NOT_APPROVED
+        );*/
+        // El retiro superó las validaciones del Milestones
+        uint256 fiatAmountTarget = milestone.fiatAmountTarget;
+        EntityLib.Entity storage entity = _getEntity(_milestoneId);
+        for (uint256 i = 0; i < entity.budgetIds.length; i++) {
+            fiatAmountTarget = _fitBudget(
+                _milestoneId,
+                entity.budgetIds[i],
+                fiatAmountTarget
+            );
+            _doWithdraw(_milestoneId, entity.budgetIds[i]);
+        }
+        milestone.status = MilestoneLib.Status.Paid;
     }
 
     /**
@@ -461,9 +478,8 @@ contract Crowdfunding is AragonApp, Constants {
         view
         returns (
             uint256 id,
-            uint256 idIndex,
             string infoCid,
-            address delegate,
+            address[] users,
             uint256[] campaignIds,
             uint256[] donationIds,
             uint256[] budgetIds,
@@ -473,9 +489,9 @@ contract Crowdfunding is AragonApp, Constants {
         EntityLib.Entity storage entity = _getEntity(_id);
         DacLib.Dac storage dac = _getDac(_id);
         id = dac.id;
-        idIndex = dac.idIndex;
         infoCid = dac.infoCid;
-        delegate = dac.delegate;
+        users = new address[](1);
+        users[0] = dac.delegate;
         campaignIds = dac.campaignIds;
         donationIds = entity.donationIds;
         budgetIds = entity.budgetIds;
@@ -491,10 +507,8 @@ contract Crowdfunding is AragonApp, Constants {
         view
         returns (
             uint256 id,
-            uint256 idIndex,
             string infoCid,
-            address manager,
-            address reviewer,
+            address[] users,
             uint256[] dacIds,
             uint256[] milestoneIds,
             uint256[] donationIds,
@@ -505,10 +519,10 @@ contract Crowdfunding is AragonApp, Constants {
         EntityLib.Entity storage entity = _getEntity(_id);
         CampaignLib.Campaign storage campaign = _getCampaign(_id);
         id = campaign.id;
-        idIndex = campaign.idIndex;
         infoCid = campaign.infoCid;
-        manager = campaign.manager;
-        reviewer = campaign.reviewer;
+        users = new address[](2);
+        users[0] = campaign.manager;
+        users[1] = campaign.reviewer;
         dacIds = campaign.dacIds;
         milestoneIds = campaign.milestoneIds;
         donationIds = entity.donationIds;
@@ -525,14 +539,11 @@ contract Crowdfunding is AragonApp, Constants {
         view
         returns (
             uint256 id,
-            uint256 idIndex,
             string infoCid,
             uint256 fiatAmountTarget,
-            address manager,
-            address reviewer,
-            address recipient,
-            address campaignReviewer,
             uint256 campaignId,
+            address[] users,
+            uint256[] activityIds,
             uint256[] donationIds,
             uint256[] budgetIds,
             MilestoneLib.Status status
@@ -541,17 +552,41 @@ contract Crowdfunding is AragonApp, Constants {
         EntityLib.Entity storage entity = _getEntity(_id);
         MilestoneLib.Milestone storage milestone = _getMilestone(_id);
         id = milestone.id;
-        idIndex = milestone.idIndex;
         infoCid = milestone.infoCid;
         fiatAmountTarget = milestone.fiatAmountTarget;
-        manager = milestone.manager;
-        reviewer = milestone.reviewer;
-        recipient = milestone.recipient;
-        campaignReviewer = milestone.campaignReviewer;
+        users = new address[](4);
+        users[0] = milestone.manager;
+        users[1] = milestone.reviewer;
+        users[2] = milestone.campaignReviewer;
+        users[3] = milestone.recipient;
         campaignId = milestone.campaignId;
+        activityIds = milestone.activityIds;
         donationIds = entity.donationIds;
         budgetIds = entity.budgetIds;
         status = milestone.status;
+    }
+
+    /**
+     * @notice Obtiene la Activity cuyo identificador coincide con `_id`.
+     * @return Datos de la Activity.
+     */
+    function getActivity(uint256 _id)
+        external
+        view
+        returns (
+            uint256 id,
+            uint256 idIndex,
+            string infoCid,
+            address user,
+            uint256 milestoneId
+        )
+    {
+        ActivityLib.Activity storage activity = _getActivity(_id);
+        id = activity.id;
+        idIndex = activity.idIndex;
+        infoCid = activity.infoCid;
+        user = activity.user;
+        milestoneId = activity.milestoneId;
     }
 
     /**
@@ -724,7 +759,7 @@ contract Crowdfunding is AragonApp, Constants {
         // El presupuesto es finalizado.
         budget.status = BudgetLib.Status.Paid;
 
-        emit Withdraw(_milestoneId, budget.token, budget.amount);
+        emit MilestoneWithdraw(_milestoneId, budget.token, budget.amount);
     }
 
     /**
@@ -796,6 +831,13 @@ contract Crowdfunding is AragonApp, Constants {
         returns (MilestoneLib.Milestone storage)
     {
         return milestoneData.getMilestone(_id);
+    }
+
+    function _getActivity(uint256 _id)
+        private
+        returns (ActivityLib.Activity storage)
+    {
+        return activityData.getActivity(_id);
     }
 
     function _getBudget(uint256 _id)
