@@ -575,17 +575,17 @@ contract Crowdfunding is AragonApp, Constants {
         view
         returns (
             uint256 id,
-            uint256 idIndex,
             string infoCid,
             address user,
+            uint256 createdAt,
             uint256 milestoneId
         )
     {
         ActivityLib.Activity storage activity = _getActivity(_id);
         id = activity.id;
-        idIndex = activity.idIndex;
         infoCid = activity.infoCid;
         user = activity.user;
+        createdAt = activity.createdAt;
         milestoneId = activity.milestoneId;
     }
 
@@ -598,7 +598,6 @@ contract Crowdfunding is AragonApp, Constants {
         view
         returns (
             uint256 id,
-            uint256 idIndex,
             uint256 entityId,
             address token,
             uint256 amount,
@@ -608,7 +607,6 @@ contract Crowdfunding is AragonApp, Constants {
     {
         BudgetLib.Budget storage budget = _getBudget(_id);
         id = budget.id;
-        idIndex = budget.idIndex;
         entityId = budget.entityId;
         token = budget.token;
         amount = budget.amount;
@@ -625,7 +623,6 @@ contract Crowdfunding is AragonApp, Constants {
         view
         returns (
             uint256 id,
-            uint256 idIndex,
             address giver,
             address token,
             uint256 amount,
@@ -638,7 +635,6 @@ contract Crowdfunding is AragonApp, Constants {
     {
         DonationLib.Donation storage donation = _getDonation(_id);
         id = donation.id;
-        idIndex = donation.idIndex;
         giver = donation.giver;
         token = donation.token;
         amount = donation.amount;

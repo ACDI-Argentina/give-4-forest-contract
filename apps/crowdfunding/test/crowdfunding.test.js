@@ -153,7 +153,6 @@ contract('Crowdfunding App', ([
             assert.equal(dacs.length, 1)
             assertDac(dacs[0], {
                 id: 1,
-                idIndex: 0,
                 infoCid: INFO_CID,
                 users: [delegate],
                 campaignIds: [],
@@ -164,7 +163,6 @@ contract('Crowdfunding App', ([
             let entity = await crowdfunding.getEntity(dacId);
             assertEntity(entity, {
                 id: 1,
-                idIndex: 0,
                 entityType: ENTITY_TYPE_DAC,
                 budgetIdsLength: 0
             });
@@ -205,7 +203,6 @@ contract('Crowdfunding App', ([
             let entity = await crowdfunding.getEntity(campaignId);
             assertEntity(entity, {
                 id: 2,
-                idIndex: 1,
                 entityType: ENTITY_TYPE_CAMPAIGN,
                 budgetIdsLength: 0
             });
@@ -275,7 +272,6 @@ contract('Crowdfunding App', ([
             let entity = await crowdfunding.getEntity(milestoneId);
             assertEntity(entity, {
                 id: 3,
-                idIndex: 2,
                 entityType: ENTITY_TYPE_MILESTONE,
                 budgetIdsLength: 0
             });
@@ -359,7 +355,6 @@ contract('Crowdfunding App', ([
             assert.equal(budgets.length, 1)
             assertBudget(budgets[0], {
                 id: 1,
-                idIndex: 0,
                 entityId: dacId,
                 token: ETH,
                 amount: amount,
@@ -371,7 +366,6 @@ contract('Crowdfunding App', ([
             assert.equal(entityDonations.length, 1)
             assertDonation(entityDonations[0], {
                 id: 1,
-                idIndex: 0,
                 giver: giver,
                 token: ETH,
                 amount: amount,
@@ -384,7 +378,6 @@ contract('Crowdfunding App', ([
             assert.equal(budgetDonations.length, 1)
             assertDonation(budgetDonations[0], {
                 id: 1,
-                idIndex: 0,
                 giver: giver,
                 token: ETH,
                 amount: amount,
@@ -418,7 +411,6 @@ contract('Crowdfunding App', ([
             assert.equal(budgets.length, 1)
             assertBudget(budgets[0], {
                 id: 1,
-                idIndex: 0,
                 entityId: campaignId,
                 token: ETH,
                 amount: amount,
@@ -430,7 +422,6 @@ contract('Crowdfunding App', ([
             assert.equal(entityDonations.length, 1)
             assertDonation(entityDonations[0], {
                 id: 1,
-                idIndex: 0,
                 giver: giver,
                 token: ETH,
                 amount: amount,
@@ -443,7 +434,6 @@ contract('Crowdfunding App', ([
             assert.equal(budgetDonations.length, 1)
             assertDonation(budgetDonations[0], {
                 id: 1,
-                idIndex: 0,
                 giver: giver,
                 token: ETH,
                 amount: amount,
@@ -477,7 +467,6 @@ contract('Crowdfunding App', ([
             assert.equal(budgets.length, 1)
             assertBudget(budgets[0], {
                 id: 1,
-                idIndex: 0,
                 entityId: milestoneId,
                 token: ETH,
                 amount: amount,
@@ -489,7 +478,6 @@ contract('Crowdfunding App', ([
             assert.equal(entityDonations.length, 1)
             assertDonation(entityDonations[0], {
                 id: 1,
-                idIndex: 0,
                 giver: giver,
                 token: ETH,
                 amount: amount,
@@ -502,7 +490,6 @@ contract('Crowdfunding App', ([
             assert.equal(budgetDonations.length, 1)
             assertDonation(budgetDonations[0], {
                 id: 1,
-                idIndex: 0,
                 giver: giver,
                 token: ETH,
                 amount: amount,
@@ -559,7 +546,6 @@ contract('Crowdfunding App', ([
                 assert.equal(budgets.length, 1)
                 assertBudget(budgets[0], {
                     id: 1,
-                    idIndex: 0,
                     entityId: dacId,
                     token: tokenInstance.address,
                     amount: amount,
@@ -571,7 +557,6 @@ contract('Crowdfunding App', ([
                 assert.equal(entityDonations.length, 1)
                 assertDonation(entityDonations[0], {
                     id: 1,
-                    idIndex: 0,
                     giver: giver,
                     token: tokenInstance.address,
                     amount: amount,
@@ -584,7 +569,6 @@ contract('Crowdfunding App', ([
                 assert.equal(budgetDonations.length, 1)
                 assertDonation(budgetDonations[0], {
                     id: 1,
-                    idIndex: 0,
                     giver: giver,
                     token: tokenInstance.address,
                     amount: amount,
@@ -618,7 +602,6 @@ contract('Crowdfunding App', ([
                 assert.equal(budgets.length, 1)
                 assertBudget(budgets[0], {
                     id: 1,
-                    idIndex: 0,
                     entityId: campaignId,
                     token: tokenInstance.address,
                     amount: amount,
@@ -630,7 +613,6 @@ contract('Crowdfunding App', ([
                 assert.equal(entityDonations.length, 1)
                 assertDonation(entityDonations[0], {
                     id: 1,
-                    idIndex: 0,
                     giver: giver,
                     token: tokenInstance.address,
                     amount: amount,
@@ -643,7 +625,6 @@ contract('Crowdfunding App', ([
                 assert.equal(budgetDonations.length, 1)
                 assertDonation(budgetDonations[0], {
                     id: 1,
-                    idIndex: 0,
                     giver: giver,
                     token: tokenInstance.address,
                     amount: amount,
@@ -677,7 +658,6 @@ contract('Crowdfunding App', ([
                 assert.equal(budgets.length, 1)
                 assertBudget(budgets[0], {
                     id: 1,
-                    idIndex: 0,
                     entityId: milestoneId,
                     token: tokenInstance.address,
                     amount: amount,
@@ -689,7 +669,6 @@ contract('Crowdfunding App', ([
                 assert.equal(entityDonations.length, 1)
                 assertDonation(entityDonations[0], {
                     id: 1,
-                    idIndex: 0,
                     giver: giver,
                     token: tokenInstance.address,
                     amount: amount,
@@ -702,7 +681,6 @@ contract('Crowdfunding App', ([
                 assert.equal(budgetDonations.length, 1)
                 assertDonation(budgetDonations[0], {
                     id: 1,
-                    idIndex: 0,
                     giver: giver,
                     token: tokenInstance.address,
                     amount: amount,
@@ -1269,7 +1247,6 @@ contract('Crowdfunding App', ([
             // La 2da donación es la transferida.
             assertDonation(donations[1], {
                 id: 3,
-                idIndex: 2,
                 giver: giver,
                 token: ETH,
                 amount: donationAmount,

@@ -12,6 +12,7 @@ library ActivityLib {
         uint256 idIndex; // Índice del Id en ActivityIds;
         string infoCid; // IPFS Content ID de las información (JSON) del Item del Milestone.
         address user; // Address del usuario que realiza la actividad.
+        uint256 createdAt; // Fecha y hora de la activity.
         uint256 milestoneId; // Id del Milestone al cual pertenece
     }
     struct Data {
@@ -21,13 +22,6 @@ library ActivityLib {
         /// @dev Iterable Mapping de Activities
         mapping(uint256 => Activity) activities;
     }
-    /// @dev Estructura que define los datos de un Item de Milestone.
-    /*struct Item {
-        uint256 id; // Identificación del Item
-        uint256 idIndex; // Índice del Id en ItemIds;
-        string infoCid; // IPFS Content ID de las información (JSON) del Item del Milestone.
-        uint256 activityId; // Id del Activity al cual pertenece.
-    }*/
 
     string
         internal constant ERROR_ACTIVITY_NOT_EXISTS = "CROWDFUNDING_ACTIVITY_NOT_EXIST";
@@ -49,6 +43,7 @@ library ActivityLib {
         activity.idIndex = idIndex;
         activity.infoCid = _activityInfoCid;
         activity.user = _user;
+        activity.createdAt = block.timestamp;
         activity.milestoneId = _milestoneId;
         self.activities[id] = activity;
     }

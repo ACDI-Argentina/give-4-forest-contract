@@ -1,6 +1,5 @@
 const assertEntity = (entity, entityExpected) => {
   assert.equal(entity.id, entityExpected.id);
-  assert.equal(entity.idIndex, entityExpected.idIndex);
   assert.equal(entity.entityType, entityExpected.entityType);
   assert.equal(entity.budgetIds.length, entityExpected.budgetIdsLength);
 }
@@ -58,7 +57,6 @@ const assertActivity = (activity, activityExpected) => {
 
 const assertDonation = (donation, donationExpected) => {
   assert.equal(donation.id, donationExpected.id);
-  assert.equal(donation.idIndex, donationExpected.idIndex);
   assert.equal(donation.giver, donationExpected.giver);
   assert.equal(donation.token, donationExpected.token);
   assert.equal(donation.amount.toString(), donationExpected.amount.toString());
@@ -70,9 +68,6 @@ const assertDonation = (donation, donationExpected) => {
 const assertBudget = (budget, budgetExpected) => {
   if (budgetExpected.id != undefined) {
     assert.equal(budget.id, budgetExpected.id);
-  }
-  if (budgetExpected.idIndex != undefined) {
-    assert.equal(budget.idIndex, budgetExpected.idIndex);
   }
   assert.equal(budget.entityId, budgetExpected.entityId);
   assert.equal(budget.token, budgetExpected.token);
