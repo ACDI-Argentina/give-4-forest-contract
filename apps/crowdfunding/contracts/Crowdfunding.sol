@@ -73,6 +73,8 @@ contract Crowdfunding is AragonApp, Constants {
         uint256 amount
     );
     event MilestoneComplete(uint256 milestoneId);
+    event MilestoneApprove(uint256 milestoneId);
+    event MilestoneReject(uint256 milestoneId);
     event MilestoneWithdraw(uint256 milestoneId, address token, uint256 amount);
 
     /**
@@ -329,8 +331,8 @@ contract Crowdfunding is AragonApp, Constants {
             msg.sender,
             _milestoneId
         );
-        milestone.status = MilestoneLib.Status.Completed;
         milestone.activityIds.push(activityId);
+        milestone.status = MilestoneLib.Status.Completed;
         emit MilestoneComplete(_milestoneId);
     }
 
@@ -339,11 +341,14 @@ contract Crowdfunding is AragonApp, Constants {
      *  Marca el Milestone como rechazado si `_approve` es false.
      * @param _milestoneId Id del milestone que se marca como aprobado o rechazado.
      * @param _approve Especifica si se aprueba o no el Milestone.
+     * @param _activityInfoCid Content ID de las información (JSON) de la actividad
+     * que comprueba la aprobación o no del Milestone. IPFS Cid.
      */
-    function milestoneApprove(uint256 _milestoneId, bool _approve)
-        external
-        isInitialized
-    {
+    function milestoneReview(
+        uint256 _milestoneId,
+        bool _approve,
+        string _activityInfoCid
+    ) external isInitialized {
         MilestoneLib.Milestone storage milestone = _getMilestone(_milestoneId);
         // Solamente el Milestone Reviewer o Campaign Reviewer puede
         // marcar el Milestone como aprobado o no.
@@ -355,14 +360,23 @@ contract Crowdfunding is AragonApp, Constants {
         // El Milestone debe estar Completado.
         require(
             milestone.status == MilestoneLib.Status.Completed,
-            ERROR_MILESTONE_APPROVE_NOT_COMPLETED
+            ERROR_MILESTONE_REVIEW_NOT_COMPLETED
         );
+        // Registración de la actividad.
+        uint256 activityId = activityData.insert(
+            _activityInfoCid,
+            msg.sender,
+            _milestoneId
+        );
+        milestone.activityIds.push(activityId);
         if (_approve) {
             // Milestone Aprobado
             milestone.status = MilestoneLib.Status.Approved;
+            emit MilestoneApprove(_milestoneId);
         } else {
             // Milestone Rechazado
             milestone.status = MilestoneLib.Status.Rejected;
+            emit MilestoneReject(_milestoneId);
         }
     }
 
@@ -381,11 +395,10 @@ contract Crowdfunding is AragonApp, Constants {
             ERROR_AUTH_FAILED
         );
         // El Milestone debe estar Aprobado.
-        // TODO Volver a colocar restricción se implemente que el Milestone está completo.
-        /*require(
+        require(
             milestone.status == MilestoneLib.Status.Approved,
             ERROR_WITHDRAW_NOT_APPROVED
-        );*/
+        );
         // El retiro superó las validaciones del Milestones
         uint256 fiatAmountTarget = milestone.fiatAmountTarget;
         EntityLib.Entity storage entity = _getEntity(_milestoneId);

@@ -81,9 +81,9 @@ contract Constants is EtherTokenConstant {
     // Milestone Complete
     string
         internal constant ERROR_MILESTONE_COMPLETE_NOT_ACTIVE = "CROWDFUNDING_MILESTONE_COMPLETE_NOT_ACTIVE";
-    // Milestone Approve
+    // Milestone Review
     string
-        internal constant ERROR_MILESTONE_APPROVE_NOT_COMPLETED = "CROWDFUNDING_MILESTONE_APPROVE_NOT_COMPLETED";
+        internal constant ERROR_MILESTONE_REVIEW_NOT_COMPLETED = "CROWDFUNDING_MILESTONE_REVIEW_NOT_COMPLETED";
     // Exchange Rate
     string
         internal constant ERROR_EXCHANGE_RATE_NOT_EXISTS = "CROWDFUNDING_EXCHANGE_RATE_NOT_EXISTS";

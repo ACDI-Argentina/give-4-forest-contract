@@ -237,7 +237,7 @@ contract('Crowdfunding App', ([
 
     context('Manejo de Milestones', function () {
 
-        it.skip('Creación de Milestone', async () => {
+        it('Creación de Milestone', async () => {
 
             let dacId = await newDac(crowdfunding, delegate, '1');
             let campaignId = await newCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
@@ -785,7 +785,7 @@ contract('Crowdfunding App', ([
             });
         })
 
-        it.skip('Transferencia de ETH de Dac a Milestone', async () => {
+        it('Transferencia de ETH de Dac a Milestone', async () => {
 
             const receipt = await crowdfunding.transfer(dacId1, milestoneId1, [donationId1], { from: delegate });
             const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
@@ -817,7 +817,7 @@ contract('Crowdfunding App', ([
             });
         })
 
-        it.skip('Transferencia de ETH de Campaign a Milestone', async () => {
+        it('Transferencia de ETH de Campaign a Milestone', async () => {
 
             const receipt = await crowdfunding.transfer(campaignId1, milestoneId1, [donationId2], { from: campaignManager });
             const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
@@ -882,11 +882,11 @@ contract('Crowdfunding App', ([
                 errors.CROWDFUNDING_TRANSFER_NOT_AUTHORIZED);
         })
 
-        it.skip('Transferencia de ETH de Dac no activa', async () => {
+        it('Transferencia de ETH de Dac no activa', async () => {
 
         })
 
-        it.skip('Transferencia de ETH de Campaign no activa', async () => {
+        it('Transferencia de ETH de Campaign no activa', async () => {
 
         })
 
@@ -957,7 +957,7 @@ contract('Crowdfunding App', ([
                     giver);
             })
 
-            it.skip(`Transferencia de Token ERC20 (${title}) de Dac a Campaign`, async () => {
+            it(`Transferencia de Token ERC20 (${title}) de Dac a Campaign`, async () => {
 
                 const receipt = await crowdfunding.transfer(dacId, campaignId, [donationId1], { from: delegate });
                 const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
@@ -989,7 +989,7 @@ contract('Crowdfunding App', ([
                 });
             })
 
-            it.skip(`Transferencia de Token ERC20 (${title}) de Dac a Campaign`, async () => {
+            it(`Transferencia de Token ERC20 (${title}) de Dac a Campaign`, async () => {
 
                 const receipt = await crowdfunding.transfer(dacId, milestoneId, [donationId1], { from: delegate });
                 const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
@@ -1021,7 +1021,7 @@ contract('Crowdfunding App', ([
                 });
             })
 
-            it.skip(`Transferencia de Token ERC20 (${title}) de Campaign a Milestone`, async () => {
+            it(`Transferencia de Token ERC20 (${title}) de Campaign a Milestone`, async () => {
 
                 const receipt = await crowdfunding.transfer(campaignId, milestoneId, [donationId2], { from: campaignManager });
                 const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
@@ -1100,30 +1100,30 @@ contract('Crowdfunding App', ([
                 errors.CROWDFUNDING_AUTH_FAILED);
         })
 
-        it.skip('Milestone Completado no activo', async () => {
+        it('Milestone Completado no activo', async () => {
 
-            await crowdfunding.milestoneComplete(milestoneId1, { from: milestoneManager });
-            await crowdfunding.milestoneApprove(milestoneId1, true, { from: milestoneReviewer });
+            await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
+            await crowdfunding.milestoneReview(milestoneId1, true, INFO_CID, { from: milestoneReviewer });
 
             // Un Milestone Aprobado no puede volver a estar Completado.
             await assertRevert(
-                crowdfunding.milestoneComplete(milestoneId1, { from: milestoneManager }),
+                crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager }),
                 errors.CROWDFUNDING_MILESTONE_COMPLETE_NOT_ACTIVE);
         })
 
-        it.skip('Milestone Aprobado por Milestone Reviewer', async () => {
+        it('Milestone Aprobado por Milestone Reviewer', async () => {
 
-            await crowdfunding.milestoneComplete(milestoneId1, { from: milestoneManager });
-            await crowdfunding.milestoneApprove(milestoneId1, true, { from: milestoneReviewer });
+            await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
+            await crowdfunding.milestoneReview(milestoneId1, true, INFO_CID, { from: milestoneReviewer });
 
             let milestone = await crowdfunding.getMilestone(milestoneId1);
             assert.equal(milestone.status, MILESTONE_STATUS_APPROVED);
         })
 
-        it.skip('Milestone Aprobado por Campaign Reviewer', async () => {
+        it('Milestone Aprobado por Campaign Reviewer', async () => {
 
-            await crowdfunding.milestoneComplete(milestoneId1, { from: milestoneManager });
-            await crowdfunding.milestoneApprove(milestoneId1, true, { from: campaignReviewer });
+            await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
+            await crowdfunding.milestoneReview(milestoneId1, true, INFO_CID, { from: campaignReviewer });
 
             let milestone = await crowdfunding.getMilestone(milestoneId1);
             assert.equal(milestone.status, MILESTONE_STATUS_APPROVED);
@@ -1133,23 +1133,23 @@ contract('Crowdfunding App', ([
 
             // notAuthorized account no es el reviewer del milestone ni el campaign manager.
             await assertRevert(
-                crowdfunding.milestoneApprove(milestoneId1, true, { from: notAuthorized }),
+                crowdfunding.milestoneReview(milestoneId1, true, INFO_CID, { from: notAuthorized }),
                 errors.CROWDFUNDING_AUTH_FAILED);
         })
 
-        it.skip('Milestone Rechazado por Milestone Reviewer', async () => {
+        it('Milestone Rechazado por Milestone Reviewer', async () => {
 
-            await crowdfunding.milestoneComplete(milestoneId1, { from: milestoneManager });
-            await crowdfunding.milestoneApprove(milestoneId1, false, { from: milestoneReviewer });
+            await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
+            await crowdfunding.milestoneReview(milestoneId1, false, INFO_CID, { from: milestoneReviewer });
 
             let milestone = await crowdfunding.getMilestone(milestoneId1);
             assert.equal(milestone.status, MILESTONE_STATUS_REJECTED);
         })
 
-        it.skip('Milestone Rechazado por Campaign Reviewer', async () => {
+        it('Milestone Rechazado por Campaign Reviewer', async () => {
 
-            await crowdfunding.milestoneComplete(milestoneId1, { from: milestoneManager });
-            await crowdfunding.milestoneApprove(milestoneId1, false, { from: campaignReviewer });
+            await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
+            await crowdfunding.milestoneReview(milestoneId1, false, INFO_CID, { from: campaignReviewer });
 
             let milestone = await crowdfunding.getMilestone(milestoneId1);
             assert.equal(milestone.status, MILESTONE_STATUS_REJECTED);
@@ -1159,7 +1159,7 @@ contract('Crowdfunding App', ([
 
             // notAuthorized account no es el reviewer del milestone ni el campaign manager.
             await assertRevert(
-                crowdfunding.milestoneApprove(milestoneId1, false, { from: notAuthorized }),
+                crowdfunding.milestoneReview(milestoneId1, false, INFO_CID, { from: notAuthorized }),
                 errors.CROWDFUNDING_AUTH_FAILED);
         })
     })
@@ -1204,17 +1204,17 @@ contract('Crowdfunding App', ([
                 giver);
         });
 
-        it.skip('Withdraw ETH', async () => {
+        it('Withdraw ETH', async () => {
 
             // Se carga cotización de ETH
             // TODO Esto debiera hacerse a través de un Oracle.
             await crowdfunding.setExchangeRate(ETH, USD_ETH_RATE, { from: deployer });
 
             // Inicialmente de completa y aprueba el milestone.
-            await crowdfunding.milestoneComplete(milestoneId1, { from: milestoneManager });
-            await crowdfunding.milestoneApprove(milestoneId1, true, { from: campaignReviewer });
+            await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
+            await crowdfunding.milestoneReview(milestoneId1, true, INFO_CID, { from: campaignReviewer });
 
-            let receipt = await crowdfunding.withdraw(milestoneId1, { from: milestoneRecipient });
+            let receipt = await crowdfunding.milestoneWithdraw(milestoneId1, { from: milestoneRecipient });
 
             let milestone = await crowdfunding.getMilestone(milestoneId1);
             assert.equal(milestone.status, MILESTONE_STATUS_FINISHED);
@@ -1264,23 +1264,27 @@ contract('Crowdfunding App', ([
                 errors.CROWDFUNDING_AUTH_FAILED);
         })
 
-        it.skip('Withdraw ETH no aprobado', async () => {
+        it('Withdraw ETH no aprobado', async () => {
+
+            // Se carga cotización de ETH
+            // TODO Esto debiera hacerse a través de un Oracle.
+            await crowdfunding.setExchangeRate(ETH, USD_ETH_RATE, { from: deployer });
 
             // El Milestone no está aprobado, por lo que no pueden retirarse los fondos.
             await assertRevert(
-                crowdfunding.withdraw(milestoneId1, { from: milestoneRecipient }),
+                crowdfunding.milestoneWithdraw(milestoneId1, { from: milestoneRecipient }),
                 errors.CROWDFUNDING_WITHDRAW_NOT_APPROVED);
         })
 
-        it.skip('Withdraw ETH sin cotización', async () => {
+        it('Withdraw ETH sin cotización', async () => {
 
             // Inicialmente de completa y aprueba el milestone.
-            await crowdfunding.milestoneComplete(milestoneId1, { from: milestoneManager });
-            await crowdfunding.milestoneApprove(milestoneId1, true, { from: campaignReviewer });
+            await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
+            await crowdfunding.milestoneReview(milestoneId1, true, INFO_CID, { from: campaignReviewer });
 
             // Como no se determinó la cotización del ETH, entonces debe recharse el retiro.
             await assertRevert(
-                crowdfunding.withdraw(milestoneId1, { from: milestoneRecipient }),
+                crowdfunding.milestoneWithdraw(milestoneId1, { from: milestoneRecipient }),
                 errors.CROWDFUNDING_EXCHANGE_RATE_NOT_EXISTS);
         })
     })
