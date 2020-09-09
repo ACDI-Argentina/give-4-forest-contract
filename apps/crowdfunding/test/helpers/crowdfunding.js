@@ -69,9 +69,9 @@ const newDac = async (crowdfunding, delegate) => {
   return getEventArgument(receipt, 'NewDac', 'id').toNumber();
 }
 
-const newCampaign = async (crowdfunding, manager, reviewer, dacId) => {
-  let receipt = await crowdfunding.newCampaign(INFO_CID, dacId, reviewer, { from: manager });
-  return getEventArgument(receipt, 'NewCampaign', 'id').toNumber();
+const saveCampaign = async (crowdfunding, manager, reviewer, dacId, campaignId = 0) => {
+  const receipt = await crowdfunding.saveCampaign(INFO_CID, dacId, reviewer, campaignId, { from: manager });
+  return getEventArgument(receipt, 'SaveCampaign', 'id').toNumber();
 }
 
 const newMilestone = async (crowdfunding, manager, reviewer, recipient, campaignReviewer, campaignId) => {
@@ -148,7 +148,7 @@ const getDonations = async (crowdfunding, donationIds) => {
 module.exports = {
   newCrowdfunding,
   newDac,
-  newCampaign,
+  saveCampaign,
   newMilestone,
   newDonationEther,
   newDonationToken,

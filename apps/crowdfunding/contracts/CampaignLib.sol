@@ -61,6 +61,31 @@ library CampaignLib {
     }
 
     /**
+     * @notice actualiza una Campaign.
+     */
+    function update(
+        Data storage self,
+        uint256 id,
+        string _infoCid,
+        uint256 _dacId,
+        address _manager, //No se si vamos a permitir la actualizacion del manager
+        address _reviewer
+    ) public {
+        Campaign storage campaign = self.campaigns[id];
+        campaign.infoCid = _infoCid;
+        campaign.manager = _manager;
+        campaign.reviewer = _reviewer;
+
+        //Si permitimos que actualice la dac relacionada vamos a tener que actualizar el array de campañas de la dac original
+        // dac.campaignIds.push(_campaignId); //Actualiza la dac relacionada
+        // es factible economicamente borrar datos de un array? revisar cryptozombies a ver como hacia esto
+
+        uint256[] memory dacIdsTmp = new uint256[](1);
+        dacIdsTmp[0] = _dacId;
+        campaign.dacIds = dacIdsTmp;        
+    }
+
+    /**
      * @notice Obtiene la Campaign `_id`
      * @return Campaign cuya identificación coincide con la especificada.
      */

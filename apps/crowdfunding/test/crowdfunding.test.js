@@ -1,10 +1,10 @@
 const { assertRevert } = require('@aragon/test-helpers/assertThrow')
 const { getEventArgument } = require('@aragon/test-helpers/events')
 const { newDao, newApp } = require('../scripts/dao')
-const { createPermission } = require('../scripts/permissions')
+const { createPermission, grantPermission } = require('../scripts/permissions')
 const { newCrowdfunding,
     newDac,
-    newCampaign,
+    saveCampaign,
     newMilestone,
     newDonationEther,
     newDonationToken,
@@ -77,17 +77,21 @@ const BUDGET_STATUS_PAID = 3;
 // TODO Este valor debe establerse por un Oracle.
 const USD_ETH_RATE = new BN('100000000000000');
 
-contract('Crowdfunding App', ([
-    deployer,
-    giver,
-    registeredUser,
-    delegate,
-    campaignManager,
-    campaignReviewer,
-    milestoneManager,
-    milestoneReviewer,
-    milestoneRecipient,
-    notAuthorized]) => {
+contract('Crowdfunding App', (accounts) => {
+    const [
+        deployer,
+        giver,
+        registeredUser,
+        delegate,
+        campaignManager,
+        campaignReviewer,
+        milestoneManager,
+        milestoneReviewer,
+        milestoneRecipient,
+        notAuthorized,
+        campaignManager2,
+        campaignManager3,
+    ] = accounts;
 
     let crowdfundingBase, crowdfunding;
     let vaultBase, vault;
@@ -110,26 +114,33 @@ contract('Crowdfunding App', ([
     })
 
     beforeEach(async () => {
+        try{
+            // Deploy de la DAO
+            const { dao, acl } = await newDao(deployer);
+    
+            // Deploy de contratos y proxies
+            const crowdfundingAddress = await newApp(dao, "crowdfunding", crowdfundingBase.address, deployer);
+            const vaultAddress = await newApp(dao, "vault", vaultBase.address, deployer);
+            crowdfunding = await Crowdfunding.at(crowdfundingAddress);
+            vault = await Vault.at(vaultAddress);
+    
+            // Configuración de permisos
+            await createPermission(acl, delegate, crowdfunding.address, CREATE_DAC_ROLE, deployer);
+            await createPermission(acl, campaignManager, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
+            await createPermission(acl, milestoneManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
+            await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
+            await createPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
+    
+            await grantPermission(acl, campaignManager2, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
+            await grantPermission(acl, campaignManager3, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
+    
+            // Inicialización
+            await vault.initialize()
+            await crowdfunding.initialize(vault.address);
 
-        // Deploy de la DAO
-        const { dao, acl } = await newDao(deployer);
-
-        // Deploy de contratos y proxies
-        const crowdfundingAddress = await newApp(dao, "crowdfunding", crowdfundingBase.address, deployer);
-        const vaultAddress = await newApp(dao, "vault", vaultBase.address, deployer);
-        crowdfunding = await Crowdfunding.at(crowdfundingAddress);
-        vault = await Vault.at(vaultAddress);
-
-        // Configuración de permisos
-        await createPermission(acl, delegate, crowdfunding.address, CREATE_DAC_ROLE, deployer);
-        await createPermission(acl, campaignManager, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
-        await createPermission(acl, milestoneManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
-        await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
-        await createPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
-
-        // Inicialización
-        await vault.initialize()
-        await crowdfunding.initialize(vault.address);
+        } catch(err){
+            console.log(err);
+        }
     });
 
     context('Inicialización', function () {
@@ -139,7 +150,7 @@ contract('Crowdfunding App', ([
         })
     });
 
-    context('Manejo de DACs', function () {
+     context('Manejo de DACs', function () {
 
         it('Creación de Dac', async () => {
 
@@ -175,7 +186,7 @@ contract('Crowdfunding App', ([
                 { from: notAuthorized }
             ), errors.APP_AUTH_FAILED)
         });
-    });
+    }); 
 
     context('Manejo de Campaigns', function () {
 
@@ -183,9 +194,9 @@ contract('Crowdfunding App', ([
 
             let dacId = await newDac(crowdfunding, delegate);
 
-            let receipt = await crowdfunding.newCampaign(INFO_CID, dacId, campaignReviewer, { from: campaignManager });
+            let receipt = await crowdfunding.saveCampaign(INFO_CID, dacId, campaignReviewer, 0, { from: campaignManager });
 
-            let campaignId = getEventArgument(receipt, 'NewCampaign', 'id');
+            let campaignId = getEventArgument(receipt, 'SaveCampaign', 'id'); 
             assert.equal(campaignId, 2);
 
             let campaigns = await getCampaigns(crowdfunding);
@@ -214,10 +225,11 @@ contract('Crowdfunding App', ([
 
             // El delegate no tiene configurada la autorización para crear campaigns.
             await assertRevert(
-                crowdfunding.newCampaign(
+                crowdfunding.saveCampaign(
                     INFO_CID,
                     dacId,
                     campaignReviewer,
+                    0,
                     { from: delegate })
                 , errors.APP_AUTH_FAILED)
         });
@@ -227,20 +239,128 @@ contract('Crowdfunding App', ([
             // La Dac con Id 1 no existe.
             let dacId = 1;
 
-            await assertRevert(crowdfunding.newCampaign(
+            await assertRevert(crowdfunding.saveCampaign(
                 INFO_CID,
                 dacId,
                 campaignReviewer,
+                0,
                 { from: campaignManager }), errors.CROWDFUNDING_DAC_NOT_EXIST)
         })
+
+        it('Modificación de Campaign', async () => {
+
+            const dacId = await newDac(crowdfunding, delegate);
+            const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId, 0);
+
+            //modificamos la campaign creada
+            const NEW_INFO_CID = "b4B1A3935bF977bad5Ec753325B4CD8D889EF0e7e7c7424";
+            const newCampaignReviewer = campaignManager2;
+            const receipt = await crowdfunding.saveCampaign(
+                NEW_INFO_CID,
+                dacId,
+                newCampaignReviewer,
+                campaignId,
+                { from: campaignManager }
+            );
+
+            //comprobar que los cambios se realizaron correctamente 
+            const updatedCampaignId = getEventArgument(receipt, 'SaveCampaign', 'id');
+            const updatedCampaign = await crowdfunding.getCampaign(campaignId);
+
+            assert.equal(updatedCampaignId.toNumber(), campaignId);
+            assert.equal(updatedCampaign.infoCid, NEW_INFO_CID);
+            assert.equal(updatedCampaign.reviewer, newCampaignReviewer);
+            assert.equal(updatedCampaign.manager, campaignManager); //el manager debe permanecer siendo el mismo  
+            
+        });
+
+        it('Modificación de Campaign asociación a otra dac', async () => {
+            const dacId = await newDac(crowdfunding, delegate);
+            const newDacId = await newDac(crowdfunding, delegate);
+
+            const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId, 0);
+            const campaign = await crowdfunding.getCampaign(campaignId);
+
+            const receipt = await crowdfunding.saveCampaign(
+                campaign.infoCid,
+                newDacId,
+                campaign.reviewer,
+                campaignId,
+                { from: campaignManager }
+            );
+
+            //comprobar que los cambios se realizaron correctamente 
+            const updatedCampaignId = getEventArgument(receipt, 'SaveCampaign', 'id');
+            const updatedCampaign = await crowdfunding.getCampaign(campaignId);
+
+            assert.equal(updatedCampaignId.toNumber(), campaignId);
+            assert.equal(updatedCampaign.dacIds[0], newDacId);
+
+            const sourceDac = await crowdfunding.getDac(dacId);
+            const targetDac = await crowdfunding.getDac(newDacId);
+
+            const campaignIdBN = new BN(campaignId);
+            campaignInSourceDac = sourceDac.campaignIds.find(_campaignId => _campaignId.eq(campaignIdBN) )
+            campaignInTargetDac = targetDac.campaignIds.find(_campaignId => _campaignId.eq(campaignIdBN) )
+            
+            assert.notEqual(campaignInTargetDac, undefined, `El campaignId:${campaignId} debe encontrarse en el campaignIds destino`);
+            assert.equal(campaignInSourceDac, undefined, `El campaignId:${campaignId} no debe encontrarse en el campaignIds original`);
+        });
+
+
+        it('Modificación de Campaign inexistente',async () => {
+            const inexistentCampaignId = 1;
+            const dacId = await newDac(crowdfunding, delegate);
+            await assertRevert(
+                crowdfunding.saveCampaign(
+                    INFO_CID,
+                    dacId,
+                    campaignReviewer,
+                    inexistentCampaignId, 
+                    { from: campaignManager }
+                )
+                , errors.CROWDFUNDING_CAMPAIGN_NOT_EXIST)
+        });
+
+        it('Modificación de Campaign no autorizada',async () => {
+            const dacId = await newDac(crowdfunding, delegate);
+            const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
+
+            await assertRevert(
+                crowdfunding.saveCampaign(
+                    INFO_CID,
+                    dacId,
+                    campaignReviewer,
+                    campaignId, 
+                    { from: campaignManager2 }
+                )
+                , errors.CROWDFUNDING_AUTH_FAILED)
+        });
+
+        it('Modificación de Campaign asociación a dac inexistente',async () => {
+            const dacId = await newDac(crowdfunding, delegate);
+            const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId, 0);
+            const inexistentDacId = 25;
+
+            await assertRevert(
+                crowdfunding.saveCampaign(
+                    INFO_CID,
+                    inexistentDacId,
+                    campaignReviewer,
+                    campaignId, 
+                    { from: campaignManager }
+                )
+                , errors.CROWDFUNDING_DAC_NOT_EXIST) 
+        });
+
     });
 
-    context('Manejo de Milestones', function () {
+     context('Manejo de Milestones', function () {
 
         it('Creación de Milestone', async () => {
 
             let dacId = await newDac(crowdfunding, delegate, '1');
-            let campaignId = await newCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
+            let campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
 
             let fiatAmountTarget = 10;
 
@@ -280,7 +400,7 @@ contract('Crowdfunding App', ([
         it('Creación de Milestone no autorizado', async () => {
 
             let dacId = await newDac(crowdfunding, delegate, '1');
-            let campaignId = await newCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
+            let campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
 
             let fiatAmountTarget = 10;
 
@@ -322,7 +442,7 @@ contract('Crowdfunding App', ([
         beforeEach(async () => {
 
             dacId = await newDac(crowdfunding, delegate);
-            campaignId = await newCampaign(crowdfunding,
+            campaignId = await saveCampaign(crowdfunding,
                 campaignManager,
                 campaignReviewer,
                 dacId);
@@ -516,7 +636,7 @@ contract('Crowdfunding App', ([
                 // Se aprueba al Crowdfunding para depositar los Tokens en el Vault.
                 await tokenInstance.approve(crowdfunding.address, amount, { from: giver });
                 dacId = await newDac(crowdfunding, delegate);
-                campaignId = await newCampaign(crowdfunding,
+                campaignId = await saveCampaign(crowdfunding,
                     campaignManager,
                     campaignReviewer,
                     dacId);
@@ -706,11 +826,11 @@ contract('Crowdfunding App', ([
 
             dacId1 = await newDac(crowdfunding, delegate);
             dacId2 = await newDac(crowdfunding, delegate);
-            campaignId1 = await newCampaign(crowdfunding,
+            campaignId1 = await saveCampaign(crowdfunding,
                 campaignManager,
                 campaignReviewer,
                 dacId1);
-            campaignId2 = await newCampaign(crowdfunding,
+            campaignId2 = await saveCampaign(crowdfunding,
                 campaignManager,
                 campaignReviewer,
                 dacId2);
@@ -922,7 +1042,7 @@ contract('Crowdfunding App', ([
             beforeEach(async () => {
 
                 dacId = await newDac(crowdfunding, delegate);
-                campaignId = await newCampaign(crowdfunding,
+                campaignId = await saveCampaign(crowdfunding,
                     campaignManager,
                     campaignReviewer,
                     dacId);
@@ -1062,7 +1182,7 @@ contract('Crowdfunding App', ([
         beforeEach(async () => {
 
             dacId1 = await newDac(crowdfunding, delegate);
-            campaignId1 = await newCampaign(crowdfunding,
+            campaignId1 = await saveCampaign(crowdfunding,
                 campaignManager,
                 campaignReviewer,
                 dacId1);
@@ -1174,7 +1294,7 @@ contract('Crowdfunding App', ([
         beforeEach(async () => {
 
             dacId1 = await newDac(crowdfunding, delegate);
-            campaignId1 = await newCampaign(crowdfunding,
+            campaignId1 = await saveCampaign(crowdfunding,
                 campaignManager,
                 campaignReviewer,
                 dacId1);

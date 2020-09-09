@@ -58,7 +58,7 @@ contract Crowdfunding is AragonApp, Constants {
     }
 
     event NewDac(uint256 id);
-    event NewCampaign(uint256 id);
+    event SaveCampaign(uint256 id);
     event NewMilestone(uint256 id);
     event NewDonation(
         uint256 id,
@@ -88,23 +88,39 @@ contract Crowdfunding is AragonApp, Constants {
     }
 
     /**
-     * @notice Crea la Campaign `title`. Quien envía la transacción es el manager de
-     *  la Campaign.
+     * @notice Crea o actualiza una campaign.
+     * quien envía la transacción es el manager de la campaign.
      * @param _infoCid Content ID de las información (JSON) de la Campaign. IPFS Cid.
      * @param _dacId Id de la Dac a la cual pertenece la Campaign.
      * @param _reviewer address del Campaign Reviewer
+    *  @param _campaignId 0 para nueva campaign o el id del campaign en el caso de  modificación
      */
-    function newCampaign(
+    function saveCampaign(
         string _infoCid,
         uint256 _dacId,
-        address _reviewer
+        address _reviewer,
+        uint256 _campaignId
     ) external auth(CREATE_CAMPAIGN_ROLE) {
-        // Se comprueba que la Dac exista.
-        DacLib.Dac storage dac = _getDac(_dacId);
-        uint256 entityId = _newEntity(EntityLib.EntityType.Campaign);
-        campaignData.insert(entityId, _infoCid, _dacId, msg.sender, _reviewer);
+        
+        DacLib.Dac storage dac = _getDac(_dacId); // Se comprueba que la Dac exista.
+        uint256 entityId;
+
+        if(_campaignId == 0){
+            entityId = _newEntity(EntityLib.EntityType.Campaign);
+            campaignData.insert(entityId, _infoCid, _dacId, msg.sender, _reviewer);
+        } else {
+            entityId = _campaignId;
+            CampaignLib.Campaign storage campaign = _getCampaign(entityId);
+            require(msg.sender == campaign.manager, ERROR_AUTH_FAILED);
+
+            DacLib.Dac storage oldDac = _getDac(campaign.dacIds[0]);
+            campaignData.update(entityId, _infoCid, _dacId, msg.sender, _reviewer);
+            
+            ArrayLib.removeElement(oldDac.campaignIds, entityId);//Actualiza las referencias desde las dacs   
+        }
+
         dac.campaignIds.push(entityId);
-        emit NewCampaign(entityId);
+        emit SaveCampaign(entityId);
     }
 
     /**
