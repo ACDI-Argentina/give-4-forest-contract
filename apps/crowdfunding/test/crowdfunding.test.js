@@ -269,8 +269,8 @@ contract('Crowdfunding App', (accounts) => {
 
             assert.equal(updatedCampaignId.toNumber(), campaignId);
             assert.equal(updatedCampaign.infoCid, NEW_INFO_CID);
-            assert.equal(updatedCampaign.reviewer, newCampaignReviewer);
-            assert.equal(updatedCampaign.manager, campaignManager); //el manager debe permanecer siendo el mismo  
+            assert.equal(updatedCampaign.users[0], campaignManager); //el manager debe permanecer siendo el mismo  
+            assert.equal(updatedCampaign.users[1], newCampaignReviewer);
             
         });
 
@@ -280,11 +280,12 @@ contract('Crowdfunding App', (accounts) => {
 
             const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId, 0);
             const campaign = await crowdfunding.getCampaign(campaignId);
+            const reviewer = campaign.users[1];
 
             const receipt = await crowdfunding.saveCampaign(
                 campaign.infoCid,
                 newDacId,
-                campaign.reviewer,
+                reviewer,
                 campaignId,
                 { from: campaignManager }
             );
