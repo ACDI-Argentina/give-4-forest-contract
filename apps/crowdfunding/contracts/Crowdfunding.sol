@@ -228,7 +228,7 @@ contract Crowdfunding is AragonApp, Constants {
      * @param _entityIdTo Id de la entidad a la cual se transfieren las donaciones.
      * @param _donationIds Ids de las donaciones a transferir.
      */
-    function transfer(
+    /*function transfer(
         uint256 _entityIdFrom,
         uint256 _entityIdTo,
         uint256[] _donationIds
@@ -321,7 +321,7 @@ contract Crowdfunding is AragonApp, Constants {
         for (uint256 i2 = 0; i2 < _donationIds.length; i2++) {
             _doTransfer(_entityIdFrom, _entityIdTo, _donationIds[i2]);
         }
-    }
+    }*/
 
     /**
      * @notice Marca el Milestone `_milestoneId` como completado.
@@ -473,15 +473,15 @@ contract Crowdfunding is AragonApp, Constants {
      * @notice Obtiene todos los identificadores de Donaciones.
      * @return Arreglo con todos los identificadores de Donaciones.
      */
-    function getDonationIds() external view returns (uint256[]) {
+    /*function getDonationIds() external view returns (uint256[]) {
         return donationData.ids;
-    }
+    }*/
 
     /**
      * @notice Obtiene el Entity cuyo identificador coincide con `_id`.
      * @return Datos del Entity.
      */
-    function getEntity(uint256 _id)
+    /*function getEntity(uint256 _id)
         external
         view
         returns (
@@ -496,7 +496,7 @@ contract Crowdfunding is AragonApp, Constants {
         idIndex = entity.idIndex;
         entityType = entity.entityType;
         budgetIds = entity.budgetIds;
-    }
+    }*/
 
     /**
      * @notice Obtiene la Dac cuyo identificador coincide con `_id`.
@@ -610,7 +610,8 @@ contract Crowdfunding is AragonApp, Constants {
             uint256 milestoneId
         )
     {
-        ActivityLib.Activity storage activity = _getActivity(_id);
+        //ActivityLib.Activity storage activity = _getActivity(_id);
+        ActivityLib.Activity storage activity = activityData.getActivity(_id);
         id = activity.id;
         infoCid = activity.infoCid;
         user = activity.user;
@@ -806,8 +807,7 @@ contract Crowdfunding is AragonApp, Constants {
         uint256 rate = _getExchangeRate(budget.token).rate;
         uint256 amountTarget = _fiatAmountTarget.mul(rate);
         for (uint256 i = 0; i < budget.donationIds.length; i++) {
-            /*DonationLib.Donation storage donation = donationData
-                .donations[budget.donationIds[i]];*/
+            //DonationLib.Donation storage donation = donationData.donations[budget.donationIds[i]];
             DonationLib.Donation storage donation = _getDonation(
                 budget.donationIds[i]
             );
@@ -858,12 +858,12 @@ contract Crowdfunding is AragonApp, Constants {
         return milestoneData.getMilestone(_id);
     }
 
-    function _getActivity(uint256 _id)
+    /*function _getActivity(uint256 _id)
         private
         returns (ActivityLib.Activity storage)
     {
         return activityData.getActivity(_id);
-    }
+    }*/
 
     function _getBudget(uint256 _id)
         private
