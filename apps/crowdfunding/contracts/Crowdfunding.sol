@@ -11,7 +11,6 @@ import "./CampaignLib.sol";
 import "./MilestoneLib.sol";
 import "./ActivityLib.sol";
 import "./DonationLib.sol";
-import "./BudgetLib.sol";
 
 /**
  * @title Crowdfunding
@@ -25,7 +24,6 @@ contract Crowdfunding is AragonApp, Constants {
     using MilestoneLib for MilestoneLib.Data;
     using ActivityLib for ActivityLib.Data;
     using DonationLib for DonationLib.Data;
-    using BudgetLib for BudgetLib.Data;
     using SafeMath for uint256;
 
     /// @dev Estructura que almacena el tipo de cambio en USD de un token para una fecha y hora.
@@ -41,7 +39,6 @@ contract Crowdfunding is AragonApp, Constants {
     MilestoneLib.Data milestoneData;
     ActivityLib.Data activityData;
     DonationLib.Data donationData;
-    BudgetLib.Data budgetData;
 
     mapping(address => ExchangeRate) public exchangeRates;
 
@@ -69,8 +66,7 @@ contract Crowdfunding is AragonApp, Constants {
     event Transfer(
         uint256 entityIdFrom,
         uint256 entityIdTo,
-        uint256 donationId,
-        uint256 amount
+        uint256 donationId
     );
     event MilestoneComplete(uint256 milestoneId);
     event MilestoneApprove(uint256 milestoneId);
@@ -93,7 +89,7 @@ contract Crowdfunding is AragonApp, Constants {
      * @param _infoCid Content ID de las información (JSON) de la Campaign. IPFS Cid.
      * @param _dacId Id de la Dac a la cual pertenece la Campaign.
      * @param _reviewer address del Campaign Reviewer
-    *  @param _campaignId 0 para nueva campaign o el id del campaign en el caso de  modificación
+     *  @param _campaignId 0 para nueva campaign o el id del campaign en el caso de  modificación
      */
     function saveCampaign(
         string _infoCid,
@@ -101,22 +97,33 @@ contract Crowdfunding is AragonApp, Constants {
         address _reviewer,
         uint256 _campaignId
     ) external auth(CREATE_CAMPAIGN_ROLE) {
-        
         DacLib.Dac storage dac = _getDac(_dacId); // Se comprueba que la Dac exista.
         uint256 entityId;
 
-        if(_campaignId == 0){
+        if (_campaignId == 0) {
             entityId = _newEntity(EntityLib.EntityType.Campaign);
-            campaignData.insert(entityId, _infoCid, _dacId, msg.sender, _reviewer);
+            campaignData.insert(
+                entityId,
+                _infoCid,
+                _dacId,
+                msg.sender,
+                _reviewer
+            );
         } else {
             entityId = _campaignId;
             CampaignLib.Campaign storage campaign = _getCampaign(entityId);
             require(msg.sender == campaign.manager, ERROR_AUTH_FAILED);
 
             DacLib.Dac storage oldDac = _getDac(campaign.dacIds[0]);
-            campaignData.update(entityId, _infoCid, _dacId, msg.sender, _reviewer);
-            
-            ArrayLib.removeElement(oldDac.campaignIds, entityId);//Actualiza las referencias desde las dacs   
+            campaignData.update(
+                entityId,
+                _infoCid,
+                _dacId,
+                msg.sender,
+                _reviewer
+            );
+
+            ArrayLib.removeElement(oldDac.campaignIds, entityId); //Actualiza las referencias desde las dacs
         }
 
         dac.campaignIds.push(entityId);
@@ -171,6 +178,10 @@ contract Crowdfunding is AragonApp, Constants {
         address _token,
         uint256 _amount
     ) external payable isInitialized {
+        require(
+            donationData.isTokenEnabled(_token),
+            ERROR_DONATE_TOKEN_NOT_ENABLED
+        );
         require(_amount > 0, ERROR_DONATE_AMOUNT_ZERO);
         if (_token == ETH) {
             // Asegura que la cantidad de ETH enviada coincida con el valor
@@ -203,19 +214,12 @@ contract Crowdfunding is AragonApp, Constants {
             msg.sender
         );
 
-        // Se agrega a las donaciones de la entidad.
+        // Se agrega a las donaciones de la entidad y su presupuesto.
         EntityLib.Entity storage entity = _getEntity(_entityId);
         entity.donationIds.push(donationId);
+        entity.budgetDonationIds.push(donationId);
 
-        // Se agrega al presupuesto de la entidad.
-        BudgetLib.Budget storage budget = _getOrNewBudget(_entityId, _token);
-        budget.amount = budget.amount.add(_amount);
-        budget.donationIds.push(donationId);
-
-        DonationLib.Donation storage donation = _getDonation(donationId);
-        donation.budgetId = budget.id;
-
-        emit NewDonation(donation.id, _entityId, _token, _amount);
+        emit NewDonation(donationId, _entityId, _token, _amount);
     }
 
     /**
@@ -224,11 +228,11 @@ contract Crowdfunding is AragonApp, Constants {
      * @dev Las donaciones se transfieren por completo y no fraccionadas.
      *  Previo a realiza la transferencia de las donaciones, se realizan validaciones
      *  de autorización, estructura y estados.
-     * @param _entityIdFrom Id de la entidad a la cual pertenecen las donaciones transferidas.
-     * @param _entityIdTo Id de la entidad a la cual se transfieren las donaciones.
-     * @param _donationIds Ids de las donaciones a transferir.
+     * @param _entityIdFrom Id de la entidad de la cual las donaciones forman parte de su presupuesto.
+     * @param _entityIdTo Id de la entidad a la cual se transfieren las donaciones para formar parte de su presupuesto.
+     * @param _donationIds Ids de las donaciones a transferir de presupuesto.
      */
-    /*function transfer(
+    function transfer(
         uint256 _entityIdFrom,
         uint256 _entityIdTo,
         uint256[] _donationIds
@@ -321,7 +325,7 @@ contract Crowdfunding is AragonApp, Constants {
         for (uint256 i2 = 0; i2 < _donationIds.length; i2++) {
             _doTransfer(_entityIdFrom, _entityIdTo, _donationIds[i2]);
         }
-    }*/
+    }
 
     /**
      * @notice Marca el Milestone `_milestoneId` como completado.
@@ -399,7 +403,7 @@ contract Crowdfunding is AragonApp, Constants {
     /**
      * @notice Retira los fondos del Milestone `_milestoneId`.
      * @dev Implementación de Withdraw Pattern.
-     * @param _milestoneId Id del milestone sobre el cual se retiran los fondos.
+     * @param _milestoneId Id del milestone desde el cual se retiran los fondos.
      */
     function milestoneWithdraw(uint256 _milestoneId) external isInitialized {
         MilestoneLib.Milestone storage milestone = _getMilestone(_milestoneId);
@@ -416,17 +420,68 @@ contract Crowdfunding is AragonApp, Constants {
             ERROR_WITHDRAW_NOT_APPROVED
         );
         // El retiro superó las validaciones del Milestones
-        uint256 fiatAmountTarget = milestone.fiatAmountTarget;
         EntityLib.Entity storage entity = _getEntity(_milestoneId);
-        for (uint256 i = 0; i < entity.budgetIds.length; i++) {
-            fiatAmountTarget = _fitBudget(
-                _milestoneId,
-                entity.budgetIds[i],
-                fiatAmountTarget
-            );
-            _doWithdraw(_milestoneId, entity.budgetIds[i]);
+        uint256 fiatAmountTarget = milestone.fiatAmountTarget;
+        for (uint256 i1 = 0; i1 < donationData.tokens.length; i1++) {
+            // El retiro se realiza ordenado por token de las donaciones.
+            address token = donationData.tokens[i1];
+            uint256 tokenAmount = 0;
+            uint256 tokenRate = _getExchangeRate(token).rate;
+            for (uint256 i2 = 0; i2 < entity.budgetDonationIds.length; i2++) {
+                DonationLib.Donation storage donation = _getDonation(
+                    entity.budgetDonationIds[i2]
+                );
+                if (donation.token != token) {
+                    // La donación no se realizó con el token analizado. Se omite su procesamiento.
+                    // Es la solución para procesar las donaciones agrupadas por token.
+                    continue;
+                }
+                // Se ajusta la donación según su relación con el monto objetivo del milestone.
+                uint256 amountTarget = fiatAmountTarget.mul(tokenRate);
+                if (amountTarget >= donation.amountRemainding) {
+                    // No se superó el monto objetivo.
+                    tokenAmount = tokenAmount.add(donation.amountRemainding);
+                    donation.amountRemainding = 0;
+                    donation.status = DonationLib.Status.Spent;
+                    amountTarget = amountTarget.sub(donation.amountRemainding);
+                } else {
+                    // El monto restante de la donación es superior al objetivo.
+                    if (amountTarget != 0) {
+                        // Se calculan los Token para completar el objetivo.
+                        tokenAmount = tokenAmount.add(amountTarget);
+                        donation.amountRemainding = donation
+                            .amountRemainding
+                            .sub(amountTarget);
+                        amountTarget = 0;
+                    }
+                    // Se transfiere el fondo restante de la Donación a la Campaign del Milestone.
+                    _doTransfer(
+                        _milestoneId,
+                        milestone.campaignId,
+                        donation.id
+                    );
+                }
+                // El redondeo favorece a la retención de fondos en el smart contract.
+                fiatAmountTarget = amountTarget.div(tokenRate);
+            }
+            // Se realiza el retiro del monto para el token.
+            if (tokenAmount == 0) {
+                // No se continúa con el retiro porque no hay monto por transferir.
+                continue;
+            }
+            // Se realiza la transferencia desde el Vault al destinatario.
+            vault.transfer(token, milestone.recipient, tokenAmount);
+            emit MilestoneWithdraw(_milestoneId, token, tokenAmount);
         }
         milestone.status = MilestoneLib.Status.Paid;
+    }
+
+    /**
+     * @notice Habilita el token `_token` para realizar donaciones.
+     * @param _token token habilitado para realizar donaciones.
+     */
+    function enableToken(address _token) public auth(ENABLE_TOKEN_ROLE) {
+        donationData.insertToken(_token);
     }
 
     /**
@@ -470,35 +525,6 @@ contract Crowdfunding is AragonApp, Constants {
     }
 
     /**
-     * @notice Obtiene todos los identificadores de Donaciones.
-     * @return Arreglo con todos los identificadores de Donaciones.
-     */
-    /*function getDonationIds() external view returns (uint256[]) {
-        return donationData.ids;
-    }*/
-
-    /**
-     * @notice Obtiene el Entity cuyo identificador coincide con `_id`.
-     * @return Datos del Entity.
-     */
-    /*function getEntity(uint256 _id)
-        external
-        view
-        returns (
-            uint256 id,
-            uint256 idIndex,
-            EntityLib.EntityType entityType,
-            uint256[] budgetIds
-        )
-    {
-        EntityLib.Entity storage entity = _getEntity(_id);
-        id = entity.id;
-        idIndex = entity.idIndex;
-        entityType = entity.entityType;
-        budgetIds = entity.budgetIds;
-    }*/
-
-    /**
      * @notice Obtiene la Dac cuyo identificador coincide con `_id`.
      * @return Datos de la Dac.
      */
@@ -511,7 +537,7 @@ contract Crowdfunding is AragonApp, Constants {
             address[] users,
             uint256[] campaignIds,
             uint256[] donationIds,
-            uint256[] budgetIds,
+            uint256[] budgetDonationIds,
             DacLib.Status status
         )
     {
@@ -523,7 +549,7 @@ contract Crowdfunding is AragonApp, Constants {
         users[0] = dac.delegate;
         campaignIds = dac.campaignIds;
         donationIds = entity.donationIds;
-        budgetIds = entity.budgetIds;
+        budgetDonationIds = entity.budgetDonationIds;
         status = dac.status;
     }
 
@@ -541,7 +567,7 @@ contract Crowdfunding is AragonApp, Constants {
             uint256[] dacIds,
             uint256[] milestoneIds,
             uint256[] donationIds,
-            uint256[] budgetIds,
+            uint256[] budgetDonationIds,
             CampaignLib.Status status
         )
     {
@@ -555,7 +581,7 @@ contract Crowdfunding is AragonApp, Constants {
         dacIds = campaign.dacIds;
         milestoneIds = campaign.milestoneIds;
         donationIds = entity.donationIds;
-        budgetIds = entity.budgetIds;
+        budgetDonationIds = entity.budgetDonationIds;
         status = campaign.status;
     }
 
@@ -574,7 +600,7 @@ contract Crowdfunding is AragonApp, Constants {
             address[] users,
             uint256[] activityIds,
             uint256[] donationIds,
-            uint256[] budgetIds,
+            uint256[] budgetDonationIds,
             MilestoneLib.Status status
         )
     {
@@ -591,7 +617,7 @@ contract Crowdfunding is AragonApp, Constants {
         campaignId = milestone.campaignId;
         activityIds = milestone.activityIds;
         donationIds = entity.donationIds;
-        budgetIds = entity.budgetIds;
+        budgetDonationIds = entity.budgetDonationIds;
         status = milestone.status;
     }
 
@@ -610,38 +636,12 @@ contract Crowdfunding is AragonApp, Constants {
             uint256 milestoneId
         )
     {
-        //ActivityLib.Activity storage activity = _getActivity(_id);
-        ActivityLib.Activity storage activity = activityData.getActivity(_id);
+        ActivityLib.Activity storage activity = _getActivity(_id);
         id = activity.id;
         infoCid = activity.infoCid;
         user = activity.user;
         createdAt = activity.createdAt;
         milestoneId = activity.milestoneId;
-    }
-
-    /**
-     * @notice Obtiene el Presupuesto cuyo identificador coincide con `_id`.
-     * @return Datos del Presupuesto.
-     */
-    function getBudget(uint256 _id)
-        external
-        view
-        returns (
-            uint256 id,
-            uint256 entityId,
-            address token,
-            uint256 amount,
-            uint256[] donationIds,
-            BudgetLib.Status status
-        )
-    {
-        BudgetLib.Budget storage budget = _getBudget(_id);
-        id = budget.id;
-        entityId = budget.entityId;
-        token = budget.token;
-        amount = budget.amount;
-        donationIds = budget.donationIds;
-        status = budget.status;
     }
 
     /**
@@ -659,7 +659,7 @@ contract Crowdfunding is AragonApp, Constants {
             uint256 amountRemainding,
             uint256 createdAt,
             uint256 entityId,
-            uint256 budgetId,
+            uint256 budgetEntityId,
             DonationLib.Status status
         )
     {
@@ -671,7 +671,7 @@ contract Crowdfunding is AragonApp, Constants {
         amountRemainding = donation.amountRemainding;
         createdAt = donation.createdAt;
         entityId = donation.entityId;
-        budgetId = donation.budgetId;
+        budgetEntityId = donation.budgetEntityId;
         status = donation.status;
     }
 
@@ -689,50 +689,21 @@ contract Crowdfunding is AragonApp, Constants {
     }
 
     /**
-     * @notice Obtiene el Presupuesto de la Entity `_entityId` del token `_token`.
-     * @dev Si el presupuesto aún no fue creado, se crea en este momento.
-     * @param _entityId identificador de la entidad.
-     * @param _token token del presupuesto.
-     * @return Presupuesto del entity y token especificado.
-     */
-    function _getOrNewBudget(uint256 _entityId, address _token)
-        internal
-        returns (BudgetLib.Budget storage)
-    {
-        EntityLib.Entity storage entity = _getEntity(_entityId);
-        for (uint256 i = 0; i < entity.budgetIds.length; i++) {
-            BudgetLib.Budget storage budget = budgetData.budgets[entity
-                .budgetIds[i]];
-            if (budget.token == _token) {
-                return budget;
-            }
-        }
-        // No existe un presupuesto de la entidad para el token especificado,
-        // por lo que se crea un nuevo presupuesto para el token.
-        uint256 budgetId = budgetData.insert(_entityId, _token);
-        // Se asocia el presupuesto a la entidad
-        entityData.entities[_entityId].budgetIds.push(budgetId);
-        return _getBudget(budgetId);
-    }
-
-    /**
      * @notice Realiza la transferencia de la donación `_donationId` desde
-     *  la entidad `_entityIdFrom` a la entidad `_entityIdTo`.
+     *  el presupuesto de la entidad `_entityIdFrom` al presupuesto de la entidad `_entityIdTo`.
      * @dev La donación se transfiere por completo y no fraccionada.
-     * @param _entityIdFrom Id de la entidad a la cual pertenece la donación transferida.
-     * @param _entityIdTo Id de la entidad a la cual se transfiere la donación.
-     * @param _donationId Id de las donación a transferir.
+     * @param _entityIdFrom Id de la entidad de la cual la donación forma parte de su presupuesto.
+     * @param _entityIdTo Id de la entidad a la cual se transfiere la donación para formar parte de su presupuesto.
+     * @param _donationId Id de las donación a transferir de presupuesto.
      */
     function _doTransfer(
         uint256 _entityIdFrom,
         uint256 _entityIdTo,
         uint256 _donationId
     ) internal {
+        EntityLib.Entity storage entityFrom = _getEntity(_entityIdFrom);
+        EntityLib.Entity storage entityTo = _getEntity(_entityIdTo);
         DonationLib.Donation storage donation = _getDonation(_donationId);
-        BudgetLib.Budget storage budgetFrom = _getOrNewBudget(
-            _entityIdFrom,
-            donation.token
-        );
         // La donación debe estar disponible.
         require(
             donation.status == DonationLib.Status.Available,
@@ -740,97 +711,14 @@ contract Crowdfunding is AragonApp, Constants {
         );
         // La donación debe pertenecer al presupuesto de la entidad origen.
         require(
-            donation.budgetId == budgetFrom.id,
-            ERROR_TRANSFER_DONATION_NOT_BELONGS_ORIGIN
+            donation.budgetEntityId == _entityIdFrom,
+            ERROR_TRANSFER_DONATION_NOT_BELONGS_BUDGET
         );
-
-        BudgetLib.Budget storage budgetTo = _getOrNewBudget(
-            _entityIdTo,
-            donation.token
-        );
-
-        uint256 amountTransfer = donation.amountRemainding;
-        // Se quita la donación del presupuesto origen.
-        budgetFrom.amount = budgetFrom.amount.sub(amountTransfer);
-        ArrayLib.removeElement(budgetFrom.donationIds, _donationId);
-        // Se agrega la donación al presupuesto destino.
-        budgetTo.amount = budgetTo.amount.add(amountTransfer);
-        budgetTo.donationIds.push(_donationId);
-        donation.budgetId = budgetTo.id;
-
-        emit Transfer(_entityIdFrom, _entityIdTo, _donationId, amountTransfer);
-    }
-
-    /**
-     * @notice Realiza el retiro de fondos desde el presupuesto `_budgetId` del Milestone `_milestoneId`.
-     * @param _milestoneId Id del Milestone para el cual se retiran los fondos.
-     * @param _budgetId Id del presupuesto desde el cual se retiran los fondos.
-     */
-    function _doWithdraw(uint256 _milestoneId, uint256 _budgetId) internal {
-        MilestoneLib.Milestone storage milestone = _getMilestone(_milestoneId);
-        BudgetLib.Budget storage budget = _getBudget(_budgetId);
-        if (budget.amount == 0) {
-            // No se continúa con el retiro porque no hay monto por transferir.
-            // El presupuesto es cerrado.
-            budget.status = BudgetLib.Status.Closed;
-            return;
-        }
-        // El presupuesto debe estar comprometido.
-        require(
-            budget.status == BudgetLib.Status.Budgeted,
-            ERROR_WITHDRAW_NOT_BUDGETED
-        );
-        // Se realiza la transferencia desde el Vault al destinatario.
-        vault.transfer(budget.token, milestone.recipient, budget.amount);
-        // El presupuesto es finalizado.
-        budget.status = BudgetLib.Status.Paid;
-
-        emit MilestoneWithdraw(_milestoneId, budget.token, budget.amount);
-    }
-
-    /**
-     * @notice Ajusta el presupuesto `_budgetId` del Milestone `_milestoneId`
-     *  según el monto objetivo `_fiatAmountTarget`.
-     *  @dev Los cálculos de valores restantes de las donaciones del presupuesto,
-     *  ajustan el presupuesto en sí.
-     * @param _milestoneId Id del Milestone para el cual se ajusta el presupuesto.
-     * @param _budgetId Id del presupuesto del Milestone que se ajusta.
-     * @param _fiatAmountTarget Monto en dinero fiat objetivo a alcanzar por el presupuesto.
-     */
-    function _fitBudget(
-        uint256 _milestoneId,
-        uint256 _budgetId,
-        uint256 _fiatAmountTarget
-    ) private returns (uint256 fiatAmountTarget) {
-        MilestoneLib.Milestone storage milestone = _getMilestone(_milestoneId);
-        BudgetLib.Budget storage budget = _getBudget(_budgetId);
-        uint256 rate = _getExchangeRate(budget.token).rate;
-        uint256 amountTarget = _fiatAmountTarget.mul(rate);
-        for (uint256 i = 0; i < budget.donationIds.length; i++) {
-            //DonationLib.Donation storage donation = donationData.donations[budget.donationIds[i]];
-            DonationLib.Donation storage donation = _getDonation(
-                budget.donationIds[i]
-            );
-            if (amountTarget >= donation.amountRemainding) {
-                // No se superó el monto objetivo.
-                donation.amountRemainding = 0;
-                donation.status = DonationLib.Status.Spent;
-                amountTarget = amountTarget.sub(donation.amountRemainding);
-            } else {
-                // El monto restante de la donación es superior al objetivo.
-                if (amountTarget != 0) {
-                    // Se calculan los Token para completar el objetivo.
-                    donation.amountRemainding = donation.amountRemainding.sub(
-                        amountTarget
-                    );
-                    amountTarget = 0;
-                }
-                // Se transfiere el fondo restante de la Donación a la Campaign del Milestone.
-                _doTransfer(milestone.id, milestone.campaignId, donation.id);
-            }
-        }
-        // El redondeo favorece a la retención de fondos.
-        fiatAmountTarget = amountTarget.div(rate);
+        // Se quita la donación del presupuesto de la entidad origen.
+        ArrayLib.removeElement(entityFrom.budgetDonationIds, _donationId);
+        // Se agrega la donación al presupuesto de la entidad destino.
+        entityTo.budgetDonationIds.push(_donationId);
+        emit Transfer(_entityIdFrom, _entityIdTo, _donationId);
     }
 
     function _getEntity(uint256 _id)
@@ -858,18 +746,11 @@ contract Crowdfunding is AragonApp, Constants {
         return milestoneData.getMilestone(_id);
     }
 
-    /*function _getActivity(uint256 _id)
+    function _getActivity(uint256 _id)
         private
         returns (ActivityLib.Activity storage)
     {
         return activityData.getActivity(_id);
-    }*/
-
-    function _getBudget(uint256 _id)
-        private
-        returns (BudgetLib.Budget storage)
-    {
-        return budgetData.getBudget(_id);
     }
 
     function _getDonation(uint256 _id)

@@ -36,6 +36,7 @@ contract Constants is EtherTokenConstant {
     bytes32 public constant EXCHANGE_RATE_ROLE = keccak256(
         "EXCHANGE_RATE_ROLE"
     );
+    bytes32 public constant ENABLE_TOKEN_ROLE = keccak256("ENABLE_TOKEN_ROLE");
 
     // Errores
 
@@ -44,6 +45,8 @@ contract Constants is EtherTokenConstant {
         internal constant ERROR_VAULT_NOT_CONTRACT = "CROWDFUNDING_VAULT_NOT_CONTRACT";
     string
         internal constant ERROR_ENTITY_NOT_EXISTS = "CROWDFUNDING_ENTITY_NOT_EXIST";
+    string
+        internal constant ERROR_DONATE_TOKEN_NOT_ENABLED = "ERROR_DONATE_TOKEN_NOT_ENABLED";
     string
         internal constant ERROR_DONATE_AMOUNT_ZERO = "CROWDFUNDING_DONATE_AMOUNT_ZERO";
     string
@@ -72,12 +75,10 @@ contract Constants is EtherTokenConstant {
     string
         internal constant ERROR_TRANSFER_DONATION_NOT_AVAILABLE = "CROWDFUNDING_TRANSFER_DONATION_NOT_AVAILABLE";
     string
-        internal constant ERROR_TRANSFER_DONATION_NOT_BELONGS_ORIGIN = "CROWDFUNDING_TRANSFER_DONATION_NOT_BELONGS_ORIGIN";
+        internal constant ERROR_TRANSFER_DONATION_NOT_BELONGS_BUDGET = "CROWDFUNDING_TRANSFER_DONATION_NOT_BELONGS_BUDGET";
     // Withdraw
     string
         internal constant ERROR_WITHDRAW_NOT_APPROVED = "CROWDFUNDING_WITHDRAW_NOT_APPROVED";
-    string
-        internal constant ERROR_WITHDRAW_NOT_BUDGETED = "CROWDFUNDING_WITHDRAW_NOT_BUDGETED";
     // Milestone Complete
     string
         internal constant ERROR_MILESTONE_COMPLETE_NOT_ACTIVE = "CROWDFUNDING_MILESTONE_COMPLETE_NOT_ACTIVE";

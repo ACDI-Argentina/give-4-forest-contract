@@ -13,7 +13,7 @@ library EntityLib {
         uint256 idIndex; // Índice del Id en entityIds;
         EntityType entityType;
         uint256[] donationIds; // Ids de las donaciones de la entidad.
-        uint256[] budgetIds; // Ids de los presupuestos.
+        uint256[] budgetDonationIds; // Ids de las donaciones que forna parte del presupuesto de la entidad.
     }
 
     struct Data {
