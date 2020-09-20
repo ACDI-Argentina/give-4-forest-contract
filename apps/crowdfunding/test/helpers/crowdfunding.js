@@ -118,25 +118,6 @@ const getMilestones = async (crowdfunding) => {
   return milestones;
 }
 
-const getBudgets = async (crowdfunding, entity) => {
-  let budgets = [];
-  for (i = 0; i < entity.budgetIds.length; i++) {
-    budgets.push(await crowdfunding.getBudget(entity.budgetIds[i]));
-  }
-  return budgets;
-}
-
-const getBudget = async (crowdfunding, entityId, token) => {
-  let entity = await crowdfunding.getEntity(entityId);
-  for (i = 0; i < entity.budgetIds.length; i++) {
-    let budget = await crowdfunding.getBudget(entity.budgetIds[i]);
-    if (budget.token == token) {
-      return budget;
-    }
-  }
-  return null;
-}
-
 const getDonations = async (crowdfunding, donationIds) => {
   let donations = [];
   for (i = 0; i < donationIds.length; i++) {
@@ -155,8 +136,6 @@ module.exports = {
   getDacs,
   getCampaigns,
   getMilestones,
-  getBudgets,
-  getBudget,
   getDonations,
   INFO_CID,
   FIAT_AMOUNT_TARGET

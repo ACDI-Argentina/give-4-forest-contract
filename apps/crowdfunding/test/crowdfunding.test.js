@@ -11,18 +11,14 @@ const { newCrowdfunding,
     getDacs,
     getCampaigns,
     getMilestones,
-    getBudgets,
-    getBudget,
     getDonations,
     INFO_CID,
     FIAT_AMOUNT_TARGET } = require('./helpers/crowdfunding')
-const { assertEntity,
-    assertDac,
+const { assertDac,
     assertCampaign,
     assertMilestone,
     assertActivity,
-    assertDonation,
-    assertBudget } = require('./helpers/asserts')
+    assertDonation } = require('./helpers/asserts')
 const { errors } = require('./helpers/errors')
 const Crowdfunding = artifacts.require('Crowdfunding')
 const Vault = artifacts.require('Vault')
@@ -66,12 +62,6 @@ const MILESTONE_STATUS_FINISHED = 5;
 // 0: DonationStatus.Available;
 const DONATION_STATUS_AVAILABLE = 0;
 
-// 0: Status.Budgeted;
-const BUDGET_STATUS_BUDGETED = 0;
-const BUDGET_STATUS_PAYING = 1;
-const BUDGET_STATUS_CLOSED = 2;
-const BUDGET_STATUS_PAID = 3;
-
 // Equivalencia de 0.01 USD en Ether (Wei)
 // 1 ETH = 1E+18 Wei = 100 USD > 0.01 USD = 1E+14 Wei
 // TODO Este valor debe establerse por un Oracle.
@@ -95,7 +85,7 @@ contract('Crowdfunding App', (accounts) => {
 
     let crowdfundingBase, crowdfunding;
     let vaultBase, vault;
-    let CREATE_DAC_ROLE, CREATE_CAMPAIGN_ROLE, CREATE_MILESTONE_ROLE, EXCHANGE_RATE_ROLE;
+    let CREATE_DAC_ROLE, CREATE_CAMPAIGN_ROLE, CREATE_MILESTONE_ROLE, EXCHANGE_RATE_ROLE, ENABLE_TOKEN_ROLE;
     let TRANSFER_ROLE;
     let ETH
 
@@ -107,6 +97,7 @@ contract('Crowdfunding App', (accounts) => {
         CREATE_CAMPAIGN_ROLE = await crowdfundingBase.CREATE_CAMPAIGN_ROLE();
         CREATE_MILESTONE_ROLE = await crowdfundingBase.CREATE_MILESTONE_ROLE();
         EXCHANGE_RATE_ROLE = await crowdfundingBase.EXCHANGE_RATE_ROLE();
+        ENABLE_TOKEN_ROLE = await crowdfundingBase.ENABLE_TOKEN_ROLE();
         TRANSFER_ROLE = await vaultBase.TRANSFER_ROLE()
 
         const ethConstant = await EtherTokenConstantMock.new()
@@ -114,31 +105,32 @@ contract('Crowdfunding App', (accounts) => {
     })
 
     beforeEach(async () => {
-        try{
+        try {
             // Deploy de la DAO
             const { dao, acl } = await newDao(deployer);
-    
+
             // Deploy de contratos y proxies
             const crowdfundingAddress = await newApp(dao, "crowdfunding", crowdfundingBase.address, deployer);
             const vaultAddress = await newApp(dao, "vault", vaultBase.address, deployer);
             crowdfunding = await Crowdfunding.at(crowdfundingAddress);
             vault = await Vault.at(vaultAddress);
-    
+
             // Configuración de permisos
             await createPermission(acl, delegate, crowdfunding.address, CREATE_DAC_ROLE, deployer);
             await createPermission(acl, campaignManager, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
             await createPermission(acl, milestoneManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
             await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
+            await createPermission(acl, deployer, crowdfunding.address, ENABLE_TOKEN_ROLE, deployer);
             await createPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
-    
+
             await grantPermission(acl, campaignManager2, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
             await grantPermission(acl, campaignManager3, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
-    
+
             // Inicialización
             await vault.initialize()
             await crowdfunding.initialize(vault.address);
 
-        } catch(err){
+        } catch (err) {
             console.log(err);
         }
     });
@@ -150,7 +142,7 @@ contract('Crowdfunding App', (accounts) => {
         })
     });
 
-     context('Manejo de DACs', function () {
+    context('Manejo de DACs', function () {
 
         it('Creación de Dac', async () => {
 
@@ -167,15 +159,8 @@ contract('Crowdfunding App', (accounts) => {
                 infoCid: INFO_CID,
                 users: [delegate],
                 campaignIds: [],
-                budgetIdsLength: 0,
+                budgetDonationIdsLength: 0,
                 status: DAC_STATUS_ACTIVE
-            });
-
-            let entity = await crowdfunding.getEntity(dacId);
-            assertEntity(entity, {
-                id: 1,
-                entityType: ENTITY_TYPE_DAC,
-                budgetIdsLength: 0
             });
         });
 
@@ -186,7 +171,7 @@ contract('Crowdfunding App', (accounts) => {
                 { from: notAuthorized }
             ), errors.APP_AUTH_FAILED)
         });
-    }); 
+    });
 
     context('Manejo de Campaigns', function () {
 
@@ -196,7 +181,7 @@ contract('Crowdfunding App', (accounts) => {
 
             let receipt = await crowdfunding.saveCampaign(INFO_CID, dacId, campaignReviewer, 0, { from: campaignManager });
 
-            let campaignId = getEventArgument(receipt, 'SaveCampaign', 'id'); 
+            let campaignId = getEventArgument(receipt, 'SaveCampaign', 'id');
             assert.equal(campaignId, 2);
 
             let campaigns = await getCampaigns(crowdfunding);
@@ -207,15 +192,8 @@ contract('Crowdfunding App', (accounts) => {
                 users: [campaignManager, campaignReviewer],
                 dacIds: [dacId],
                 milestoneIds: [],
-                budgetIdsLength: 0,
+                budgetDonationIdsLength: 0,
                 status: CAMPAIGN_STATUS_ACTIVE
-            });
-
-            let entity = await crowdfunding.getEntity(campaignId);
-            assertEntity(entity, {
-                id: 2,
-                entityType: ENTITY_TYPE_CAMPAIGN,
-                budgetIdsLength: 0
             });
         });
 
@@ -271,7 +249,7 @@ contract('Crowdfunding App', (accounts) => {
             assert.equal(updatedCampaign.infoCid, NEW_INFO_CID);
             assert.equal(updatedCampaign.users[0], campaignManager); //el manager debe permanecer siendo el mismo  
             assert.equal(updatedCampaign.users[1], newCampaignReviewer);
-            
+
         });
 
         it('Modificación de Campaign asociación a otra dac', async () => {
@@ -301,15 +279,15 @@ contract('Crowdfunding App', (accounts) => {
             const targetDac = await crowdfunding.getDac(newDacId);
 
             const campaignIdBN = new BN(campaignId);
-            campaignInSourceDac = sourceDac.campaignIds.find(_campaignId => _campaignId.eq(campaignIdBN) )
-            campaignInTargetDac = targetDac.campaignIds.find(_campaignId => _campaignId.eq(campaignIdBN) )
-            
+            campaignInSourceDac = sourceDac.campaignIds.find(_campaignId => _campaignId.eq(campaignIdBN))
+            campaignInTargetDac = targetDac.campaignIds.find(_campaignId => _campaignId.eq(campaignIdBN))
+
             assert.notEqual(campaignInTargetDac, undefined, `El campaignId:${campaignId} debe encontrarse en el campaignIds destino`);
             assert.equal(campaignInSourceDac, undefined, `El campaignId:${campaignId} no debe encontrarse en el campaignIds original`);
         });
 
 
-        it('Modificación de Campaign inexistente',async () => {
+        it('Modificación de Campaign inexistente', async () => {
             const inexistentCampaignId = 1;
             const dacId = await newDac(crowdfunding, delegate);
             await assertRevert(
@@ -317,13 +295,13 @@ contract('Crowdfunding App', (accounts) => {
                     INFO_CID,
                     dacId,
                     campaignReviewer,
-                    inexistentCampaignId, 
+                    inexistentCampaignId,
                     { from: campaignManager }
                 )
                 , errors.CROWDFUNDING_CAMPAIGN_NOT_EXIST)
         });
 
-        it('Modificación de Campaign no autorizada',async () => {
+        it('Modificación de Campaign no autorizada', async () => {
             const dacId = await newDac(crowdfunding, delegate);
             const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
 
@@ -332,13 +310,13 @@ contract('Crowdfunding App', (accounts) => {
                     INFO_CID,
                     dacId,
                     campaignReviewer,
-                    campaignId, 
+                    campaignId,
                     { from: campaignManager2 }
                 )
                 , errors.CROWDFUNDING_AUTH_FAILED)
         });
 
-        it('Modificación de Campaign asociación a dac inexistente',async () => {
+        it('Modificación de Campaign asociación a dac inexistente', async () => {
             const dacId = await newDac(crowdfunding, delegate);
             const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId, 0);
             const inexistentDacId = 25;
@@ -348,15 +326,15 @@ contract('Crowdfunding App', (accounts) => {
                     INFO_CID,
                     inexistentDacId,
                     campaignReviewer,
-                    campaignId, 
+                    campaignId,
                     { from: campaignManager }
                 )
-                , errors.CROWDFUNDING_DAC_NOT_EXIST) 
+                , errors.CROWDFUNDING_DAC_NOT_EXIST)
         });
 
     });
 
-     context('Manejo de Milestones', function () {
+    context('Manejo de Milestones', function () {
 
         it('Creación de Milestone', async () => {
 
@@ -385,16 +363,9 @@ contract('Crowdfunding App', (accounts) => {
                 fiatAmountTarget: fiatAmountTarget,
                 users: [milestoneManager, milestoneReviewer, campaignReviewer, milestoneRecipient],
                 campaignId: campaignId,
-                budgetIdsLength: 0,
+                budgetDonationIdsLength: 0,
                 activityIdsLength: 0,
                 status: MILESTONE_STATUS_ACTIVE
-            });
-
-            let entity = await crowdfunding.getEntity(milestoneId);
-            assertEntity(entity, {
-                id: 3,
-                entityType: ENTITY_TYPE_MILESTONE,
-                budgetIdsLength: 0
             });
         });
 
@@ -455,7 +426,16 @@ contract('Crowdfunding App', (accounts) => {
                 campaignId);
         });
 
+        it('Donar a Dac con ETH no permido', async () => {
+
+            const amount = 10;
+
+            await assertRevert(crowdfunding.donate(dacId, ETH, amount, { from: giver }), errors.CROWDFUNDING_DONATE_TOKEN_NOT_ENABLED)
+        });
+
         it('Donar a Dac', async () => {
+
+            await crowdfunding.enableToken(ETH, { from: deployer });
 
             const amount = 10
 
@@ -471,39 +451,19 @@ contract('Crowdfunding App', (accounts) => {
             assert.equal(receiptAmount, amount);
 
             let dac = await crowdfunding.getDac(dacId);
+            assert.equal(dac.donationIds.length, 1);
+            assert.equal(dac.budgetDonationIds.length, 1);
 
-            let budgets = await getBudgets(crowdfunding, dac);
-            assert.equal(budgets.length, 1)
-            assertBudget(budgets[0], {
-                id: 1,
-                entityId: dacId,
-                token: ETH,
-                amount: amount,
-                donationIds: [1],
-                status: BUDGET_STATUS_BUDGETED
-            });
-
-            let entityDonations = await getDonations(crowdfunding, dac.donationIds);
-            assert.equal(entityDonations.length, 1)
-            assertDonation(entityDonations[0], {
+            let donations = await getDonations(crowdfunding, dac.donationIds);
+            assert.equal(donations.length, 1)
+            assertDonation(donations[0], {
                 id: 1,
                 giver: giver,
                 token: ETH,
                 amount: amount,
                 amountRemainding: amount,
                 entityId: dacId,
-                status: DONATION_STATUS_AVAILABLE
-            });
-
-            let budgetDonations = await getDonations(crowdfunding, budgets[0].donationIds);
-            assert.equal(budgetDonations.length, 1)
-            assertDonation(budgetDonations[0], {
-                id: 1,
-                giver: giver,
-                token: ETH,
-                amount: amount,
-                amountRemainding: amount,
-                entityId: dacId,
+                budgetEntityId: dacId,
                 status: DONATION_STATUS_AVAILABLE
             });
 
@@ -512,6 +472,8 @@ contract('Crowdfunding App', (accounts) => {
         })
 
         it('Donar a Campaign', async () => {
+
+            await crowdfunding.enableToken(ETH, { from: deployer });
 
             const amount = 10
 
@@ -527,39 +489,19 @@ contract('Crowdfunding App', (accounts) => {
             assert.equal(receiptAmount, amount);
 
             let campaign = await crowdfunding.getCampaign(campaignId);
+            assert.equal(campaign.donationIds.length, 1);
+            assert.equal(campaign.budgetDonationIds.length, 1);
 
-            let budgets = await getBudgets(crowdfunding, campaign);
-            assert.equal(budgets.length, 1)
-            assertBudget(budgets[0], {
-                id: 1,
-                entityId: campaignId,
-                token: ETH,
-                amount: amount,
-                donationIds: [1],
-                status: BUDGET_STATUS_BUDGETED
-            });
-
-            let entityDonations = await getDonations(crowdfunding, campaign.donationIds);
-            assert.equal(entityDonations.length, 1)
-            assertDonation(entityDonations[0], {
+            let donations = await getDonations(crowdfunding, campaign.donationIds);
+            assert.equal(donations.length, 1)
+            assertDonation(donations[0], {
                 id: 1,
                 giver: giver,
                 token: ETH,
                 amount: amount,
                 amountRemainding: amount,
                 entityId: campaignId,
-                status: DONATION_STATUS_AVAILABLE
-            });
-
-            let budgetDonations = await getDonations(crowdfunding, budgets[0].donationIds);
-            assert.equal(budgetDonations.length, 1)
-            assertDonation(budgetDonations[0], {
-                id: 1,
-                giver: giver,
-                token: ETH,
-                amount: amount,
-                amountRemainding: amount,
-                entityId: campaignId,
+                budgetEntityId: campaignId,
                 status: DONATION_STATUS_AVAILABLE
             });
 
@@ -568,6 +510,8 @@ contract('Crowdfunding App', (accounts) => {
         })
 
         it('Donar a Milestone', async () => {
+
+            await crowdfunding.enableToken(ETH, { from: deployer });
 
             const amount = 10
 
@@ -583,39 +527,19 @@ contract('Crowdfunding App', (accounts) => {
             assert.equal(receiptAmount, amount);
 
             let milestone = await crowdfunding.getMilestone(milestoneId);
+            assert.equal(milestone.donationIds.length, 1);
+            assert.equal(milestone.budgetDonationIds.length, 1);
 
-            let budgets = await getBudgets(crowdfunding, milestone);
-            assert.equal(budgets.length, 1)
-            assertBudget(budgets[0], {
-                id: 1,
-                entityId: milestoneId,
-                token: ETH,
-                amount: amount,
-                donationIds: [1],
-                status: BUDGET_STATUS_BUDGETED
-            });
-
-            let entityDonations = await getDonations(crowdfunding, milestone.donationIds);
-            assert.equal(entityDonations.length, 1)
-            assertDonation(entityDonations[0], {
+            let donations = await getDonations(crowdfunding, milestone.donationIds);
+            assert.equal(donations.length, 1)
+            assertDonation(donations[0], {
                 id: 1,
                 giver: giver,
                 token: ETH,
                 amount: amount,
                 amountRemainding: amount,
                 entityId: milestoneId,
-                status: DONATION_STATUS_AVAILABLE
-            });
-
-            let budgetDonations = await getDonations(crowdfunding, budgets[0].donationIds);
-            assert.equal(budgetDonations.length, 1)
-            assertDonation(budgetDonations[0], {
-                id: 1,
-                giver: giver,
-                token: ETH,
-                amount: amount,
-                amountRemainding: amount,
-                entityId: milestoneId,
+                budgetEntityId: milestoneId,
                 status: DONATION_STATUS_AVAILABLE
             });
 
@@ -649,7 +573,15 @@ contract('Crowdfunding App', (accounts) => {
                     campaignId);
             })
 
+            it('Donar a Dac con token no permido', async () => {
+
+                await assertRevert(crowdfunding.donate(dacId, tokenInstance.address, amount, { from: giver }), errors.CROWDFUNDING_DONATE_TOKEN_NOT_ENABLED)
+            });
+
             it('Donar a Dac', async () => {
+
+                await crowdfunding.enableToken(tokenInstance.address, { from: deployer });
+
                 const receipt = await crowdfunding.donate(dacId, tokenInstance.address, amount, { from: giver });
                 const receiptId = getEventArgument(receipt, 'NewDonation', 'id');
                 const receiptEntityId = getEventArgument(receipt, 'NewDonation', 'entityId');
@@ -662,39 +594,19 @@ contract('Crowdfunding App', (accounts) => {
                 assert.equal(receiptAmount.toString(), amount.toString());
 
                 let dac = await crowdfunding.getDac(dacId);
+                assert.equal(dac.donationIds.length, 1);
+                assert.equal(dac.budgetDonationIds.length, 1);
 
-                let budgets = await getBudgets(crowdfunding, dac);
-                assert.equal(budgets.length, 1)
-                assertBudget(budgets[0], {
-                    id: 1,
-                    entityId: dacId,
-                    token: tokenInstance.address,
-                    amount: amount,
-                    donationIds: [1],
-                    status: BUDGET_STATUS_BUDGETED
-                });
-
-                let entityDonations = await getDonations(crowdfunding, dac.donationIds);
-                assert.equal(entityDonations.length, 1)
-                assertDonation(entityDonations[0], {
+                let donations = await getDonations(crowdfunding, dac.donationIds);
+                assert.equal(donations.length, 1)
+                assertDonation(donations[0], {
                     id: 1,
                     giver: giver,
                     token: tokenInstance.address,
                     amount: amount,
                     amountRemainding: amount,
                     entityId: dacId,
-                    status: DONATION_STATUS_AVAILABLE
-                });
-
-                let budgetDonations = await getDonations(crowdfunding, budgets[0].donationIds);
-                assert.equal(budgetDonations.length, 1)
-                assertDonation(budgetDonations[0], {
-                    id: 1,
-                    giver: giver,
-                    token: tokenInstance.address,
-                    amount: amount,
-                    amountRemainding: amount,
-                    entityId: dacId,
+                    budgetEntityId: dacId,
                     status: DONATION_STATUS_AVAILABLE
                 });
 
@@ -705,6 +617,8 @@ contract('Crowdfunding App', (accounts) => {
             });
 
             it('Donar a Campaign', async () => {
+
+                await crowdfunding.enableToken(tokenInstance.address, { from: deployer });
 
                 const receipt = await crowdfunding.donate(campaignId, tokenInstance.address, amount, { from: giver });
                 const receiptId = getEventArgument(receipt, 'NewDonation', 'id');
@@ -718,39 +632,19 @@ contract('Crowdfunding App', (accounts) => {
                 assert.equal(receiptAmount.toString(), amount.toString());
 
                 let campaign = await crowdfunding.getCampaign(campaignId);
+                assert.equal(campaign.donationIds.length, 1);
+                assert.equal(campaign.budgetDonationIds.length, 1);
 
-                let budgets = await getBudgets(crowdfunding, campaign);
-                assert.equal(budgets.length, 1)
-                assertBudget(budgets[0], {
-                    id: 1,
-                    entityId: campaignId,
-                    token: tokenInstance.address,
-                    amount: amount,
-                    donationIds: [1],
-                    status: BUDGET_STATUS_BUDGETED
-                });
-
-                let entityDonations = await getDonations(crowdfunding, campaign.donationIds);
-                assert.equal(entityDonations.length, 1)
-                assertDonation(entityDonations[0], {
+                let donations = await getDonations(crowdfunding, campaign.donationIds);
+                assert.equal(donations.length, 1)
+                assertDonation(donations[0], {
                     id: 1,
                     giver: giver,
                     token: tokenInstance.address,
                     amount: amount,
                     amountRemainding: amount,
                     entityId: campaignId,
-                    status: DONATION_STATUS_AVAILABLE
-                });
-
-                let budgetDonations = await getDonations(crowdfunding, budgets[0].donationIds);
-                assert.equal(budgetDonations.length, 1)
-                assertDonation(budgetDonations[0], {
-                    id: 1,
-                    giver: giver,
-                    token: tokenInstance.address,
-                    amount: amount,
-                    amountRemainding: amount,
-                    entityId: campaignId,
+                    budgetEntityId: campaignId,
                     status: DONATION_STATUS_AVAILABLE
                 });
 
@@ -761,6 +655,8 @@ contract('Crowdfunding App', (accounts) => {
             });
 
             it('Donar a Milestone', async () => {
+
+                await crowdfunding.enableToken(tokenInstance.address, { from: deployer });
 
                 const receipt = await crowdfunding.donate(milestoneId, tokenInstance.address, amount, { from: giver });
                 const receiptId = getEventArgument(receipt, 'NewDonation', 'id');
@@ -774,17 +670,8 @@ contract('Crowdfunding App', (accounts) => {
                 assert.equal(receiptAmount.toString(), amount.toString());
 
                 let milestone = await crowdfunding.getMilestone(milestoneId);
-
-                let budgets = await getBudgets(crowdfunding, milestone);
-                assert.equal(budgets.length, 1)
-                assertBudget(budgets[0], {
-                    id: 1,
-                    entityId: milestoneId,
-                    token: tokenInstance.address,
-                    amount: amount,
-                    donationIds: [1],
-                    status: BUDGET_STATUS_BUDGETED
-                });
+                assert.equal(milestone.donationIds.length, 1);
+                assert.equal(milestone.budgetDonationIds.length, 1);
 
                 let entityDonations = await getDonations(crowdfunding, milestone.donationIds);
                 assert.equal(entityDonations.length, 1)
@@ -795,18 +682,7 @@ contract('Crowdfunding App', (accounts) => {
                     amount: amount,
                     amountRemainding: amount,
                     entityId: milestoneId,
-                    status: DONATION_STATUS_AVAILABLE
-                });
-
-                let budgetDonations = await getDonations(crowdfunding, budgets[0].donationIds);
-                assert.equal(budgetDonations.length, 1)
-                assertDonation(budgetDonations[0], {
-                    id: 1,
-                    giver: giver,
-                    token: tokenInstance.address,
-                    amount: amount,
-                    amountRemainding: amount,
-                    entityId: milestoneId,
+                    budgetEntityId: milestoneId,
                     status: DONATION_STATUS_AVAILABLE
                 });
 
@@ -825,6 +701,7 @@ contract('Crowdfunding App', (accounts) => {
 
         beforeEach(async () => {
 
+            await crowdfunding.enableToken(ETH, { from: deployer });
             dacId1 = await newDac(crowdfunding, delegate);
             dacId2 = await newDac(crowdfunding, delegate);
             campaignId1 = await saveCampaign(crowdfunding,
@@ -880,30 +757,18 @@ contract('Crowdfunding App', (accounts) => {
             const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
             const receiptEntityIdTo = getEventArgument(receipt, 'Transfer', 'entityIdTo');
             const receiptDonationId = getEventArgument(receipt, 'Transfer', 'donationId');
-            const receiptAmount = getEventArgument(receipt, 'Transfer', 'amount');
 
             assert.equal(receiptEntityIdFrom, dacId1);
             assert.equal(receiptEntityIdTo, campaignId1);
             assert.equal(receiptDonationId, donationId1);
-            assert.equal(receiptAmount.toString(), donationAmount.toString());
 
-            let budgetFrom = await getBudget(crowdfunding, dacId1, ETH);
-            assertBudget(budgetFrom, {
-                entityId: dacId1,
-                token: ETH,
-                amount: new BN(0),
-                donationIds: [],
-                status: BUDGET_STATUS_BUDGETED
-            });
+            let dac = await crowdfunding.getDac(dacId1);
+            assert.equal(dac.donationIds.length, 1);
+            assert.equal(dac.budgetDonationIds.length, 0);
 
-            let budgetTo = await getBudget(crowdfunding, campaignId1, ETH);
-            assertBudget(budgetTo, {
-                entityId: campaignId1,
-                token: ETH,
-                amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
-                donationIds: [donationId2, donationId1],
-                status: BUDGET_STATUS_BUDGETED
-            });
+            let campaign = await crowdfunding.getCampaign(campaignId1);
+            assert.equal(campaign.donationIds.length, 1);
+            assert.equal(campaign.budgetDonationIds.length, 2);
         })
 
         it('Transferencia de ETH de Dac a Milestone', async () => {
@@ -912,30 +777,18 @@ contract('Crowdfunding App', (accounts) => {
             const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
             const receiptEntityIdTo = getEventArgument(receipt, 'Transfer', 'entityIdTo');
             const receiptDonationId = getEventArgument(receipt, 'Transfer', 'donationId');
-            const receiptAmount = getEventArgument(receipt, 'Transfer', 'amount');
 
             assert.equal(receiptEntityIdFrom, dacId1);
             assert.equal(receiptEntityIdTo, milestoneId1);
             assert.equal(receiptDonationId, donationId1);
-            assert.equal(receiptAmount.toString(), donationAmount.toString());
 
-            let budgetFrom = await getBudget(crowdfunding, dacId1, ETH);
-            assertBudget(budgetFrom, {
-                entityId: dacId1,
-                token: ETH,
-                amount: new BN(0),
-                donationIds: [],
-                status: BUDGET_STATUS_BUDGETED
-            });
+            let dac = await crowdfunding.getDac(dacId1);
+            assert.equal(dac.donationIds.length, 1);
+            assert.equal(dac.budgetDonationIds.length, 0);
 
-            let budgetTo = await getBudget(crowdfunding, milestoneId1, ETH);
-            assertBudget(budgetTo, {
-                entityId: milestoneId1,
-                token: ETH,
-                amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
-                donationIds: [donationId3, donationId1],
-                status: BUDGET_STATUS_BUDGETED
-            });
+            let milestone = await crowdfunding.getMilestone(milestoneId1);
+            assert.equal(milestone.donationIds.length, 1);
+            assert.equal(milestone.budgetDonationIds.length, 2);
         })
 
         it('Transferencia de ETH de Campaign a Milestone', async () => {
@@ -944,30 +797,18 @@ contract('Crowdfunding App', (accounts) => {
             const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
             const receiptEntityIdTo = getEventArgument(receipt, 'Transfer', 'entityIdTo');
             const receiptDonationId = getEventArgument(receipt, 'Transfer', 'donationId');
-            const receiptAmount = getEventArgument(receipt, 'Transfer', 'amount');
 
             assert.equal(receiptEntityIdFrom, campaignId1);
             assert.equal(receiptEntityIdTo, milestoneId1);
             assert.equal(receiptDonationId, donationId2);
-            assert.equal(receiptAmount.toString(), donationAmount.toString());
 
-            let budgetFrom = await getBudget(crowdfunding, campaignId1, ETH);
-            assertBudget(budgetFrom, {
-                entityId: campaignId1,
-                token: ETH,
-                amount: new BN(0),
-                donationIds: [],
-                status: BUDGET_STATUS_BUDGETED
-            });
+            let campaign = await crowdfunding.getCampaign(campaignId1);
+            assert.equal(campaign.donationIds.length, 1);
+            assert.equal(campaign.budgetDonationIds.length, 0);
 
-            let budgetTo = await getBudget(crowdfunding, milestoneId1, ETH);
-            assertBudget(budgetTo, {
-                entityId: milestoneId1,
-                token: ETH,
-                amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
-                donationIds: [donationId3, donationId2],
-                status: BUDGET_STATUS_BUDGETED
-            });
+            let milestone = await crowdfunding.getMilestone(milestoneId1);
+            assert.equal(milestone.donationIds.length, 1);
+            assert.equal(milestone.budgetDonationIds.length, 2);
         })
 
         it('Transferencia de ETH de Dac a Campaign no autorizada', async () => {
@@ -1030,7 +871,7 @@ contract('Crowdfunding App', (accounts) => {
                 campaignId1,
                 [donationId2],
                 { from: delegate }),
-                errors.CROWDFUNDING_TRANSFER_DONATION_NOT_BELONGS_ORIGIN);
+                errors.CROWDFUNDING_TRANSFER_DONATION_NOT_BELONGS_BUDGET);
         })
     })
 
@@ -1042,6 +883,7 @@ contract('Crowdfunding App', (accounts) => {
 
             beforeEach(async () => {
 
+                await crowdfunding.enableToken(ETH, { from: deployer });
                 dacId = await newDac(crowdfunding, delegate);
                 campaignId = await saveCampaign(crowdfunding,
                     campaignManager,
@@ -1058,6 +900,7 @@ contract('Crowdfunding App', (accounts) => {
                 // Set up a new token similar to token1's distribution
                 tokenInstance = await tokenContract.new(giver, 10000 + VAULT_INITIAL_TOKEN1_BALANCE)
                 await tokenInstance.transfer(vault.address, VAULT_INITIAL_TOKEN1_BALANCE, { from: giver })
+                await crowdfunding.enableToken(tokenInstance.address, { from: deployer });
                 // Donación del Token a DAC
                 donationId1 = await newDonationToken(crowdfunding,
                     tokenInstance,
@@ -1084,62 +927,38 @@ contract('Crowdfunding App', (accounts) => {
                 const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
                 const receiptEntityIdTo = getEventArgument(receipt, 'Transfer', 'entityIdTo');
                 const receiptDonationId = getEventArgument(receipt, 'Transfer', 'donationId');
-                const receiptAmount = getEventArgument(receipt, 'Transfer', 'amount');
 
                 assert.equal(receiptEntityIdFrom, dacId);
                 assert.equal(receiptEntityIdTo, campaignId);
                 assert.equal(receiptDonationId, donationId1);
-                assert.equal(receiptAmount.toString(), donationAmount.toString());
 
-                let budgetFrom = await getBudget(crowdfunding, dacId, tokenInstance.address);
-                assertBudget(budgetFrom, {
-                    entityId: dacId,
-                    token: tokenInstance.address,
-                    amount: new BN(0),
-                    donationIds: [],
-                    status: BUDGET_STATUS_BUDGETED
-                });
+                let dac = await crowdfunding.getDac(dacId);
+                assert.equal(dac.donationIds.length, 1);
+                assert.equal(dac.budgetDonationIds.length, 0);
 
-                let budgetTo = await getBudget(crowdfunding, campaignId, tokenInstance.address);
-                assertBudget(budgetTo, {
-                    entityId: campaignId,
-                    token: tokenInstance.address,
-                    amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
-                    donationIds: [donationId2, donationId1],
-                    status: BUDGET_STATUS_BUDGETED
-                });
+                let campaign = await crowdfunding.getCampaign(campaignId);
+                assert.equal(campaign.donationIds.length, 1);
+                assert.equal(campaign.budgetDonationIds.length, 2);
             })
 
-            it(`Transferencia de Token ERC20 (${title}) de Dac a Campaign`, async () => {
+            it(`Transferencia de Token ERC20 (${title}) de Dac a Milestone`, async () => {
 
                 const receipt = await crowdfunding.transfer(dacId, milestoneId, [donationId1], { from: delegate });
                 const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
                 const receiptEntityIdTo = getEventArgument(receipt, 'Transfer', 'entityIdTo');
                 const receiptDonationId = getEventArgument(receipt, 'Transfer', 'donationId');
-                const receiptAmount = getEventArgument(receipt, 'Transfer', 'amount');
 
                 assert.equal(receiptEntityIdFrom, dacId);
                 assert.equal(receiptEntityIdTo, milestoneId);
                 assert.equal(receiptDonationId, donationId1);
-                assert.equal(receiptAmount.toString(), donationAmount.toString());
 
-                let budgetFrom = await getBudget(crowdfunding, dacId, tokenInstance.address);
-                assertBudget(budgetFrom, {
-                    entityId: dacId,
-                    token: tokenInstance.address,
-                    amount: 0,
-                    donationIds: [],
-                    status: BUDGET_STATUS_BUDGETED
-                });
+                let dac = await crowdfunding.getDac(dacId);
+                assert.equal(dac.donationIds.length, 1);
+                assert.equal(dac.budgetDonationIds.length, 0);
 
-                let budgetTo = await getBudget(crowdfunding, milestoneId, tokenInstance.address);
-                assertBudget(budgetTo, {
-                    entityId: milestoneId,
-                    token: tokenInstance.address,
-                    amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
-                    donationIds: [donationId3, donationId1],
-                    status: BUDGET_STATUS_BUDGETED
-                });
+                let milestone = await crowdfunding.getMilestone(milestoneId);
+                assert.equal(milestone.donationIds.length, 1);
+                assert.equal(milestone.budgetDonationIds.length, 2);
             })
 
             it(`Transferencia de Token ERC20 (${title}) de Campaign a Milestone`, async () => {
@@ -1148,30 +967,18 @@ contract('Crowdfunding App', (accounts) => {
                 const receiptEntityIdFrom = getEventArgument(receipt, 'Transfer', 'entityIdFrom');
                 const receiptEntityIdTo = getEventArgument(receipt, 'Transfer', 'entityIdTo');
                 const receiptDonationId = getEventArgument(receipt, 'Transfer', 'donationId');
-                const receiptAmount = getEventArgument(receipt, 'Transfer', 'amount');
 
                 assert.equal(receiptEntityIdFrom, campaignId);
                 assert.equal(receiptEntityIdTo, milestoneId);
                 assert.equal(receiptDonationId, donationId2);
-                assert.equal(receiptAmount.toString(), donationAmount.toString());
 
-                let budgetFrom = await getBudget(crowdfunding, campaignId, tokenInstance.address);
-                assertBudget(budgetFrom, {
-                    entityId: campaignId,
-                    token: tokenInstance.address,
-                    amount: 0,
-                    donationIds: [],
-                    status: BUDGET_STATUS_BUDGETED
-                });
+                let campaign = await crowdfunding.getCampaign(campaignId);
+                assert.equal(campaign.donationIds.length, 1);
+                assert.equal(campaign.budgetDonationIds.length, 0);
 
-                let budgetTo = await getBudget(crowdfunding, milestoneId, tokenInstance.address);
-                assertBudget(budgetTo, {
-                    entityId: milestoneId,
-                    token: tokenInstance.address,
-                    amount: donationAmount.add(donationAmount), // Donación inicial + transferencia
-                    donationIds: [donationId3, donationId2],
-                    status: BUDGET_STATUS_BUDGETED
-                });
+                let milestone = await crowdfunding.getMilestone(milestoneId);
+                assert.equal(milestone.donationIds.length, 1);
+                assert.equal(milestone.budgetDonationIds.length, 2);
             })
         })
     }
@@ -1294,6 +1101,8 @@ contract('Crowdfunding App', (accounts) => {
 
         beforeEach(async () => {
 
+            await crowdfunding.enableToken(ETH, { from: deployer });
+
             dacId1 = await newDac(crowdfunding, delegate);
             campaignId1 = await saveCampaign(crowdfunding,
                 campaignManager,
@@ -1339,40 +1148,30 @@ contract('Crowdfunding App', (accounts) => {
 
             let milestone = await crowdfunding.getMilestone(milestoneId1);
             assert.equal(milestone.status, MILESTONE_STATUS_FINISHED);
-
+            
             // Estado de los presupuestos
 
-            let budgetMilestone = await getBudget(crowdfunding, milestoneId1, ETH);
-            assertBudget(budgetMilestone, {
-                entityId: milestoneId1,
-                token: ETH,
-                amount: FIAT_AMOUNT_TARGET.mul(USD_ETH_RATE), // El presupuesto pagado es el target dividido la cotización.
-                donationIds: [],
-                status: BUDGET_STATUS_PAID
-            });
+            assert.equal(milestone.donationIds.length, 1);
+            assert.equal(milestone.budgetDonationIds.length, 0);
 
-            let budgetCampaign = await getBudget(crowdfunding, campaignId1, ETH);
-            assertBudget(budgetCampaign, {
-                entityId: campaignId1,
-                token: ETH,
-                amount: donationAmount.add(donationAmount.sub(FIAT_AMOUNT_TARGET.mul(USD_ETH_RATE))), // La donación inicial + el restante del retiro del milestone.
-                donationIds: [donationId2, donationId3],
-                status: BUDGET_STATUS_BUDGETED
-            });
+            let campaign = await crowdfunding.getCampaign(campaignId1);
+            assert.equal(campaign.donationIds.length, 1);
+            assert.equal(campaign.budgetDonationIds.length, 2);
 
             // Estado de la donación sobre el Milestone
             // Se transfirió el remanente a la Campaign.
 
-            let donations = await getDonations(crowdfunding, budgetCampaign.donationIds);
+            let donations = await getDonations(crowdfunding, campaign.budgetDonationIds);
             assert.equal(donations.length, 2);
             // La 2da donación es la transferida.
             assertDonation(donations[1], {
-                id: 3,
+                id: donationId3,
                 giver: giver,
                 token: ETH,
                 amount: donationAmount,
                 amountRemainding: donationAmount.sub(FIAT_AMOUNT_TARGET.mul(USD_ETH_RATE)),
                 entityId: milestoneId1,
+                budgetEntityId: campaignId1,
                 status: DONATION_STATUS_AVAILABLE
             });
         })

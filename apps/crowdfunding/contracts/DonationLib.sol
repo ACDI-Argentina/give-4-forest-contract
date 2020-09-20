@@ -88,6 +88,7 @@ library DonationLib {
         donation.amountRemainding = _amount;
         donation.createdAt = block.timestamp;
         donation.entityId = _entityId;
+        donation.budgetEntityId = _entityId;
         donation.status = Status.Available;
         self.donations[id] = donation;
     }

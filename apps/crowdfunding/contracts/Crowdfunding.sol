@@ -718,6 +718,8 @@ contract Crowdfunding is AragonApp, Constants {
         ArrayLib.removeElement(entityFrom.budgetDonationIds, _donationId);
         // Se agrega la donación al presupuesto de la entidad destino.
         entityTo.budgetDonationIds.push(_donationId);
+        // Se modifica la donación para que pertenezca al presupuesto de la entidad destino.
+        donation.budgetEntityId = _entityIdTo;
         emit Transfer(_entityIdFrom, _entityIdTo, _donationId);
     }
 
