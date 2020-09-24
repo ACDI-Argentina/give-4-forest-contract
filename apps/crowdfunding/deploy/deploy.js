@@ -9,7 +9,6 @@ const CampaignLib = artifacts.require('CampaignLib')
 const MilestoneLib = artifacts.require('MilestoneLib')
 const ActivityLib = artifacts.require('ActivityLib')
 const DonationLib = artifacts.require('DonationLib')
-const BudgetLib = artifacts.require('BudgetLib')
 const Vault = artifacts.require('Vault')
 
 // Por versión de Solidity (0.4.24), el placeholder de la libraría aún se arma
@@ -24,7 +23,6 @@ const CAMPAIGN_LIB_PLACEHOLDER = '__contracts/CampaignLib.sol:CampaignLi__';
 const MILESTONE_LIB_PLACEHOLDER = '__contracts/MilestoneLib.sol:Milestone__';
 const ACTIVITY_LIB_PLACEHOLDER = '__contracts/ActivityLib.sol:ActivityLi__';
 const DONATION_LIB_PLACEHOLDER = '__contracts/DonationLib.sol:DonationLi__';
-const BUDGET_LIB_PLACEHOLDER = '__contracts/BudgetLib.sol:BudgetLib_____';
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
 
@@ -64,9 +62,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     // Link Crowdfunding > DonationLib
     const donationLib = await DonationLib.new({ from: deployer });
     await linkLib(donationLib, Crowdfunding, DONATION_LIB_PLACEHOLDER);
-    // Link Crowdfunding > BudgetLib
-    const budgetLib = await BudgetLib.new({ from: deployer });
-    await linkLib(budgetLib, Crowdfunding, BUDGET_LIB_PLACEHOLDER);
 
     const crowdfundingBase = await Crowdfunding.new({ from: deployer });
     const crowdfundingAddress = await newApp(dao, 'crowdfunding', crowdfundingBase.address, deployer);
@@ -78,7 +73,6 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(`   - Campaign Lib: ${campaignLib.address}`);
     log(`   - Milestone Lib: ${milestoneLib.address}`);
     log(`   - Activity Lib: ${activityLib.address}`);
-    log(`   - Budget Lib: ${budgetLib.address}`);
     log(`   - Donation Lib: ${donationLib.address}`);
     log(`   - Array Lib: ${arrayLib.address}`);
     log(` - Crowdfunding Base: ${crowdfundingBase.address}`);
@@ -145,6 +139,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let CREATE_CAMPAIGN_ROLE = await crowdfundingBase.CREATE_CAMPAIGN_ROLE();
     let CREATE_MILESTONE_ROLE = await crowdfundingBase.CREATE_MILESTONE_ROLE();
     let EXCHANGE_RATE_ROLE = await crowdfundingBase.EXCHANGE_RATE_ROLE();
+    let ENABLE_TOKEN_ROLE = await crowdfundingBase.ENABLE_TOKEN_ROLE();
     let TRANSFER_ROLE = await vaultBase.TRANSFER_ROLE()
     log(`   - CREATE_DAC_ROLE`);
     await createPermission(acl, account1, crowdfunding.address, CREATE_DAC_ROLE, deployer);
@@ -162,6 +157,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(`   - EXCHANGE_RATE_ROLE`);
     await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
     log(`       - Deployer: ${deployer}`);
+    log(`   - ENABLE_TOKEN_ROLE`);
+    await createPermission(acl, deployer, crowdfunding.address, ENABLE_TOKEN_ROLE, deployer);
+    log(`       - Deployer: ${deployer}`);
     log(`   - TRANSFER_ROLE`);
     await createPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
     log(`       - Crowdfunding: ${crowdfunding.address}`);
@@ -169,6 +167,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     // Inicialización
     await vault.initialize()
     await crowdfunding.initialize(vault.address);
+
+    const ETH = '0x0000000000000000000000000000000000000000';
 
     // Exchange Rate
 
@@ -178,12 +178,17 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     // Se carga cotización de ETH
     // TODO Esto debiera hacerse a través de un Oracle.
-    const ETH = '0x0000000000000000000000000000000000000000';
     // Equivalencia de 0.01 USD en Ether (Wei)
     // 1 ETH = 1E+18 Wei = 100 USD > 0.01 USD = 1E+14 Wei
     // TODO Este valor debe establerse por un Oracle.
     const USD_ETH_RATE = new BN('100000000000000');
     await crowdfunding.setExchangeRate(ETH, USD_ETH_RATE, { from: deployer });
+
+    // Habilitación de ETH (RBTC) para donar.
+
+    log(` - Enable ETH (RBTC)`);
+
+    await crowdfunding.enableToken(ETH, { from: deployer });
 
     log(` - Initialized`);
 }
