@@ -342,8 +342,9 @@ contract Crowdfunding is AragonApp, Constants {
         require(milestone.manager == msg.sender, ERROR_AUTH_FAILED);
         // El Milestone debe estar Activo.
         require(
-            milestone.status == MilestoneLib.Status.Active,
-            ERROR_MILESTONE_COMPLETE_NOT_ACTIVE
+            milestone.status == MilestoneLib.Status.Active ||
+                milestone.status == MilestoneLib.Status.Rejected,
+            ERROR_MILESTONE_CANNOT_COMPLETE
         );
         // Registración de la actividad.
         uint256 activityId = activityData.insert(

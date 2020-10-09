@@ -1002,7 +1002,7 @@ contract('Crowdfunding App', (accounts) => {
                 campaignId1);
         });
 
-        it('Milestone Completado', async () => {
+        it('Milestone Completado en estado Activo', async () => {
 
             await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
 
@@ -1020,6 +1020,47 @@ contract('Crowdfunding App', (accounts) => {
             });
         })
 
+        it('Milestone Completado en estado Rechazado', async () => {
+
+            // Se completa inicialmente.
+            await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
+
+            // Se rechaza la completitud del milestone.
+            await crowdfunding.milestoneReview(milestoneId1, false, INFO_CID, { from: milestoneReviewer });
+
+            // Se vuelve a completar tras el rechazo.
+            await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
+
+            let milestone = await crowdfunding.getMilestone(milestoneId1);
+            assert.equal(milestone.status, MILESTONE_STATUS_COMPLETED);
+
+            assert.equal(milestone.activityIds.length, 3);
+
+            let activity1 = await crowdfunding.getActivity(1);
+            assertActivity(activity1, {
+                id: 1,
+                infoCid: INFO_CID,
+                user: milestoneManager,
+                milestoneId: milestoneId1
+            });
+
+            let activity2 = await crowdfunding.getActivity(2);
+            assertActivity(activity2, {
+                id: 2,
+                infoCid: INFO_CID,
+                user: milestoneReviewer,
+                milestoneId: milestoneId1
+            });
+
+            let activity3 = await crowdfunding.getActivity(3);
+            assertActivity(activity3, {
+                id: 3,
+                infoCid: INFO_CID,
+                user: milestoneManager,
+                milestoneId: milestoneId1
+            });
+        })
+
         it('Milestone Completado no autorizado', async () => {
 
             // notAuthorized account no es el manager del milestone.
@@ -1028,7 +1069,7 @@ contract('Crowdfunding App', (accounts) => {
                 errors.CROWDFUNDING_AUTH_FAILED);
         })
 
-        it('Milestone Completado no activo', async () => {
+        it('Milestone Completado no activo ni rechazo', async () => {
 
             await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
             await crowdfunding.milestoneReview(milestoneId1, true, INFO_CID, { from: milestoneReviewer });
@@ -1036,7 +1077,7 @@ contract('Crowdfunding App', (accounts) => {
             // Un Milestone Aprobado no puede volver a estar Completado.
             await assertRevert(
                 crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager }),
-                errors.CROWDFUNDING_MILESTONE_COMPLETE_NOT_ACTIVE);
+                errors.CROWDFUNDING_MILESTONE_CANNOT_COMPLETE);
         })
 
         it('Milestone Aprobado por Milestone Reviewer', async () => {
@@ -1148,7 +1189,7 @@ contract('Crowdfunding App', (accounts) => {
 
             let milestone = await crowdfunding.getMilestone(milestoneId1);
             assert.equal(milestone.status, MILESTONE_STATUS_FINISHED);
-            
+
             // Estado de los presupuestos
 
             assert.equal(milestone.donationIds.length, 1);
