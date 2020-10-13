@@ -30,7 +30,7 @@ module.exports = {
       // Public Key: 0x41ba2e6eF76ABFd57fC0DD03e696c711EC4002Ca
       // Private Key: da87821735850d8165de05b6c20d8c71d33b700d8fa8c3480b3d8b7318f1bb89
       accounts: ['0xda87821735850d8165de05b6c20d8c71d33b700d8fa8c3480b3d8b7318f1bb89'],
-      gas: 6000000
+      gas: 6200000
       // Explorer: https://explorer.testnet.rsk.co
       // Faucet: https://faucet.rsk.co
     }
@@ -39,7 +39,7 @@ module.exports = {
     version: '0.4.24',
     optimizer: {
       enabled: true,
-      runs: 200
+      runs: 1
     },
   },
   // Etherscan plugin configuration. Learn more at https://github.com/nomiclabs/buidler/tree/master/packages/buidler-etherscan

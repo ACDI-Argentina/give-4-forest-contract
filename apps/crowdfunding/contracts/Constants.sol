@@ -44,8 +44,6 @@ contract Constants is EtherTokenConstant {
     string
         internal constant ERROR_VAULT_NOT_CONTRACT = "CROWDFUNDING_VAULT_NOT_CONTRACT";
     string
-        internal constant ERROR_ENTITY_NOT_EXISTS = "CROWDFUNDING_ENTITY_NOT_EXIST";
-    string
         internal constant ERROR_DONATE_TOKEN_NOT_ENABLED = "CROWDFUNDING_DONATE_TOKEN_NOT_ENABLED";
     string
         internal constant ERROR_DONATE_AMOUNT_ZERO = "CROWDFUNDING_DONATE_AMOUNT_ZERO";
