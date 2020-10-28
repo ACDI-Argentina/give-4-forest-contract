@@ -36,6 +36,11 @@ const tokenTestGroups = [
     }
 ];
 
+//Price providers
+const PriceProxy = artifacts.require('PriceProxy');
+const PriceProviderMock = artifacts.require('./mocks/PriceProviderMock')
+
+
 // 0: EntityType.Dac;
 // 1: EntityType.Campaign;
 // 2: EntityType.Milestone;
@@ -65,7 +70,8 @@ const DONATION_STATUS_AVAILABLE = 0;
 // Equivalencia de 0.01 USD en Ether (Wei)
 // 1 ETH = 1E+18 Wei = 100 USD > 0.01 USD = 1E+14 Wei
 // TODO Este valor debe establerse por un Oracle.
-const USD_ETH_RATE = new BN('100000000000000');
+
+const USD_ETH_RATE = new BN('766260038006'); //Correspond to BTC Price of 13.0504
 
 contract('Crowdfunding App', (accounts) => {
     const [
@@ -129,6 +135,11 @@ contract('Crowdfunding App', (accounts) => {
             // Inicialización
             await vault.initialize()
             await crowdfunding.initialize(vault.address);
+
+            //Inicializacion de price provider
+            priceProviderMock = await PriceProviderMock.new("13050400000000000000000");
+            priceProxy = await PriceProxy.new(priceProviderMock.address);
+            await crowdfunding.setPriceProxy(priceProxy.address);
 
         } catch (err) {
             console.log(err);
