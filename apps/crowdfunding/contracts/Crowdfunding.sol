@@ -775,7 +775,8 @@ contract Crowdfunding is AragonApp, Constants {
      * @return Exchange Rate del Token.
      */
     function _getExchangeRate(address _token) public view returns (uint256){ //it's private, only set as public for test purposes
-        require( exchangeRates[_token].date != 0, ERROR_EXCHANGE_RATE_NOT_EXISTS);
+        /* require( exchangeRates[_token].date != 0, ERROR_EXCHANGE_RATE_NOT_EXISTS); */ 
+        //TODO: Implement some way to revert transaction if price doesn't exists
         return priceProxy.getExchangeRate(_token);
     }
 }
