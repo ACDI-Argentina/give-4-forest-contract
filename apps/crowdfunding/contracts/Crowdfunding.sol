@@ -12,6 +12,7 @@ import "./MilestoneLib.sol";
 import "./ActivityLib.sol";
 import "./DonationLib.sol";
 
+import "./PriceProxy.sol";
 /**
  * @title Crowdfunding
  * @author ACDI
@@ -38,7 +39,9 @@ contract Crowdfunding is AragonApp, Constants {
     CampaignLib.Data campaignData;
     MilestoneLib.Data milestoneData;
     ActivityLib.Data activityData;
-    DonationLib.Data donationData;
+    DonationLib.Data donationData; 
+
+    PriceProxy internal priceProxy;
 
     mapping(address => ExchangeRate) public exchangeRates;
 
@@ -427,7 +430,7 @@ contract Crowdfunding is AragonApp, Constants {
             // El retiro se realiza ordenado por token de las donaciones.
             address token = donationData.tokens[i1];
             uint256 tokenAmount = 0;
-            uint256 tokenRate = _getExchangeRate(token).rate;
+            uint256 tokenRate = _getExchangeRate(token); //rate
             for (uint256 i2 = 0; i2 < entity.budgetDonationIds.length; i2++) {
                 DonationLib.Donation storage donation = _getDonation(
                     entity.budgetDonationIds[i2]
@@ -483,6 +486,10 @@ contract Crowdfunding is AragonApp, Constants {
      */
     function enableToken(address _token) public auth(ENABLE_TOKEN_ROLE) {
         donationData.insertToken(_token);
+    }
+
+    function setPriceProxy(PriceProxy _priceProxy) public { //TODO: CRITICAL: ADD AUTH
+        priceProxy = _priceProxy; //TODO: Emit event
     }
 
     /**
@@ -767,14 +774,8 @@ contract Crowdfunding is AragonApp, Constants {
      * @notice Obtiene el Exchange Rate del Token `_token`
      * @return Exchange Rate del Token.
      */
-    function _getExchangeRate(address _token)
-        private
-        returns (ExchangeRate storage)
-    {
-        require(
-            exchangeRates[_token].date != 0,
-            ERROR_EXCHANGE_RATE_NOT_EXISTS
-        );
-        return exchangeRates[_token];
+    function _getExchangeRate(address _token) public view returns (uint256){ //it's private, only set as public for test purposes
+        require( exchangeRates[_token].date != 0, ERROR_EXCHANGE_RATE_NOT_EXISTS);
+        return priceProxy.getExchangeRate(_token);
     }
 }
