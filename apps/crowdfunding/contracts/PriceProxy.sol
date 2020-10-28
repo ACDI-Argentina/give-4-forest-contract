@@ -30,7 +30,7 @@ contract PriceProxy {
         }
     }
 
-    function getBTCPriceFromMoC() private view returns (uint256) {
+    function getBTCPriceFromMoC() public view returns (uint256) {
         (bytes32 price, bool has) = priceProvider.peek();
         require(has, "Oracle have no Bitcoin Price");
         return uint256(price);
