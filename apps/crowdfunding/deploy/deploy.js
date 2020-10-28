@@ -1,3 +1,11 @@
+const arg = require("arg");
+
+const args = arg( {'--network': String},process.argv);
+const network = args["--network"] || "rskRegtest";
+
+console.log(`[${new Date().toISOString()}] Deploying on ${network}...`);
+
+
 const { newDao, newApp } = require('../scripts/dao')
 const { createPermission, grantPermission } = require('../scripts/permissions')
 const BN = require('bn.js');
@@ -10,6 +18,9 @@ const MilestoneLib = artifacts.require('MilestoneLib')
 const ActivityLib = artifacts.require('ActivityLib')
 const DonationLib = artifacts.require('DonationLib')
 const Vault = artifacts.require('Vault')
+
+const PriceProviderMock = artifacts.require('PriceProviderMock');
+const PriceProxy = artifacts.require('PriceProxy')
 
 // Por versión de Solidity (0.4.24), el placeholder de la libraría aún se arma
 // con el nombre y no el hash.
@@ -183,11 +194,27 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     // TODO Este valor debe establerse por un Oracle.
     const USD_ETH_RATE = new BN('100000000000000');
     await crowdfunding.setExchangeRate(ETH, USD_ETH_RATE, { from: deployer });
+    
+    let priceProviderAddress;
+
+    if(network === "rskRegtest"){
+        const RBTC_PRICE = new BN('13050400000000000000000');
+        const priceProviderMock = await PriceProviderMock.new( RBTC_PRICE, { from: deployer });
+        priceProviderAddress = priceProviderMock.address;
+        log(` - PriceProviderMock: ${priceProviderAddress}`);
+        
+    } else {
+        priceProviderAddress = "0x2d39Cc54dc44FF27aD23A91a9B5fd750dae4B218"; //PriceProvider of MoC
+    }
+
+    const priceProxy = await PriceProxy.new(priceProviderAddress,{ from: deployer });
+    await crowdfunding.setPriceProxy(priceProxy.address, { from: deployer });
+
+    log(` - PriceProxy: ${priceProxy.address}`);
 
     // Habilitación de ETH (RBTC) para donar.
 
     log(` - Enable ETH (RBTC)`);
-
     await crowdfunding.enableToken(ETH, { from: deployer });
 
     log(` - Initialized`);
