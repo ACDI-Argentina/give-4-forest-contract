@@ -8,7 +8,6 @@ const CampaignLib = artifacts.require('CampaignLib')
 const MilestoneLib = artifacts.require('MilestoneLib')
 const ActivityLib = artifacts.require('ActivityLib')
 const DonationLib = artifacts.require('DonationLib')
-const BudgetLib = artifacts.require('BudgetLib')
 const BN = require('bn.js');
 
 // Ejemplo de IPFS CID con datos JSON
@@ -29,7 +28,6 @@ const CAMPAIGN_LIB_PLACEHOLDER = '__contracts/CampaignLib.sol:CampaignLi__';
 const MILESTONE_LIB_PLACEHOLDER = '__contracts/MilestoneLib.sol:Milestone__';
 const ACTIVITY_LIB_PLACEHOLDER = '__contracts/ActivityLib.sol:ActivityLi__';
 const DONATION_LIB_PLACEHOLDER = '__contracts/DonationLib.sol:DonationLi__';
-const BUDGET_LIB_PLACEHOLDER = '__contracts/BudgetLib.sol:BudgetLib_____';
 
 const linkLib = async (lib, destination, libPlaceholder) => {
   let libAddr = lib.address.replace('0x', '').toLowerCase()
@@ -58,9 +56,7 @@ const newCrowdfunding = async (deployer) => {
   // Link Crowdfunding > DonationLib
   const donationLib = await DonationLib.new({ from: deployer });
   await linkLib(donationLib, Crowdfunding, DONATION_LIB_PLACEHOLDER);
-  // Link Crowdfunding > BudgetLib
-  const budgetLib = await BudgetLib.new({ from: deployer });
-  await linkLib(budgetLib, Crowdfunding, BUDGET_LIB_PLACEHOLDER);
+
   return await Crowdfunding.new({ from: deployer });
 }
 
