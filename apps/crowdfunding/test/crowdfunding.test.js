@@ -37,7 +37,7 @@ const tokenTestGroups = [
 ];
 
 //Price providers
-const PriceProxy = artifacts.require('PriceProxy');
+const ExchangeRateProvider = artifacts.require('ExchangeRateProvider');
 const PriceProviderMock = artifacts.require('./mocks/PriceProviderMock')
 
 
@@ -138,8 +138,8 @@ contract('Crowdfunding App', (accounts) => {
 
             //Inicializacion de price provider
             priceProviderMock = await PriceProviderMock.new("13050400000000000000000");
-            priceProxy = await PriceProxy.new(priceProviderMock.address);
-            await crowdfunding.setPriceProxy(priceProxy.address);
+            exchangeRateProvider = await ExchangeRateProvider.new(priceProviderMock.address);
+            await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address);
 
         } catch (err) {
             console.log(err);

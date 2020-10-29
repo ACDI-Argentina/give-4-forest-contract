@@ -8,7 +8,7 @@ import "@aragon/os/contracts/lib/math/SafeMath.sol";
   como los priceProvider de MoC
   TODO: Preguntar por la cotizacion de otros tokens
 */
-contract PriceProxy {
+contract ExchangeRateProvider {
     using SafeMath for uint256;
     IPriceProvider internal priceProvider;
     address RBTC = 0x0;

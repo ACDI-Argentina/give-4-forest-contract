@@ -12,7 +12,7 @@ import "./MilestoneLib.sol";
 import "./ActivityLib.sol";
 import "./DonationLib.sol";
 
-import "./PriceProxy.sol";
+import "./ExchangeRateProvider.sol";
 /**
  * @title Crowdfunding
  * @author ACDI
@@ -41,7 +41,7 @@ contract Crowdfunding is AragonApp, Constants {
     ActivityLib.Data activityData;
     DonationLib.Data donationData; 
 
-    PriceProxy internal priceProxy;
+    ExchangeRateProvider internal exchangeRateProvider;
 
     mapping(address => ExchangeRate) public exchangeRates;
 
@@ -488,8 +488,8 @@ contract Crowdfunding is AragonApp, Constants {
         donationData.insertToken(_token);
     }
 
-    function setPriceProxy(PriceProxy _priceProxy) public { //TODO: CRITICAL: ADD AUTH
-        priceProxy = _priceProxy; //TODO: Emit event
+    function setExchangeRateProvider(ExchangeRateProvider _exchangeRateProvider) public { //TODO: CRITICAL: ADD AUTH
+        exchangeRateProvider = _exchangeRateProvider; //TODO: Emit event
     }
 
     /**
@@ -777,6 +777,6 @@ contract Crowdfunding is AragonApp, Constants {
     function _getExchangeRate(address _token) public view returns (uint256){ //it's private, only set as public for test purposes
         /* require( exchangeRates[_token].date != 0, ERROR_EXCHANGE_RATE_NOT_EXISTS); */ 
         //TODO: Implement some way to revert transaction if price doesn't exists
-        return priceProxy.getExchangeRate(_token);
+        return exchangeRateProvider.getExchangeRate(_token);
     }
 }

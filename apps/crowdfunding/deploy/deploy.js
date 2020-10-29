@@ -20,7 +20,7 @@ const DonationLib = artifacts.require('DonationLib')
 const Vault = artifacts.require('Vault')
 
 const PriceProviderMock = artifacts.require('PriceProviderMock');
-const PriceProxy = artifacts.require('PriceProxy')
+const ExchangeRateProvider = artifacts.require('ExchangeRateProvider')
 
 // Por versión de Solidity (0.4.24), el placeholder de la libraría aún se arma
 // con el nombre y no el hash.
@@ -207,10 +207,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         priceProviderAddress = "0x2d39Cc54dc44FF27aD23A91a9B5fd750dae4B218"; //PriceProvider of MoC
     }
 
-    const priceProxy = await PriceProxy.new(priceProviderAddress,{ from: deployer });
-    await crowdfunding.setPriceProxy(priceProxy.address, { from: deployer });
+    const exchangeRateProvider = await ExchangeRateProvider.new(priceProviderAddress,{ from: deployer });
+    await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address, { from: deployer });
 
-    log(` - PriceProxy: ${priceProxy.address}`);
+    log(` - ExchangeRateProvider: ${exchangeRateProvider.address}`);
 
     // Habilitación de ETH (RBTC) para donar.
 

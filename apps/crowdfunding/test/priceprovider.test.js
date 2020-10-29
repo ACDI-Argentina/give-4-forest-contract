@@ -6,7 +6,7 @@ const Crowdfunding = artifacts.require('Crowdfunding')
 const Vault = artifacts.require('Vault')
 const BN = require('bn.js');
 
-const PriceProxy = artifacts.require('PriceProxy');
+const ExchangeRateProvider = artifacts.require('ExchangeRateProvider');
 const PriceProviderMock = artifacts.require('./mocks/PriceProviderMock')
 
 const BNEquals = (bn1, bn2) => assert.ok(bn1.eq(bn2));
@@ -17,7 +17,7 @@ const RBTC = "0x0000000000000000000000000000000000000000";
 contract('PriceProvider', (accounts) => {
     let crowdfundingBase, crowdfunding;
     let vaultBase, vault;
-    let priceProxy, priceProviderMock;
+    let exchangeRateProvider, priceProviderMock;
     const deployer = accounts[0];
     before(async () => {
         crowdfundingBase = await newCrowdfunding(deployer);
@@ -41,8 +41,8 @@ contract('PriceProvider', (accounts) => {
 
             //Inicializacion de price provider
             priceProviderMock = await PriceProviderMock.new("13050400000000000000000");
-            priceProxy = await PriceProxy.new(priceProviderMock.address);
-            await crowdfunding.setPriceProxy(priceProxy.address);
+            exchangeRateProvider = await ExchangeRateProvider.new(priceProviderMock.address);
+            await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address);
 
         } catch (err) {
             console.log(err);
@@ -54,7 +54,7 @@ contract('PriceProvider', (accounts) => {
     context('Prices', function () {
 
         it('canary (get btc price)', async () => {
-            const btcPrice = await priceProxy.getBTCPriceFromMoC();
+            const btcPrice = await exchangeRateProvider.getBTCPriceFromMoC();
             BNEqualsNumber(btcPrice, "13050400000000000000000");
         })
 
