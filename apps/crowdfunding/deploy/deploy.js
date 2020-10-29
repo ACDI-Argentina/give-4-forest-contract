@@ -150,6 +150,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let CREATE_CAMPAIGN_ROLE = await crowdfundingBase.CREATE_CAMPAIGN_ROLE();
     let CREATE_MILESTONE_ROLE = await crowdfundingBase.CREATE_MILESTONE_ROLE();
     let EXCHANGE_RATE_ROLE = await crowdfundingBase.EXCHANGE_RATE_ROLE();
+    let SET_EXCHANGE_RATE_PROVIDER = await crowdfundingBase.SET_EXCHANGE_RATE_PROVIDER();
     let ENABLE_TOKEN_ROLE = await crowdfundingBase.ENABLE_TOKEN_ROLE();
     let TRANSFER_ROLE = await vaultBase.TRANSFER_ROLE()
     log(`   - CREATE_DAC_ROLE`);
@@ -167,6 +168,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(`       - Account1: ${account1}`);
     log(`   - EXCHANGE_RATE_ROLE`);
     await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
+    log(`   - SET_EXCHANGE_RATE_PROVIDER`);
+    await createPermission(acl, deployer, crowdfunding.address, SET_EXCHANGE_RATE_PROVIDER, deployer);
     log(`       - Deployer: ${deployer}`);
     log(`   - ENABLE_TOKEN_ROLE`);
     await createPermission(acl, deployer, crowdfunding.address, ENABLE_TOKEN_ROLE, deployer);
