@@ -1,6 +1,7 @@
 const { assertRevert } = require('@aragon/test-helpers/assertThrow')
 const { newDao, newApp } = require('../scripts/dao')
 const { newCrowdfunding } = require('./helpers/crowdfunding')
+const { createPermission, grantPermission } = require('../scripts/permissions')
 
 const Crowdfunding = artifacts.require('Crowdfunding')
 const Vault = artifacts.require('Vault')
@@ -19,10 +20,12 @@ contract('PriceProvider', (accounts) => {
     let vaultBase, vault;
     let exchangeRateProvider, priceProviderMock;
     const deployer = accounts[0];
+    let SET_EXCHANGE_RATE_PROVIDER;
+
     before(async () => {
         crowdfundingBase = await newCrowdfunding(deployer);
         vaultBase = await Vault.new({ from: deployer });
-
+        SET_EXCHANGE_RATE_PROVIDER = await crowdfundingBase.SET_EXCHANGE_RATE_PROVIDER();
     })
 
     beforeEach(async () => {
@@ -40,6 +43,8 @@ contract('PriceProvider', (accounts) => {
             await crowdfunding.initialize(vault.address);
 
             //Inicializacion de price provider
+            await createPermission(acl, deployer, crowdfunding.address, SET_EXCHANGE_RATE_PROVIDER, deployer);
+            
             priceProviderMock = await PriceProviderMock.new("13050400000000000000000");
             exchangeRateProvider = await ExchangeRateProvider.new(priceProviderMock.address);
             await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address);
@@ -59,7 +64,7 @@ contract('PriceProvider', (accounts) => {
         })
 
         it('get rbtc rate from Crowdfunding', async () => {
-            const btcPrice = await crowdfunding._getExchangeRate(RBTC);
+            const btcPrice = await crowdfunding.getExchangeRate(RBTC);
             BNEqualsNumber(btcPrice, "766260038006");
         })
 
