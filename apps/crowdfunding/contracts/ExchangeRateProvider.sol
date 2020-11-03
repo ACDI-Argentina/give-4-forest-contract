@@ -11,6 +11,7 @@ contract ExchangeRateProvider {
     using SafeMath for uint256;
     IPriceProvider internal priceProvider;
     address RBTC = 0x0;
+    //array of allowed tokens? //require comprobaria que se encuentre en el listado
 
     constructor(IPriceProvider _priceProviderAddress) public {
         priceProvider = _priceProviderAddress;
@@ -24,8 +25,8 @@ contract ExchangeRateProvider {
             uint256 tokenPriceUSDWei = getBTCPriceFromMoC();
             return _asExchangeRate(tokenPriceUSDWei);
         } else {
-            //can throw exceptions or something else?
-            return 0;
+            return 0; //we should revert transaction? https://blog.polymath.network/try-catch-in-solidity-handling-the-revert-exception-f53718f76047
+            //Otra alternativa sería retornar una tupla (has,exchangeRate)
         }
     }
 

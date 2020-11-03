@@ -2,6 +2,7 @@ const { assertRevert } = require('@aragon/test-helpers/assertThrow')
 const { newDao, newApp } = require('../scripts/dao')
 const { newCrowdfunding } = require('./helpers/crowdfunding')
 const { createPermission, grantPermission } = require('../scripts/permissions')
+const { errors } = require('./helpers/errors')
 
 const Crowdfunding = artifacts.require('Crowdfunding')
 const Vault = artifacts.require('Vault')
@@ -14,12 +15,15 @@ const BNEquals = (bn1, bn2) => assert.ok(bn1.eq(bn2));
 const BNEqualsNumber = (bn1, n2) => assert.ok(bn1.eq(new BN(n2)));
 
 const RBTC = "0x0000000000000000000000000000000000000000";
+const newExchangeRateProvider = "0xE45dBA2a53c0495B7BBdE5fc7ab570bD5aDd5191";
+const randomAddr = "0xD059764e0B0C949001bF19F9cd06eA7D9e4090D7";
 
 contract('PriceProvider', (accounts) => {
     let crowdfundingBase, crowdfunding;
     let vaultBase, vault;
     let exchangeRateProvider, priceProviderMock;
     const deployer = accounts[0];
+    const giver = accounts[1];
     let SET_EXCHANGE_RATE_PROVIDER;
 
     before(async () => {
@@ -56,16 +60,34 @@ contract('PriceProvider', (accounts) => {
 
 
 
-    context('Prices', function () {
+    context('Token Prices', function () {
 
         it('canary (get btc price)', async () => {
             const btcPrice = await exchangeRateProvider.getBTCPriceFromMoC();
             BNEqualsNumber(btcPrice, "13050400000000000000000");
         })
 
-        it('get rbtc rate from Crowdfunding', async () => {
-            const btcPrice = await crowdfunding.getExchangeRate(RBTC);
-            BNEqualsNumber(btcPrice, "766260038006");
+        it('get RBTC exchange rate from Crowdfunding', async () => {
+            const exchangeRate = await crowdfunding.getExchangeRate(RBTC);
+            BNEqualsNumber(exchangeRate, "766260038006");
+        })
+
+        it('get not existent token exchange rate from Crowdfunding', async () => {
+            const exchangeRate = await crowdfunding.getExchangeRate(randomAddr);
+            BNEqualsNumber(exchangeRate, "0");
+        })
+
+        it('cambio de setExchangeRateProvider autorizado', async () => {
+            await crowdfunding.setExchangeRateProvider(newExchangeRateProvider,{from:deployer});
+            const exchangeRateProvider = await crowdfunding.exchangeRateProvider();
+            assert.equal(exchangeRateProvider,newExchangeRateProvider)
+        })
+
+        it('cambio de setExchangeRateProvider no autorizado', async () => {
+            await assertRevert(
+                crowdfunding.setExchangeRateProvider(newExchangeRateProvider,{from:giver}),
+                errors.APP_AUTH_FAILED
+            )
         })
 
 

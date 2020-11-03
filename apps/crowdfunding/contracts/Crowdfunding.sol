@@ -41,7 +41,7 @@ contract Crowdfunding is AragonApp, Constants {
     ActivityLib.Data activityData;
     DonationLib.Data donationData; 
 
-    ExchangeRateProvider internal exchangeRateProvider;
+    ExchangeRateProvider public exchangeRateProvider;
 
     mapping(address => ExchangeRate) public exchangeRates;
 
@@ -775,9 +775,11 @@ contract Crowdfunding is AragonApp, Constants {
     /**
      * @notice Obtiene el Exchange Rate del Token `_token`
      * @return Exchange Rate del Token.
+     TODO: Está funcion quizas es redundate, ya que desde fuera podemos obtener el 
+     exchangeRateProvider que se está utilizando y invocar a este método sobre el otro contrato
      */
     function getExchangeRate(address _token) public view returns (uint256){ 
-        /* require( exchangeRates[_token].date != 0, ERROR_EXCHANGE_RATE_NOT_EXISTS); */ 
+        /* require( exchangeRates[_token].date != 0, ERROR_EXCHANGE_RATE_NOT_EXISTS); */
         //TODO: Implement some way to revert transaction if price doesn't exists
         return exchangeRateProvider.getExchangeRate(_token);
     }
