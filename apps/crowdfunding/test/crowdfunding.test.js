@@ -93,7 +93,7 @@ contract('Crowdfunding App', (accounts) => {
     let vaultBase, vault;
     let CREATE_DAC_ROLE, CREATE_CAMPAIGN_ROLE, CREATE_MILESTONE_ROLE, EXCHANGE_RATE_ROLE, ENABLE_TOKEN_ROLE, SET_EXCHANGE_RATE_PROVIDER;
     let TRANSFER_ROLE;
-    let ETH
+    let RBTC
 
     before(async () => {
         crowdfundingBase = await newCrowdfunding(deployer);
@@ -108,7 +108,7 @@ contract('Crowdfunding App', (accounts) => {
         TRANSFER_ROLE = await vaultBase.TRANSFER_ROLE()
 
         const ethConstant = await EtherTokenConstantMock.new()
-        ETH = await ethConstant.getETHConstant()
+        RBTC = await ethConstant.getETHConstant()
     })
 
     beforeEach(async () => {
@@ -137,11 +137,6 @@ contract('Crowdfunding App', (accounts) => {
             // Inicialización
             await vault.initialize()
             await crowdfunding.initialize(vault.address);
-
-            //Inicializacion de price provider
-            priceProviderMock = await PriceProviderMock.new("13050400000000000000000");
-            exchangeRateProvider = await ExchangeRateProvider.new(priceProviderMock.address);
-            await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address);
 
         } catch (err) {
             console.log(err);
@@ -443,16 +438,16 @@ contract('Crowdfunding App', (accounts) => {
 
             const amount = 10;
 
-            await assertRevert(crowdfunding.donate(dacId, ETH, amount, { from: giver }), errors.CROWDFUNDING_DONATE_TOKEN_NOT_ENABLED)
+            await assertRevert(crowdfunding.donate(dacId, RBTC, amount, { from: giver }), errors.CROWDFUNDING_DONATE_TOKEN_NOT_ENABLED)
         });
 
         it('Donar a Dac', async () => {
 
-            await crowdfunding.enableToken(ETH, { from: deployer });
+            await crowdfunding.enableToken(RBTC, { from: deployer });
 
             const amount = 10
 
-            const receipt = await crowdfunding.donate(dacId, ETH, amount, { from: giver, value: amount });
+            const receipt = await crowdfunding.donate(dacId, RBTC, amount, { from: giver, value: amount });
             const receiptId = getEventArgument(receipt, 'NewDonation', 'id');
             const receiptEntityId = getEventArgument(receipt, 'NewDonation', 'entityId');
             const receiptToken = getEventArgument(receipt, 'NewDonation', 'token');
@@ -460,7 +455,7 @@ contract('Crowdfunding App', (accounts) => {
 
             assert.equal(receiptId, 1);
             assert.equal(receiptEntityId, dacId);
-            assert.equal(receiptToken, ETH);
+            assert.equal(receiptToken, RBTC);
             assert.equal(receiptAmount, amount);
 
             let dac = await crowdfunding.getDac(dacId);
@@ -472,7 +467,7 @@ contract('Crowdfunding App', (accounts) => {
             assertDonation(donations[0], {
                 id: 1,
                 giver: giver,
-                token: ETH,
+                token: RBTC,
                 amount: amount,
                 amountRemainding: amount,
                 entityId: dacId,
@@ -481,16 +476,16 @@ contract('Crowdfunding App', (accounts) => {
             });
 
             // Assert desde el Vault
-            assert.equal(await vault.balance(ETH), amount, 'Los tokens donados deben estar en el Vault.');
+            assert.equal(await vault.balance(RBTC), amount, 'Los tokens donados deben estar en el Vault.');
         })
 
         it('Donar a Campaign', async () => {
 
-            await crowdfunding.enableToken(ETH, { from: deployer });
+            await crowdfunding.enableToken(RBTC, { from: deployer });
 
             const amount = 10
 
-            const receipt = await crowdfunding.donate(campaignId, ETH, amount, { from: giver, value: amount });
+            const receipt = await crowdfunding.donate(campaignId, RBTC, amount, { from: giver, value: amount });
             const receiptId = getEventArgument(receipt, 'NewDonation', 'id');
             const receiptEntityId = getEventArgument(receipt, 'NewDonation', 'entityId');
             const receiptToken = getEventArgument(receipt, 'NewDonation', 'token');
@@ -498,7 +493,7 @@ contract('Crowdfunding App', (accounts) => {
 
             assert.equal(receiptId, 1);
             assert.equal(receiptEntityId, campaignId);
-            assert.equal(receiptToken, ETH);
+            assert.equal(receiptToken, RBTC);
             assert.equal(receiptAmount, amount);
 
             let campaign = await crowdfunding.getCampaign(campaignId);
@@ -510,7 +505,7 @@ contract('Crowdfunding App', (accounts) => {
             assertDonation(donations[0], {
                 id: 1,
                 giver: giver,
-                token: ETH,
+                token: RBTC,
                 amount: amount,
                 amountRemainding: amount,
                 entityId: campaignId,
@@ -519,16 +514,16 @@ contract('Crowdfunding App', (accounts) => {
             });
 
             // Assert desde el Vault
-            assert.equal(await vault.balance(ETH), amount, 'Los tokens donados deben estar en el Vault.');
+            assert.equal(await vault.balance(RBTC), amount, 'Los tokens donados deben estar en el Vault.');
         })
 
         it('Donar a Milestone', async () => {
 
-            await crowdfunding.enableToken(ETH, { from: deployer });
+            await crowdfunding.enableToken(RBTC, { from: deployer });
 
             const amount = 10
 
-            const receipt = await crowdfunding.donate(milestoneId, ETH, amount, { from: giver, value: amount });
+            const receipt = await crowdfunding.donate(milestoneId, RBTC, amount, { from: giver, value: amount });
             const receiptId = getEventArgument(receipt, 'NewDonation', 'id');
             const receiptEntityId = getEventArgument(receipt, 'NewDonation', 'entityId');
             const receiptToken = getEventArgument(receipt, 'NewDonation', 'token');
@@ -536,7 +531,7 @@ contract('Crowdfunding App', (accounts) => {
 
             assert.equal(receiptId, 1);
             assert.equal(receiptEntityId, milestoneId);
-            assert.equal(receiptToken, ETH);
+            assert.equal(receiptToken, RBTC);
             assert.equal(receiptAmount, amount);
 
             let milestone = await crowdfunding.getMilestone(milestoneId);
@@ -548,7 +543,7 @@ contract('Crowdfunding App', (accounts) => {
             assertDonation(donations[0], {
                 id: 1,
                 giver: giver,
-                token: ETH,
+                token: RBTC,
                 amount: amount,
                 amountRemainding: amount,
                 entityId: milestoneId,
@@ -557,7 +552,7 @@ contract('Crowdfunding App', (accounts) => {
             });
 
             // Assert desde el Vault
-            assert.equal(await vault.balance(ETH), amount, 'Los tokens donados deben estar en el Vault.');
+            assert.equal(await vault.balance(RBTC), amount, 'Los tokens donados deben estar en el Vault.');
         })
     })
 
@@ -714,7 +709,7 @@ contract('Crowdfunding App', (accounts) => {
 
         beforeEach(async () => {
 
-            await crowdfunding.enableToken(ETH, { from: deployer });
+            await crowdfunding.enableToken(RBTC, { from: deployer });
             dacId1 = await newDac(crowdfunding, delegate);
             dacId2 = await newDac(crowdfunding, delegate);
             campaignId1 = await saveCampaign(crowdfunding,
@@ -738,28 +733,28 @@ contract('Crowdfunding App', (accounts) => {
                 campaignReviewer,
                 campaignId2);
             donationAmount = new BN('10');
-            // Donación de ETH a DAC 1
+            // Donación de RBTC a DAC 1
             donationId1 = await newDonationEther(crowdfunding,
                 dacId1,
-                ETH,
+                RBTC,
                 donationAmount,
                 giver);
-            // Donación de ETH a Campaign 1
+            // Donación de RBTC a Campaign 1
             donationId2 = await newDonationEther(crowdfunding,
                 campaignId1,
-                ETH,
+                RBTC,
                 donationAmount,
                 giver);
-            // Donación de ETH a Milestone 1
+            // Donación de RBTC a Milestone 1
             donationId3 = await newDonationEther(crowdfunding,
                 milestoneId1,
-                ETH,
+                RBTC,
                 donationAmount,
                 giver);
-            // Donación de ETH a DAC 2
+            // Donación de RBTC a DAC 2
             donationId4 = await newDonationEther(crowdfunding,
                 dacId2,
-                ETH,
+                RBTC,
                 donationAmount,
                 giver);
         });
@@ -896,7 +891,7 @@ contract('Crowdfunding App', (accounts) => {
 
             beforeEach(async () => {
 
-                await crowdfunding.enableToken(ETH, { from: deployer });
+                await crowdfunding.enableToken(RBTC, { from: deployer });
                 dacId = await newDac(crowdfunding, delegate);
                 campaignId = await saveCampaign(crowdfunding,
                     campaignManager,
@@ -1152,10 +1147,15 @@ contract('Crowdfunding App', (accounts) => {
         let donationId1, donationId2, donationId3;
         // 10 ETH > 1E+019 Wei
         const donationAmount = new BN('10000000000000000000');
-
+        
         beforeEach(async () => {
 
-            await crowdfunding.enableToken(ETH, { from: deployer });
+            await crowdfunding.enableToken(RBTC, { from: deployer });
+
+            //Inicializacion de price provider
+            priceProviderMock = await PriceProviderMock.new("13050400000000000000000");
+            exchangeRateProvider = await ExchangeRateProvider.new(priceProviderMock.address);
+            await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address);
 
             dacId1 = await newDac(crowdfunding, delegate);
             campaignId1 = await saveCampaign(crowdfunding,
@@ -1168,31 +1168,27 @@ contract('Crowdfunding App', (accounts) => {
                 milestoneRecipient,
                 campaignReviewer,
                 campaignId1);
-            // Donación de ETH a DAC 1
+            // Donación de RBTC a DAC 1
             donationId1 = await newDonationEther(crowdfunding,
                 dacId1,
-                ETH,
+                RBTC,
                 donationAmount,
                 giver);
-            // Donación de ETH a Campaign 1
+            // Donación de RBTC a Campaign 1
             donationId2 = await newDonationEther(crowdfunding,
                 campaignId1,
-                ETH,
+                RBTC,
                 donationAmount,
                 giver);
-            // Donación de ETH a Milestone 1
+            // Donación de RBTC a Milestone 1
             donationId3 = await newDonationEther(crowdfunding,
                 milestoneId1,
-                ETH,
+                RBTC,
                 donationAmount,
                 giver);
         });
 
         it('Withdraw ETH', async () => {
-
-            // Se carga cotización de ETH
-            // TODO Esto debiera hacerse a través de un Oracle.
-            await crowdfunding.setExchangeRate(ETH, USD_ETH_RATE, { from: deployer });
 
             // Inicialmente de completa y aprueba el milestone.
             await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
@@ -1221,7 +1217,7 @@ contract('Crowdfunding App', (accounts) => {
             assertDonation(donations[1], {
                 id: donationId3,
                 giver: giver,
-                token: ETH,
+                token: RBTC,
                 amount: donationAmount,
                 amountRemainding: donationAmount.sub(FIAT_AMOUNT_TARGET.mul(USD_ETH_RATE)),
                 entityId: milestoneId1,
@@ -1239,11 +1235,6 @@ contract('Crowdfunding App', (accounts) => {
         })
 
         it('Withdraw ETH no aprobado', async () => {
-
-            // Se carga cotización de ETH
-            // TODO Esto debiera hacerse a través de un Oracle.
-            await crowdfunding.setExchangeRate(ETH, USD_ETH_RATE, { from: deployer });
-
             // El Milestone no está aprobado, por lo que no pueden retirarse los fondos.
             await assertRevert(
                 crowdfunding.milestoneWithdraw(milestoneId1, { from: milestoneRecipient }),
@@ -1263,32 +1254,30 @@ contract('Crowdfunding App', (accounts) => {
         })
     })
 
-    context('Exchange Rate', function () {
+    context('Exchange Rate ', function () {
+
+        const randomAddr = "0xD059764e0B0C949001bF19F9cd06eA7D9e4090D7";
 
         beforeEach(async () => {
-
+            //Inicializacion de price provider
+            priceProviderMock = await PriceProviderMock.new("13050400000000000000000");
+            exchangeRateProvider = await ExchangeRateProvider.new(priceProviderMock.address);
+            await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address);
 
         });
 
-        it('Set Exchange Rate ETH', async () => {
-
-            await crowdfunding.setExchangeRate(ETH, USD_ETH_RATE, { from: deployer });
-
-            let exchangeRate = await crowdfunding.exchangeRates(ETH);
-            assert.equal(exchangeRate.token, ETH);
-            assert.equal(exchangeRate.rate.toString(), USD_ETH_RATE.toString());
-            //assert.isAbove(exchangeRate.date.toNumber(), before);
+        it('setExchangeRateProvider autorizado', async () => {
+            await crowdfunding.setExchangeRateProvider(randomAddr,{from:deployer});
+            const exchangeRateProvider = await crowdfunding.exchangeRateProvider();
+            assert.equal(exchangeRateProvider,randomAddr)
         })
 
-        it('Set Exchange Rate ETH no autorizado', async () => {
-
-            // notAuthorized account no está autorizado a cambiar la cotización del ETH
+        it('setExchangeRateProvider no autorizado', async () => {
             await assertRevert(
-                crowdfunding.setExchangeRate(
-                    ETH,
-                    USD_ETH_RATE,
-                    { from: notAuthorized }),
-                errors.APP_AUTH_FAILED)
+                crowdfunding.setExchangeRateProvider(randomAddr,{from:notAuthorized}),
+                errors.APP_AUTH_FAILED
+            )
         })
+
     })
 })
