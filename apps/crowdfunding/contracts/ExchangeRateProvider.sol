@@ -18,6 +18,7 @@ contract ExchangeRateProvider {
     }
 
     /**
+     * @param _token Token para el cual se estable el tipo de cambio en USD.
      * @return _rate Equivalencia de 0.01 USD en Token.
      */
     function getExchangeRate(address _token) public view returns (uint256) {
