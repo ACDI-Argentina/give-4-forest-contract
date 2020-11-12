@@ -63,7 +63,7 @@ contract('ExchangeRateProvider', (accounts) => {
     context('Token Prices', function () {
 
         it('get RBTC price from exchangeRateProvider', async () => {
-            const btcPrice = await exchangeRateProvider.getBTCPriceFromMoC();
+            const btcPrice = await exchangeRateProvider.getBTCPrice();
             BNEqualsNumber(btcPrice, "13050400000000000000000");
         })
 

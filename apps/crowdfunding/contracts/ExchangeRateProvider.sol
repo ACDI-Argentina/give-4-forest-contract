@@ -23,7 +23,7 @@ contract ExchangeRateProvider {
      */
     function getExchangeRate(address _token) public view returns (uint256) {
         if (_token == RBTC) {
-            uint256 tokenPriceUSDWei = getBTCPriceFromMoC();
+            uint256 tokenPriceUSDWei = getBTCPrice();
             return _asExchangeRate(tokenPriceUSDWei);
         } else {
             return 0; //we should revert transaction? https://blog.polymath.network/try-catch-in-solidity-handling-the-revert-exception-f53718f76047
@@ -31,7 +31,10 @@ contract ExchangeRateProvider {
         }
     }
 
-    function getBTCPriceFromMoC() public view returns (uint256) {
+    /**
+     @notice uses Money On Chain as oracle
+     */
+    function getBTCPrice() public view returns (uint256) {
         (bytes32 price, bool has) = priceProvider.peek();
         require(has, "Oracle have no Bitcoin Price");
         return uint256(price);
