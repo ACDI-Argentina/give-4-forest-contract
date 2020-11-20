@@ -6,5 +6,6 @@ module.exports = {
   Crowdfunding: generateClass(
     CrowdfundingArtifact.abi,
     CrowdfundingArtifact.bytecode
-  )
+  ),
+  CrowdfundingAbi: CrowdfundingArtifact.abi
 };
