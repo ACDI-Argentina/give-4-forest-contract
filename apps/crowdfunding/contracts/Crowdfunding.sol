@@ -27,13 +27,6 @@ contract Crowdfunding is AragonApp, Constants {
     using DonationLib for DonationLib.Data;
     using SafeMath for uint256;
 
-    /// @dev Estructura que almacena el tipo de cambio en USD de un token para una fecha y hora.
-    struct ExchangeRate {
-        address token;
-        uint64 date; // Fecha y hora del tipo de cambio.
-        uint256 rate; // USD por Token.
-    }
-
     EntityLib.Data entityData;
     DacLib.Data dacData;
     CampaignLib.Data campaignData;
@@ -42,8 +35,6 @@ contract Crowdfunding is AragonApp, Constants {
     DonationLib.Data donationData; 
 
     ExchangeRateProvider public exchangeRateProvider;
-
-    mapping(address => ExchangeRate) public exchangeRates;
 
     Vault public vault;
 
@@ -430,7 +421,7 @@ contract Crowdfunding is AragonApp, Constants {
             // El retiro se realiza ordenado por token de las donaciones.
             address token = donationData.tokens[i1];
             uint256 tokenAmount = 0;
-            uint256 tokenRate = getExchangeRate(token); //rate
+            uint256 tokenRate = exchangeRateProvider.getExchangeRate(token);
             for (uint256 i2 = 0; i2 < entity.budgetDonationIds.length; i2++) {
                 DonationLib.Donation storage donation = _getDonation(
                     entity.budgetDonationIds[i2]
@@ -492,20 +483,6 @@ contract Crowdfunding is AragonApp, Constants {
         public 
         auth(SET_EXCHANGE_RATE_PROVIDER){
         exchangeRateProvider = _exchangeRateProvider; 
-    }
-
-    /**
-     * @notice Establece que `_rate` del `_token` equivale a 0.01 USD.
-     * @dev TODO este método debe reeplazarse por el establecimiento a través de un Oracle.
-     *  Evaluar la incorporación de RIF Gateway.
-     * @param _token Token para el cual se estable el tipo de cambio en USD.
-     * @param _rate Equivalencia de 0.01 USD en Token.
-     */
-    function setExchangeRate(address _token, uint256 _rate)
-        public
-        auth(EXCHANGE_RATE_ROLE)
-    {
-        exchangeRates[_token] = ExchangeRate(_token, getTimestamp64(), _rate);
     }
 
     // Getters functions
@@ -772,15 +749,4 @@ contract Crowdfunding is AragonApp, Constants {
         return donationData.getDonation(_id);
     }
 
-    /**
-     * @notice Obtiene el Exchange Rate del Token `_token`
-     * @return Exchange Rate del Token.
-     TODO: Está funcion quizas es redundate, ya que desde fuera podemos obtener el 
-     exchangeRateProvider que se está utilizando y invocar a este método sobre el otro contrato
-     */
-    function getExchangeRate(address _token) public view returns (uint256){ 
-        /* require( exchangeRates[_token].date != 0, ERROR_EXCHANGE_RATE_NOT_EXISTS); */
-        //TODO: Implement some way to revert transaction if price doesn't exists
-        return exchangeRateProvider.getExchangeRate(_token);
-    }
 }
