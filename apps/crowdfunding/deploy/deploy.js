@@ -195,7 +195,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
         const RBTC_PRICE = new BN('13050400000000000000000');
         const priceProviderMock = await PriceProviderMock.new( RBTC_PRICE, { from: deployer });
         priceProviderAddress = priceProviderMock.address;
-        log(` - PriceProviderMock: ${priceProviderAddress}`);
+        log(`   - PriceProviderMock: ${priceProviderAddress}`);
         
     } else {
         priceProviderAddress = "0x2d39Cc54dc44FF27aD23A91a9B5fd750dae4B218"; //PriceProvider of MoC
@@ -204,7 +204,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const exchangeRateProvider = await ExchangeRateProvider.new(priceProviderAddress,{ from: deployer });
     await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address, { from: deployer });
 
-    log(` - ExchangeRateProvider: ${exchangeRateProvider.address}`);
+    log(`   - ExchangeRateProvider: ${exchangeRateProvider.address}`);
 
     // Habilitación de ETH (RBTC) para donar.
 
