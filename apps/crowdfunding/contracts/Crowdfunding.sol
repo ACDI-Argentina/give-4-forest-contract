@@ -96,29 +96,20 @@ contract Crowdfunding is AragonApp, Constants {
 
         if (_campaignId == 0) {
             entityId = _newEntity(EntityLib.EntityType.Campaign);
-            campaignData.insert(
-                entityId,
-                _infoCid,
-                _dacId,
-                msg.sender,
-                _reviewer
-            );
         } else {
             entityId = _campaignId;
-            CampaignLib.Campaign storage campaign = _getCampaign(entityId);
-            require(msg.sender == campaign.manager, ERROR_AUTH_FAILED);
-
-            DacLib.Dac storage oldDac = _getDac(campaign.dacIds[0]);
-            campaignData.update(
-                entityId,
-                _infoCid,
-                _dacId,
-                msg.sender,
-                _reviewer
-            );
-
-            ArrayLib.removeElement(oldDac.campaignIds, entityId); //Actualiza las referencias desde las dacs
+            require(msg.sender == campaignData.getCampaign(entityId).manager, ERROR_AUTH_FAILED);
+            ArrayLib.removeElement(_getDac(_getCampaign(entityId).dacIds[0]).campaignIds, entityId); //Borra la referencias desde las dac anterior, TODO: COMPROBAR SI CAMBIO
         }
+
+        campaignData.save(
+            entityId,
+            _infoCid,
+            _dacId,
+            msg.sender,
+            _reviewer,
+            _campaignId
+        );
 
         dac.campaignIds.push(entityId);
         emit SaveCampaign(entityId);

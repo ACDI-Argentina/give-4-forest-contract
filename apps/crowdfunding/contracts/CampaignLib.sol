@@ -85,6 +85,29 @@ library CampaignLib {
         campaign.dacIds = dacIdsTmp;        
     }
 
+    function save(
+        Data storage self,
+        uint256 id,
+        string _infoCid,
+        uint256 _dacId,
+        address _manager,
+        address _reviewer,
+        uint256 _campaignId
+    ) public {
+        if(_campaignId == 0){
+            return insert(self,id,_infoCid,_dacId,_manager,_reviewer);
+        } else {
+            return update(self,id,_infoCid,_dacId,_manager,_reviewer);
+        }
+    }
+
+
+
+
+
+
+
+
     /**
      * @notice Obtiene la Campaign `_id`
      * @return Campaign cuya identificación coincide con la especificada.
