@@ -44,7 +44,7 @@ library MilestoneLib {
      */
     function insert(
         Data storage self,
-        uint256 id,
+        uint256 id, //entityId
         string _infoCid,
         uint256 _campaignId,
         uint256 _fiatAmountTarget,
@@ -69,6 +69,40 @@ library MilestoneLib {
         milestone.campaignId = _campaignId;
         self.milestones[id] = milestone;
     }
+
+    function update(
+        Data storage self,
+        uint256 id, //entityId
+        string _infoCid,
+        uint256 _campaignId,
+        uint256 _fiatAmountTarget,
+        address _manager,
+        address _reviewer,
+        address _recipient,
+        address _campaignReviewer
+    ) public {
+        //self.ids.push(id);  ya existe
+        //uint256 idIndex = self.ids.length - 1; inmutable
+        Milestone storage milestone = self.milestones[id];
+        //milestone.id = id; inmutable
+        //milestone.idIndex = idIndex; inmutable
+        milestone.infoCid = _infoCid;
+        milestone.fiatAmountTarget = _fiatAmountTarget;
+        milestone.manager = _manager;
+        milestone.reviewer = _reviewer;
+        milestone.recipient = _recipient;
+        milestone.campaignReviewer = _campaignReviewer;
+        //milestone.status = Status.Active; inmutable
+        // Asociación entre Campaign y Milestone
+        milestone.campaignId = _campaignId;
+        //self.milestones[id] = milestone;
+    }
+
+
+
+
+
+
 
     /**
      * @notice Obtiene el Milestone `_id`

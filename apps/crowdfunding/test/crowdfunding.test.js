@@ -5,7 +5,7 @@ const { createPermission, grantPermission } = require('../scripts/permissions')
 const { newCrowdfunding,
     newDac,
     saveCampaign,
-    newMilestone,
+    saveMilestone,
     newDonationEther,
     newDonationToken,
     getDacs,
@@ -351,16 +351,17 @@ contract('Crowdfunding App', (accounts) => {
 
             let fiatAmountTarget = 10;
 
-            let receipt = await crowdfunding.newMilestone(
+            let receipt = await crowdfunding.saveMilestone(
                 INFO_CID,
                 campaignId,
                 fiatAmountTarget,
                 milestoneReviewer,
                 milestoneRecipient,
                 campaignReviewer,
+                0,
                 { from: milestoneManager });
 
-            let milestoneId = getEventArgument(receipt, 'NewMilestone', 'id');
+            let milestoneId = getEventArgument(receipt, 'SaveMilestone', 'id');
             assert.equal(milestoneId, 3);
 
             let milestones = await getMilestones(crowdfunding);
@@ -386,13 +387,14 @@ contract('Crowdfunding App', (accounts) => {
 
             // El delegate no tiene configurada la autorización para crear milestones.
             await assertRevert(
-                crowdfunding.newMilestone(
+                crowdfunding.saveMilestone(
                     INFO_CID,
                     campaignId,
                     fiatAmountTarget,
                     milestoneReviewer,
                     milestoneRecipient,
                     campaignReviewer,
+                    0,
                     { from: delegate })
                 , errors.APP_AUTH_FAILED)
         });
@@ -404,13 +406,14 @@ contract('Crowdfunding App', (accounts) => {
 
             let fiatAmountTarget = 10;
 
-            await assertRevert(crowdfunding.newMilestone(
+            await assertRevert(crowdfunding.saveMilestone(
                 INFO_CID,
                 campaignId,
                 fiatAmountTarget,
                 milestoneReviewer,
                 milestoneRecipient,
                 campaignReviewer,
+                0,
                 { from: milestoneManager }), errors.CROWDFUNDING_CAMPAIGN_NOT_EXIST)
         });
     })
@@ -426,7 +429,7 @@ contract('Crowdfunding App', (accounts) => {
                 campaignManager,
                 campaignReviewer,
                 dacId);
-            milestoneId = await newMilestone(crowdfunding,
+            milestoneId = await saveMilestone(crowdfunding,
                 milestoneManager,
                 milestoneReviewer,
                 milestoneRecipient,
@@ -573,7 +576,7 @@ contract('Crowdfunding App', (accounts) => {
                     campaignManager,
                     campaignReviewer,
                     dacId);
-                milestoneId = await newMilestone(crowdfunding,
+                milestoneId = await saveMilestone(crowdfunding,
                     milestoneManager,
                     milestoneReviewer,
                     milestoneRecipient,
@@ -720,13 +723,13 @@ contract('Crowdfunding App', (accounts) => {
                 campaignManager,
                 campaignReviewer,
                 dacId2);
-            milestoneId1 = await newMilestone(crowdfunding,
+            milestoneId1 = await saveMilestone(crowdfunding,
                 milestoneManager,
                 milestoneReviewer,
                 milestoneRecipient,
                 campaignReviewer,
                 campaignId1);
-            milestoneId2 = await newMilestone(crowdfunding,
+            milestoneId2 = await saveMilestone(crowdfunding,
                 milestoneManager,
                 milestoneReviewer,
                 milestoneRecipient,
@@ -897,7 +900,7 @@ contract('Crowdfunding App', (accounts) => {
                     campaignManager,
                     campaignReviewer,
                     dacId);
-                milestoneId = await newMilestone(crowdfunding,
+                milestoneId = await saveMilestone(crowdfunding,
                     milestoneManager,
                     milestoneReviewer,
                     milestoneRecipient,
@@ -1002,7 +1005,7 @@ contract('Crowdfunding App', (accounts) => {
                 campaignManager,
                 campaignReviewer,
                 dacId1);
-            milestoneId1 = await newMilestone(crowdfunding,
+            milestoneId1 = await saveMilestone(crowdfunding,
                 milestoneManager,
                 milestoneReviewer,
                 milestoneRecipient,
@@ -1162,7 +1165,7 @@ contract('Crowdfunding App', (accounts) => {
                 campaignManager,
                 campaignReviewer,
                 dacId1);
-            milestoneId1 = await newMilestone(crowdfunding,
+            milestoneId1 = await saveMilestone(crowdfunding,
                 milestoneManager,
                 milestoneReviewer,
                 milestoneRecipient,
