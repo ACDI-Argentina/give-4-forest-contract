@@ -145,42 +145,28 @@ contract Crowdfunding is AragonApp, Constants {
     ) external auth(CREATE_MILESTONE_ROLE) {
         CampaignLib.Campaign storage campaign = _getCampaign(_campaignId);// Se comprueba que la Campaign exista.
 
+        uint256 entityId;
+
         if (_milestoneId == 0) { //crear nuevo milestone
-            uint256 entityId = _newEntity(EntityLib.EntityType.Milestone);
-            milestoneData.insert(
-                entityId,
-                _infoCid,
-                _campaignId,
-                _fiatAmountTarget,
-                msg.sender,
-                _reviewer,
-                _recipient,
-                _campaignReviewer
-            );
-            campaign.milestoneIds.push(entityId);
-            emit SaveMilestone(entityId);
-
-        } else { 
-              require(msg.sender == milestoneData.getMilestone(_milestoneId).manager, ERROR_AUTH_FAILED);  
-              ArrayLib.removeElement(_getCampaign(milestoneData.getMilestone(_milestoneId).campaignId).milestoneIds, entityId); //Actualiza las referencias desde las campañas
-        
-              milestoneData.update(
-                _milestoneId,
-                _infoCid,
-                _campaignId, 
-                _fiatAmountTarget,
-                 msg.sender,
-                _reviewer,
-                _recipient,
-                _campaignReviewer
-            ); 
-
-
-            campaign.milestoneIds.push(_milestoneId);
-            emit SaveMilestone(_milestoneId);
+            entityId = _newEntity(EntityLib.EntityType.Milestone);
+        } else {
+            entityId = _milestoneId;
+            require(msg.sender == milestoneData.getMilestone(_milestoneId).manager, ERROR_AUTH_FAILED);  
+            ArrayLib.removeElement(_getCampaign(milestoneData.getMilestone(_milestoneId).campaignId).milestoneIds, entityId); //Borra la referencia de la camapaña anterior
         }
-        
-
+        milestoneData.save(
+            entityId,
+            _infoCid,
+            _campaignId,
+            _fiatAmountTarget,
+            msg.sender,
+            _reviewer,
+            _recipient,
+            _campaignReviewer,
+            _milestoneId
+        );
+        campaign.milestoneIds.push(entityId);
+        emit SaveMilestone(entityId);        
     }
 
     /**

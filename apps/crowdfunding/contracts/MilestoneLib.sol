@@ -99,6 +99,25 @@ library MilestoneLib {
     }
 
 
+    function save(
+        Data storage self,
+        uint256 id, //entityId
+        string _infoCid,
+        uint256 _campaignId,
+        uint256 _fiatAmountTarget,
+        address _manager,
+        address _reviewer,
+        address _recipient,
+        address _campaignReviewer,
+        uint256 _milestoneId
+    ) public {
+        if(_milestoneId == 0 ){ //new 
+            return insert(self,id,_infoCid,_campaignId,_fiatAmountTarget,_manager,_reviewer,_recipient,_campaignReviewer);
+        } else {
+            return update(self,id,_infoCid,_campaignId,_fiatAmountTarget,_manager,_reviewer,_recipient,_campaignReviewer);
+        }
+    }
+
 
 
 
