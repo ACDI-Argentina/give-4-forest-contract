@@ -48,6 +48,42 @@ library DacLib {
         self.dacs[id] = dac;
     }
 
+    /**
+     * @notice Inserta una nueva Dac.
+     */
+    function update(
+        Data storage self,
+        uint256 id,
+        string _infoCid,
+        address delegate
+    ) public {
+        self.ids.push(id);
+        uint256 idIndex = self.ids.length - 1;
+        Dac memory dac;
+        dac.id = id;
+        dac.idIndex = idIndex;
+        dac.infoCid = _infoCid;
+        dac.delegate = delegate;
+        dac.status = Status.Active;
+        self.dacs[id] = dac;
+    }
+
+
+    function save(
+        Data storage self,
+        uint256 id,
+        string _infoCid,
+        address delegate,
+        uint256 _dacId
+    )public {
+        if(_dacId == 0 ){
+            return insert(self,id,_infoCid,delegate);
+        } else {
+            return update(self,id,_infoCid,delegate);
+        }
+    }
+
+
     function getDac(Data storage self, uint256 _id)
         public
         view

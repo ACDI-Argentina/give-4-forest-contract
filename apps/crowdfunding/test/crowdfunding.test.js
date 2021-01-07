@@ -3,7 +3,7 @@ const { getEventArgument } = require('@aragon/test-helpers/events')
 const { newDao, newApp } = require('../scripts/dao')
 const { createPermission, grantPermission } = require('../scripts/permissions')
 const { newCrowdfunding,
-    newDac,
+    saveDac,
     saveCampaign,
     saveMilestone,
     newDonationEther,
@@ -154,9 +154,9 @@ contract('Crowdfunding App', (accounts) => {
 
         it('Creación de Dac', async () => {
 
-            let receipt = await crowdfunding.newDac(INFO_CID, { from: delegate });
+            let receipt = await crowdfunding.saveDac(INFO_CID, 0,{ from: delegate });
 
-            let dacId = getEventArgument(receipt, 'NewDac', 'id');
+            let dacId = getEventArgument(receipt, 'SaveDac', 'id');
             assert.equal(dacId, 1);
 
             let dacs = await getDacs(crowdfunding);
@@ -174,8 +174,9 @@ contract('Crowdfunding App', (accounts) => {
 
         it('Creación de Dac no autorizado', async () => {
 
-            await assertRevert(crowdfunding.newDac(
+            await assertRevert(crowdfunding.saveDac(
                 INFO_CID,
+                0,
                 { from: notAuthorized }
             ), errors.APP_AUTH_FAILED)
         });
@@ -185,7 +186,7 @@ contract('Crowdfunding App', (accounts) => {
 
         it('Creación de Campaign', async () => {
 
-            let dacId = await newDac(crowdfunding, delegate);
+            let dacId = await saveDac(crowdfunding, delegate);
 
             let receipt = await crowdfunding.saveCampaign(INFO_CID, dacId, campaignReviewer, 0, { from: campaignManager });
 
@@ -207,7 +208,7 @@ contract('Crowdfunding App', (accounts) => {
 
         it('Creación de Campaign no autorizado', async () => {
 
-            let dacId = await newDac(crowdfunding, delegate);
+            let dacId = await saveDac(crowdfunding, delegate);
 
             // El delegate no tiene configurada la autorización para crear campaigns.
             await assertRevert(
@@ -235,7 +236,7 @@ contract('Crowdfunding App', (accounts) => {
 
         it('Modificación de Campaign', async () => {
 
-            const dacId = await newDac(crowdfunding, delegate);
+            const dacId = await saveDac(crowdfunding, delegate);
             const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId, 0);
 
             //modificamos la campaign creada
@@ -261,8 +262,8 @@ contract('Crowdfunding App', (accounts) => {
         });
 
         it('Modificación de Campaign asociación a otra dac', async () => {
-            const dacId = await newDac(crowdfunding, delegate);
-            const newDacId = await newDac(crowdfunding, delegate);
+            const dacId = await saveDac(crowdfunding, delegate);
+            const newDacId = await saveDac(crowdfunding, delegate);
 
             const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId, 0);
             const campaign = await crowdfunding.getCampaign(campaignId);
@@ -297,7 +298,7 @@ contract('Crowdfunding App', (accounts) => {
 
         it('Modificación de Campaign inexistente', async () => {
             const inexistentCampaignId = 1;
-            const dacId = await newDac(crowdfunding, delegate);
+            const dacId = await saveDac(crowdfunding, delegate);
             await assertRevert(
                 crowdfunding.saveCampaign(
                     INFO_CID,
@@ -310,7 +311,7 @@ contract('Crowdfunding App', (accounts) => {
         });
 
         it('Modificación de Campaign no autorizada', async () => {
-            const dacId = await newDac(crowdfunding, delegate);
+            const dacId = await saveDac(crowdfunding, delegate);
             const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
 
             await assertRevert(
@@ -325,7 +326,7 @@ contract('Crowdfunding App', (accounts) => {
         });
 
         it('Modificación de Campaign asociación a dac inexistente', async () => {
-            const dacId = await newDac(crowdfunding, delegate);
+            const dacId = await saveDac(crowdfunding, delegate);
             const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId, 0);
             const inexistentDacId = 25;
 
@@ -346,8 +347,8 @@ contract('Crowdfunding App', (accounts) => {
 
         it('Creación de Milestone', async () => {
 
-            let dacId = await newDac(crowdfunding, delegate, '1');
-            let campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
+            const dacId = await saveDac(crowdfunding, delegate);
+            const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
 
             let fiatAmountTarget = 10;
 
@@ -380,7 +381,7 @@ contract('Crowdfunding App', (accounts) => {
 
         it('Creación de Milestone no autorizado', async () => {
 
-            let dacId = await newDac(crowdfunding, delegate, '1');
+            const dacId = await saveDac(crowdfunding, delegate);
             let campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
 
             let fiatAmountTarget = 10;
@@ -424,7 +425,7 @@ contract('Crowdfunding App', (accounts) => {
 
         beforeEach(async () => {
 
-            dacId = await newDac(crowdfunding, delegate);
+            dacId = await saveDac(crowdfunding, delegate);
             campaignId = await saveCampaign(crowdfunding,
                 campaignManager,
                 campaignReviewer,
@@ -571,7 +572,7 @@ contract('Crowdfunding App', (accounts) => {
                 await tokenInstance.transfer(vault.address, VAULT_INITIAL_TOKEN1_BALANCE, { from: giver })
                 // Se aprueba al Crowdfunding para depositar los Tokens en el Vault.
                 await tokenInstance.approve(crowdfunding.address, amount, { from: giver });
-                dacId = await newDac(crowdfunding, delegate);
+                dacId = await saveDac(crowdfunding, delegate);
                 campaignId = await saveCampaign(crowdfunding,
                     campaignManager,
                     campaignReviewer,
@@ -713,8 +714,8 @@ contract('Crowdfunding App', (accounts) => {
         beforeEach(async () => {
 
             await crowdfunding.enableToken(RBTC, { from: deployer });
-            dacId1 = await newDac(crowdfunding, delegate);
-            dacId2 = await newDac(crowdfunding, delegate);
+            dacId1 = await saveDac(crowdfunding, delegate);
+            dacId2 = await saveDac(crowdfunding, delegate);
             campaignId1 = await saveCampaign(crowdfunding,
                 campaignManager,
                 campaignReviewer,
@@ -895,7 +896,7 @@ contract('Crowdfunding App', (accounts) => {
             beforeEach(async () => {
 
                 await crowdfunding.enableToken(RBTC, { from: deployer });
-                dacId = await newDac(crowdfunding, delegate);
+                dacId = await saveDac(crowdfunding, delegate);
                 campaignId = await saveCampaign(crowdfunding,
                     campaignManager,
                     campaignReviewer,
@@ -1000,7 +1001,7 @@ contract('Crowdfunding App', (accounts) => {
 
         beforeEach(async () => {
 
-            dacId1 = await newDac(crowdfunding, delegate);
+            dacId1 = await saveDac(crowdfunding, delegate);
             campaignId1 = await saveCampaign(crowdfunding,
                 campaignManager,
                 campaignReviewer,
@@ -1160,7 +1161,7 @@ contract('Crowdfunding App', (accounts) => {
             exchangeRateProvider = await ExchangeRateProvider.new(priceProviderMock.address);
             await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address);
 
-            dacId1 = await newDac(crowdfunding, delegate);
+            dacId1 = await saveDac(crowdfunding, delegate);
             campaignId1 = await saveCampaign(crowdfunding,
                 campaignManager,
                 campaignReviewer,
@@ -1257,7 +1258,7 @@ contract('Crowdfunding App', (accounts) => {
         })
     })
 
-    context('Exchange Rate ', function () {
+    context('Exchange Rate', function () {
 
         const randomAddr = "0xD059764e0B0C949001bF19F9cd06eA7D9e4090D7";
 

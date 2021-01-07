@@ -48,7 +48,7 @@ contract Crowdfunding is AragonApp, Constants {
         initialized();
     }
 
-    event NewDac(uint256 id);
+    event SaveDac(uint256 id);
     event SaveCampaign(uint256 id);
     event SaveMilestone(uint256 id);
     event NewDonation(
@@ -71,10 +71,18 @@ contract Crowdfunding is AragonApp, Constants {
      * @notice Crea la DAC `title`. Quien envía la transacción es el delegate de la Dac.
      * @param _infoCid Content ID de las información (JSON) de la Dac. IPFS Cid.
      */
-    function newDac(string _infoCid) external auth(CREATE_DAC_ROLE) {
-        uint256 entityId = _newEntity(EntityLib.EntityType.Dac);
-        dacData.insert(entityId, _infoCid, msg.sender);
-        emit NewDac(entityId);
+    function saveDac(string _infoCid, uint256 _dacId) external auth(CREATE_DAC_ROLE) {
+        uint256 entityId;
+        if(_dacId == 0 ){
+            entityId = _newEntity(EntityLib.EntityType.Dac);
+        } else {
+            entityId = _dacId;
+            require(msg.sender == dacData.getDac(entityId).delegate, ERROR_AUTH_FAILED);
+        }
+
+        dacData.save(entityId, _infoCid, msg.sender,_dacId);
+
+        emit SaveDac(entityId);
     }
 
     /**
