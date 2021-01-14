@@ -180,6 +180,50 @@ contract('Crowdfunding App', (accounts) => {
                 { from: notAuthorized }
             ), errors.APP_AUTH_FAILED)
         });
+
+        it('Edición de Dac', async () => {
+            const receipt = await crowdfunding.saveDac(INFO_CID, 0,{ from: delegate });
+            const dacId = getEventArgument(receipt, 'SaveDac', 'id');
+
+            const NEW_INFO_CID = "b4B1A3935bF977bad5Ec753325B4CD8D889EF0e7e7c7424";
+            const receiptUpdated = await crowdfunding.saveDac(NEW_INFO_CID, dacId,{ from: delegate });
+            const updatedDacId = getEventArgument(receiptUpdated, 'SaveDac', 'id');
+
+            assert.equal(dacId.toNumber(), updatedDacId.toNumber());
+                      
+            const updatedDac = await crowdfunding.getDac(dacId);
+        
+            assertDac(updatedDac, {
+                id: dacId.toNumber(),
+                infoCid: NEW_INFO_CID,
+                users: [delegate],
+                campaignIds: [],
+                budgetDonationIdsLength: 0,
+                status: DAC_STATUS_ACTIVE
+            });
+        });
+        it('Edición de Dac no autorizado', async () => {
+
+            const receipt = await crowdfunding.saveDac(INFO_CID, 0,{ from: delegate });
+            const dacId = getEventArgument(receipt, 'SaveDac', 'id');
+
+            const NEW_INFO_CID = "b4B1A3935bF977bad5Ec753325B4CD8D889EF0e7e7c7424";
+
+            await assertRevert(
+                crowdfunding.saveDac(NEW_INFO_CID, dacId,{ from: campaignManager }),
+                errors.APP_AUTH_FAILED
+            );
+
+ 
+        });
+        it('Edición de Dac inexistente', async () => {
+            await assertRevert(
+                crowdfunding.saveDac(INFO_CID, 10,{ from: delegate }),
+                errors.CROWDFUNDING_DAC_NOT_EXIST
+            );
+        });
+
+
     });
 
     context('Manejo de Campaigns', function () {
