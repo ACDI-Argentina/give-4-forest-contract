@@ -461,6 +461,115 @@ contract('Crowdfunding App', (accounts) => {
                 0,
                 { from: milestoneManager }), errors.CROWDFUNDING_CAMPAIGN_NOT_EXIST)
         });
+
+
+        it('Edición de Milestone', async () => {
+            const fiatAmountTarget = 1000;
+
+            const dacId = await saveDac(crowdfunding, delegate);
+            const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
+
+            const receipt = await crowdfunding.saveMilestone(
+                INFO_CID,
+                campaignId,
+                fiatAmountTarget,
+                milestoneReviewer,
+                milestoneRecipient,
+                campaignReviewer,
+                0, //new milestone
+                { from: milestoneManager });
+
+            const milestoneId = getEventArgument(receipt, 'SaveMilestone', 'id');
+
+            
+            const NEW_INFO_CID = "b4B1A3935bF977bad5Ec753325B4CD8D889EF0e7e7c7424";
+            const newFiatAmountTarget = 9999;
+            const newCampaignId = campaignId; //we can change of campaign?
+            //TODO: we can edit some of this address?
+            const newMilestoneReviewer = milestoneReviewer;
+            const newMilestoneRecipient = milestoneRecipient;
+            const newCampaignReviewer = campaignReviewer;
+
+            await crowdfunding.saveMilestone(
+                NEW_INFO_CID,
+                newCampaignId,
+                newFiatAmountTarget, 
+                newMilestoneReviewer, 
+                newMilestoneRecipient, 
+                newCampaignReviewer, 
+                milestoneId, 
+                { from: milestoneManager });
+
+
+            const storedMilestone = await crowdfunding.getMilestone(milestoneId);
+
+            assertMilestone(storedMilestone, {
+                id: milestoneId.toNumber(),
+                infoCid: NEW_INFO_CID,
+                fiatAmountTarget: newFiatAmountTarget,
+                users: [milestoneManager, newMilestoneReviewer, newCampaignReviewer, newMilestoneRecipient],
+                campaignId: campaignId,
+                budgetDonationIdsLength: 0,
+                activityIdsLength: 0,
+                status: MILESTONE_STATUS_ACTIVE
+            });
+        })
+        it('Edición de Milestone no autorizado', async () => {
+            const fiatAmountTarget = 1000;
+            const newFiatAmountTarget = 9999;
+            const NEW_INFO_CID = "b4B1A3935bF977bad5Ec753325B4CD8D889EF0e7e7c7424";
+
+            const dacId = await saveDac(crowdfunding, delegate);
+            const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
+
+            const receipt = await crowdfunding.saveMilestone(
+                INFO_CID,
+                campaignId,
+                fiatAmountTarget,
+                milestoneReviewer,
+                milestoneRecipient,
+                campaignReviewer,
+                0, //new milestone
+                { from: milestoneManager });
+
+            const milestoneId = getEventArgument(receipt, 'SaveMilestone', 'id');
+
+            await assertRevert(
+                crowdfunding.saveMilestone(
+                    NEW_INFO_CID,
+                    campaignId,
+                    newFiatAmountTarget,
+                    milestoneReviewer,
+                    milestoneRecipient,
+                    campaignReviewer,
+                    milestoneId,
+                    { from: campaignManager2 }),
+                errors.APP_AUTH_FAILED
+            );
+        })
+
+        it('Edición de Milestone inexistente', async () => {
+            const inexistentMilestoneId = 1299;
+            const NEW_INFO_CID = "b4B1A3935bF977bad5Ec753325B4CD8D889EF0e7e7c7424";
+            const newFiatAmountTarget = 1234;
+
+            const dacId = await saveDac(crowdfunding, delegate);
+            const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
+
+            await assertRevert(
+                crowdfunding.saveMilestone(
+                    NEW_INFO_CID,
+                    campaignId,
+                    newFiatAmountTarget,
+                    milestoneReviewer,
+                    milestoneRecipient,
+                    campaignReviewer,
+                    inexistentMilestoneId,
+                    { from: milestoneManager }),
+                errors.CROWDFUNDING_MILESTONE_NOT_EXIST
+            );
+        })
+
     })
 
     context('Donación de ETH', function () {
