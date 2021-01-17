@@ -93,7 +93,7 @@ contract('Crowdfunding App', (accounts) => {
     let vaultBase, vault;
     let CREATE_DAC_ROLE, CREATE_CAMPAIGN_ROLE, CREATE_MILESTONE_ROLE, EXCHANGE_RATE_ROLE, ENABLE_TOKEN_ROLE, SET_EXCHANGE_RATE_PROVIDER;
     let TRANSFER_ROLE;
-    let RBTC
+    let RBTC;
 
     before(async () => {
         crowdfundingBase = await newCrowdfunding(deployer);
@@ -125,7 +125,8 @@ contract('Crowdfunding App', (accounts) => {
             // Configuración de permisos
             await createPermission(acl, delegate, crowdfunding.address, CREATE_DAC_ROLE, deployer);
             await createPermission(acl, campaignManager, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
-            await createPermission(acl, milestoneManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
+            await createPermission(acl, campaignManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
+            await grantPermission(acl, milestoneManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
             await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
             await createPermission(acl, deployer, crowdfunding.address, SET_EXCHANGE_RATE_PROVIDER, deployer);
             await createPermission(acl, deployer, crowdfunding.address, ENABLE_TOKEN_ROLE, deployer);
@@ -400,11 +401,12 @@ contract('Crowdfunding App', (accounts) => {
                 INFO_CID,
                 campaignId,
                 fiatAmountTarget,
+                milestoneManager,
                 milestoneReviewer,
                 milestoneRecipient,
                 campaignReviewer,
                 0,
-                { from: milestoneManager });
+                { from: campaignManager });
 
             let milestoneId = getEventArgument(receipt, 'SaveMilestone', 'id');
             assert.equal(milestoneId, 3);
@@ -426,22 +428,22 @@ contract('Crowdfunding App', (accounts) => {
         it('Creación de Milestone no autorizado', async () => {
 
             const dacId = await saveDac(crowdfunding, delegate);
-            let campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
+            const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
 
-            let fiatAmountTarget = 10;
+            const fiatAmountTarget = 10;
 
-            // El delegate no tiene configurada la autorización para crear milestones.
             await assertRevert(
                 crowdfunding.saveMilestone(
                     INFO_CID,
                     campaignId,
                     fiatAmountTarget,
+                    milestoneManager,
                     milestoneReviewer,
                     milestoneRecipient,
                     campaignReviewer,
                     0,
-                    { from: delegate })
-                , errors.APP_AUTH_FAILED)
+                    { from: milestoneManager })
+                , errors.CROWDFUNDING_AUTH_FAILED)
         });
 
         it('Creación de Milestone con Campaign inexistente', async () => {
@@ -455,15 +457,16 @@ contract('Crowdfunding App', (accounts) => {
                 INFO_CID,
                 campaignId,
                 fiatAmountTarget,
+                milestoneManager,
                 milestoneReviewer,
                 milestoneRecipient,
                 campaignReviewer,
                 0,
-                { from: milestoneManager }), errors.CROWDFUNDING_CAMPAIGN_NOT_EXIST)
+                { from: campaignManager }), errors.CROWDFUNDING_CAMPAIGN_NOT_EXIST)
         });
 
 
-        it('Edición de Milestone', async () => {
+        it('Edición de Milestone (campaign manager)', async () => {
             const fiatAmountTarget = 1000;
 
             const dacId = await saveDac(crowdfunding, delegate);
@@ -473,19 +476,19 @@ contract('Crowdfunding App', (accounts) => {
                 INFO_CID,
                 campaignId,
                 fiatAmountTarget,
+                milestoneManager,
                 milestoneReviewer,
                 milestoneRecipient,
                 campaignReviewer,
                 0, //new milestone
-                { from: milestoneManager });
+                { from: campaignManager }); 
 
             const milestoneId = getEventArgument(receipt, 'SaveMilestone', 'id');
-
             
             const NEW_INFO_CID = "b4B1A3935bF977bad5Ec753325B4CD8D889EF0e7e7c7424";
             const newFiatAmountTarget = 9999;
-            const newCampaignId = campaignId; //we can change of campaign?
-            //TODO: we can edit some of this address?
+            const newCampaignId = campaignId; //we can change of campaign? NO!
+            
             const newMilestoneReviewer = milestoneReviewer;
             const newMilestoneRecipient = milestoneRecipient;
             const newCampaignReviewer = campaignReviewer;
@@ -493,12 +496,13 @@ contract('Crowdfunding App', (accounts) => {
             await crowdfunding.saveMilestone(
                 NEW_INFO_CID,
                 newCampaignId,
-                newFiatAmountTarget, 
+                newFiatAmountTarget,
+                milestoneManager, 
                 newMilestoneReviewer, 
                 newMilestoneRecipient, 
                 newCampaignReviewer, 
                 milestoneId, 
-                { from: milestoneManager });
+                { from: campaignManager });
 
 
             const storedMilestone = await crowdfunding.getMilestone(milestoneId);
@@ -514,7 +518,107 @@ contract('Crowdfunding App', (accounts) => {
                 status: MILESTONE_STATUS_ACTIVE
             });
         })
-        it('Edición de Milestone no autorizado', async () => {
+
+        it('Edición de Milestone (milestone manager)', async () => {
+
+            const dacId = await saveDac(crowdfunding, delegate);
+            const campaignId = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
+
+            const fiatAmountTarget = 1000;
+
+            const receipt = await crowdfunding.saveMilestone(
+                INFO_CID,
+                campaignId,
+                fiatAmountTarget,
+                milestoneManager,
+                milestoneReviewer,
+                milestoneRecipient,
+                campaignReviewer,
+                0, //new milestone
+                { from: campaignManager }); 
+
+            const milestoneId = getEventArgument(receipt, 'SaveMilestone', 'id');
+            
+            const NEW_INFO_CID = "b4B1A3935bF977bad5Ec753325B4CD8D889EF0e7e7c7424";
+            const newFiatAmountTarget = 9999;
+            //TODO: we can edit some of this address?
+            const newMilestoneReviewer = milestoneReviewer;
+            const newMilestoneRecipient = milestoneRecipient;
+            const newCampaignReviewer = campaignReviewer;
+
+            await crowdfunding.saveMilestone(
+                NEW_INFO_CID,
+                campaignId,
+                newFiatAmountTarget,
+                milestoneManager, 
+                newMilestoneReviewer, 
+                newMilestoneRecipient, 
+                newCampaignReviewer, 
+                milestoneId, 
+                { from: milestoneManager }); 
+
+
+            const storedMilestone = await crowdfunding.getMilestone(milestoneId);
+
+            assertMilestone(storedMilestone, {
+                id: milestoneId.toNumber(),
+                infoCid: NEW_INFO_CID,
+                fiatAmountTarget: newFiatAmountTarget,
+                users: [milestoneManager, newMilestoneReviewer, newCampaignReviewer, newMilestoneRecipient],
+                campaignId: campaignId,
+                budgetDonationIdsLength: 0,
+                activityIdsLength: 0,
+                status: MILESTONE_STATUS_ACTIVE
+            });
+        })
+
+
+        it('Edición de Milestone no debe permitir cambiar de campaign', async () => {
+            const dacId = await saveDac(crowdfunding, delegate);
+            const campaignId1 = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
+            const campaignId2 = await saveCampaign(crowdfunding, campaignManager, campaignReviewer, dacId);
+
+            const fiatAmountTarget = 1000;
+
+            const receipt1 = await crowdfunding.saveMilestone(
+                INFO_CID,
+                campaignId1,
+                fiatAmountTarget,
+                milestoneManager,
+                milestoneReviewer,
+                milestoneRecipient,
+                campaignReviewer,
+                0, //new milestone
+                { from: campaignManager });
+
+            const milestoneId = getEventArgument(receipt1, 'SaveMilestone', 'id');
+
+            const receipt2 = await crowdfunding.saveMilestone(
+                INFO_CID,
+                campaignId2,
+                fiatAmountTarget,
+                milestoneManager,
+                milestoneReviewer,
+                milestoneRecipient,
+                campaignReviewer,
+                milestoneId,
+                { from: campaignManager });
+
+            const storedMilestone = await crowdfunding.getMilestone(milestoneId);    
+                
+            assertMilestone(storedMilestone, {
+                id: milestoneId.toNumber(),
+                infoCid: INFO_CID,
+                fiatAmountTarget: fiatAmountTarget,
+                users: [milestoneManager, milestoneReviewer, campaignReviewer, milestoneRecipient],
+                campaignId: campaignId1,
+                budgetDonationIdsLength: 0,
+                activityIdsLength: 0,
+                status: MILESTONE_STATUS_ACTIVE
+            });
+        })
+
+        it('Edición de Milestone no autorizado (por otro campaign manager)', async () => {
             const fiatAmountTarget = 1000;
             const newFiatAmountTarget = 9999;
             const NEW_INFO_CID = "b4B1A3935bF977bad5Ec753325B4CD8D889EF0e7e7c7424";
@@ -526,11 +630,12 @@ contract('Crowdfunding App', (accounts) => {
                 INFO_CID,
                 campaignId,
                 fiatAmountTarget,
+                milestoneManager,
                 milestoneReviewer,
                 milestoneRecipient,
                 campaignReviewer,
                 0, //new milestone
-                { from: milestoneManager });
+                { from: campaignManager });
 
             const milestoneId = getEventArgument(receipt, 'SaveMilestone', 'id');
 
@@ -539,6 +644,7 @@ contract('Crowdfunding App', (accounts) => {
                     NEW_INFO_CID,
                     campaignId,
                     newFiatAmountTarget,
+                    milestoneManager,
                     milestoneReviewer,
                     milestoneRecipient,
                     campaignReviewer,
@@ -561,17 +667,18 @@ contract('Crowdfunding App', (accounts) => {
                     NEW_INFO_CID,
                     campaignId,
                     newFiatAmountTarget,
+                    milestoneManager,
                     milestoneReviewer,
                     milestoneRecipient,
                     campaignReviewer,
                     inexistentMilestoneId,
-                    { from: milestoneManager }),
+                    { from: campaignManager }),
                 errors.CROWDFUNDING_MILESTONE_NOT_EXIST
             );
         })
 
     })
-
+ 
     context('Donación de ETH', function () {
 
         let dacId, campaignId, milestoneId;
@@ -588,7 +695,9 @@ contract('Crowdfunding App', (accounts) => {
                 milestoneReviewer,
                 milestoneRecipient,
                 campaignReviewer,
-                campaignId);
+                campaignId,
+                campaignManager
+                );
         });
 
         it('Donar a Dac con ETH no permido', async () => {
@@ -735,7 +844,9 @@ contract('Crowdfunding App', (accounts) => {
                     milestoneReviewer,
                     milestoneRecipient,
                     campaignReviewer,
-                    campaignId);
+                    campaignId,
+                    campaignManager
+                    );
             })
 
             it('Donar a Dac con token no permido', async () => {
@@ -882,13 +993,16 @@ contract('Crowdfunding App', (accounts) => {
                 milestoneReviewer,
                 milestoneRecipient,
                 campaignReviewer,
-                campaignId1);
+                campaignId1,
+                campaignManager
+                );
             milestoneId2 = await saveMilestone(crowdfunding,
                 milestoneManager,
                 milestoneReviewer,
                 milestoneRecipient,
                 campaignReviewer,
-                campaignId2);
+                campaignId2,
+                campaignManager);
             donationAmount = new BN('10');
             // Donación de RBTC a DAC 1
             donationId1 = await newDonationEther(crowdfunding,
@@ -1059,7 +1173,9 @@ contract('Crowdfunding App', (accounts) => {
                     milestoneReviewer,
                     milestoneRecipient,
                     campaignReviewer,
-                    campaignId);
+                    campaignId,
+                    campaignManager
+                );
                 donationAmount = new BN('10');
 
                 // Set up a new token similar to token1's distribution
@@ -1164,7 +1280,9 @@ contract('Crowdfunding App', (accounts) => {
                 milestoneReviewer,
                 milestoneRecipient,
                 campaignReviewer,
-                campaignId1);
+                campaignId1,
+                campaignManager
+            );
         });
 
         it('Milestone Completado en estado Activo', async () => {
@@ -1324,7 +1442,9 @@ contract('Crowdfunding App', (accounts) => {
                 milestoneReviewer,
                 milestoneRecipient,
                 campaignReviewer,
-                campaignId1);
+                campaignId1,
+                campaignManager
+            );
             // Donación de RBTC a DAC 1
             donationId1 = await newDonationEther(crowdfunding,
                 dacId1,

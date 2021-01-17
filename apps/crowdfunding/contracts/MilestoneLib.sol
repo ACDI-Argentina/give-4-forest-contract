@@ -88,13 +88,13 @@ library MilestoneLib {
         //milestone.idIndex = idIndex; inmutable
         milestone.infoCid = _infoCid;
         milestone.fiatAmountTarget = _fiatAmountTarget;
-        milestone.manager = _manager;
+        //milestone.manager = _manager;  //el manager no se va a cambiar por el msg sender
         milestone.reviewer = _reviewer;
         milestone.recipient = _recipient;
         milestone.campaignReviewer = _campaignReviewer;
         //milestone.status = Status.Active; inmutable
         // Asociación entre Campaign y Milestone
-        milestone.campaignId = _campaignId;
+        //milestone.campaignId = _campaignId;
         //self.milestones[id] = milestone;
     }
 
@@ -114,6 +114,7 @@ library MilestoneLib {
         if(_milestoneId == 0 ){ //new 
             return insert(self,id,_infoCid,_campaignId,_fiatAmountTarget,_manager,_reviewer,_recipient,_campaignReviewer);
         } else {
+            getMilestone(self,_milestoneId); //check if exists
             return update(self,id,_infoCid,_campaignId,_fiatAmountTarget,_manager,_reviewer,_recipient,_campaignReviewer);
         }
     }

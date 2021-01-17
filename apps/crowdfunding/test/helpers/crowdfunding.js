@@ -70,8 +70,18 @@ const saveCampaign = async (crowdfunding, manager, reviewer, dacId, campaignId =
   return getEventArgument(receipt, 'SaveCampaign', 'id').toNumber();
 }
 
-const saveMilestone = async (crowdfunding, manager, reviewer, recipient, campaignReviewer, campaignId, milestoneId = 0 ) => {
-  let receipt = await crowdfunding.saveMilestone(INFO_CID, campaignId, FIAT_AMOUNT_TARGET, reviewer, recipient, campaignReviewer, milestoneId, { from: manager });
+const saveMilestone = async (crowdfunding, manager, reviewer, recipient, campaignReviewer, campaignId, sender, milestoneId = 0 ) => {
+  const receipt = await crowdfunding.saveMilestone(
+    INFO_CID,
+    campaignId,
+    FIAT_AMOUNT_TARGET,
+    manager,
+    reviewer,
+    recipient,
+    campaignReviewer,
+    milestoneId,
+    { from: sender }
+  );
   return getEventArgument(receipt, 'SaveMilestone', 'id').toNumber();
 }
 

@@ -166,6 +166,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(`       - Account3: ${account3}`);
     await grantPermission(acl, account1, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
     log(`       - Account1: ${account1}`);
+    await grantPermission(acl, account2, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
+    log(`       - Account2: ${account2}`);
     log(`   - EXCHANGE_RATE_ROLE`);
     await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
     log(`   - SET_EXCHANGE_RATE_PROVIDER`);

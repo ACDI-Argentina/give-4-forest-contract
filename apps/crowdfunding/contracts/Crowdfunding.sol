@@ -124,11 +124,13 @@ contract Crowdfunding is AragonApp, Constants {
     }
 
     /**
-     * @notice Crea el Milestone `title`. Quien envía la transacción es el
-     *  manager del Milestone.
+     * @notice Creación y edición de Milestone.
+     * Solamente un campaign manager puede crear milestones dentro de una campaña propia.
+     * Puede asociar un milestone manager, quien puede editar el milestone
      * @param _infoCid Content ID de las información (JSON) del Milestone. IPFS Cid.
      * @param _campaignId Id de la Campaign a la cual pertenece el Milestone.
      * @param _fiatAmountTarget Monto máximo para financiar el Milestone.
+     * @param _manager address del Milestone Manager
      * @param _reviewer address del Milestone Reviewer
      * @param _recipient address del Milestone Recipient
      * @param _campaignReviewer address del Campaign Reviewer del Milestone
@@ -137,6 +139,7 @@ contract Crowdfunding is AragonApp, Constants {
         string _infoCid,
         uint256 _campaignId,
         uint256 _fiatAmountTarget,
+        address _manager,
         address _reviewer,
         address _recipient,
         address _campaignReviewer,
@@ -144,27 +147,32 @@ contract Crowdfunding is AragonApp, Constants {
     ) external auth(CREATE_MILESTONE_ROLE) {
         CampaignLib.Campaign storage campaign = _getCampaign(_campaignId);// Se comprueba que la Campaign exista.
 
-        uint256 entityId;
+        uint256 entityId = _milestoneId;
 
-        if (_milestoneId == 0) { //crear nuevo milestone
+        if (_milestoneId == 0) {
+            require(msg.sender == campaign.manager, ERROR_AUTH_FAILED);
             entityId = _newEntity(EntityLib.EntityType.Milestone);
         } else {
-            entityId = _milestoneId;
-            require(msg.sender == milestoneData.getMilestone(_milestoneId).manager, ERROR_AUTH_FAILED);  
-            ArrayLib.removeElement(_getCampaign(milestoneData.getMilestone(_milestoneId).campaignId).milestoneIds, entityId); //Borra la referencia de la camapaña anterior
+            require(
+                msg.sender == campaign.manager ||
+                msg.sender == milestoneData.getMilestone(_milestoneId).manager  
+            , ERROR_AUTH_FAILED);
+
         }
         milestoneData.save(
             entityId,
             _infoCid,
             _campaignId,
             _fiatAmountTarget,
-            msg.sender,
+            _manager,
             _reviewer,
             _recipient,
             _campaignReviewer,
             _milestoneId
         );
-        campaign.milestoneIds.push(entityId);
+        if (_milestoneId == 0) { 
+            campaign.milestoneIds.push(entityId);
+        }
         emit SaveMilestone(entityId);        
     }
 
