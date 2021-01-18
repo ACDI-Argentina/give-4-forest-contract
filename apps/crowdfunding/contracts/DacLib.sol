@@ -57,15 +57,9 @@ library DacLib {
         string _infoCid,
         address delegate
     ) public {
-        self.ids.push(id);
-        uint256 idIndex = self.ids.length - 1;
-        Dac memory dac;
-        dac.id = id;
-        dac.idIndex = idIndex;
+        Dac storage dac = self.dacs[id];
         dac.infoCid = _infoCid;
         dac.delegate = delegate;
-        dac.status = Status.Active;
-        self.dacs[id] = dac;
     }
 
 
