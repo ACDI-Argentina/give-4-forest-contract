@@ -1,8 +1,6 @@
-const { usePlugin } = require('@nomiclabs/buidler/config')
-const hooks = require('./scripts/buidler-hooks')
-
-usePlugin('@aragon/buidler-aragon')
-usePlugin('buidler-deploy');
+const hooks = require('./scripts/hardhat-hooks')
+//require('@aragon/buidler-aragon')
+require('hardhat-deploy')
 
 module.exports = {
   // Default Buidler configurations. Read more about it at https://buidler.dev/config/
@@ -12,7 +10,7 @@ module.exports = {
       url: 'http://localhost:8545',
       timeout: 60000
     },
-    buidlerevm: {
+    hardhat: {
       allowUnlimitedContractSize: false
     },
     rskRegtest: {
@@ -35,12 +33,14 @@ module.exports = {
       // Faucet: https://faucet.rsk.co
     }
   },
-  solc: {
-    version: '0.4.24',
-    optimizer: {
-      enabled: true,
-      runs: 1
-    },
+  solidity: {
+    version: "0.4.24",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1
+      }
+    }
   },
   // Etherscan plugin configuration. Learn more at https://github.com/nomiclabs/buidler/tree/master/packages/buidler-etherscan
   etherscan: {
