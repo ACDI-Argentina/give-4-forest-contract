@@ -73,6 +73,15 @@ En desarrollo se utiliza un nodo local de **RSK Regtest** accesible desde *http:
 npm run deploy:rsk-regtest
 ```
 
+**Upgrade**
+
+```
+$env:BUIDLER_NETWORK="rskRegtest"
+$env:DAO_ADDRESS=""
+node .\scripts\upgrade.js
+```
+> DAO_ADDRESS es la dirección del Aragon DAO  disponible desde el deploy inicial.
+
 ### Testing
 
 En testing se utiliza el nodo público de **RSK Testnet** accesible desde *https://public-node.testnet.rsk.co*.
@@ -80,6 +89,15 @@ En testing se utiliza el nodo público de **RSK Testnet** accesible desde *https
 ```
 npm run deploy:rsk-testnet
 ```
+
+**Upgrade**
+
+```
+$env:BUIDLER_NETWORK="rskTestnet"
+$env:DAO_ADDRESS=""
+node .\scripts\upgrade.js
+```
+> DAO_ADDRESS es la dirección del Aragon DAO de Testing disponible desde el deploy inicial.
 
 ## Principios de desarrollo
 
