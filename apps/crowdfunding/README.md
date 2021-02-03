@@ -73,15 +73,6 @@ En desarrollo se utiliza un nodo local de **RSK Regtest** accesible desde *http:
 npm run deploy:rsk-regtest
 ```
 
-**Upgrade**
-
-```
-$env:BUIDLER_NETWORK="rskRegtest"
-$env:DAO_ADDRESS=""
-node .\scripts\upgrade.js
-```
-> DAO_ADDRESS es la dirección del Aragon DAO  disponible desde el deploy inicial.
-
 ### Testing
 
 En testing se utiliza el nodo público de **RSK Testnet** accesible desde *https://public-node.testnet.rsk.co*.
@@ -90,14 +81,36 @@ En testing se utiliza el nodo público de **RSK Testnet** accesible desde *https
 npm run deploy:rsk-testnet
 ```
 
-**Upgrade**
+## Actualizar smart contract
+
+Para actualizar el smart contract debe ejecutarse el siguiente script, especificando los parámetros:
 
 ```
-$env:BUIDLER_NETWORK="rskTestnet"
-$env:DAO_ADDRESS=""
+$env:BUIDLER_NETWORK="..."
+$env:DAO_ADDRESS="..."
 node .\scripts\upgrade.js
 ```
-> DAO_ADDRESS es la dirección del Aragon DAO de Testing disponible desde el deploy inicial.
+
+- BUIDLER_NETWORK = rskrEGTEST | rskTestnet | rskMainnet
+- DAO_ADDRESS es la dirección del Aragon DAOdisponible desde el deploy inicial según la red.
+
+## Otorgar permisos
+
+Para otorgar permisos debe ejecutarse el siguiente script, especificando los parámetros:
+
+```
+$env:BUIDLER_NETWORK="..."
+$env:DAO_ADDRESS="..."
+$env:CROWDFUNDING_ADDRESS="..."
+$env:ACCOUNT_ADDRESS="..."
+$env:ROLE="..."
+node .\scripts\upgrade.js
+```
+- BUIDLER_NETWORK = rskrEGTEST | rskTestnet | rskMainnet
+- DAO_ADDRESS es la dirección del Aragon DAOdisponible desde el deploy inicial según la red.
+- CROWDFUNDING_ADDRESS es la dirección del smart contract de Crowdfunding.
+- ACCOUNT_ADDRESS es la dirección pública de la cuenta a la cual se otorga el permiso.
+- ROLE = GIVER_ROLE | DELEGATE_ROLE | CAMPAIGN_MANAGER_ROLE | CAMPAIGN_REVIEWER_ROLE | MILESTONE_MANAGER_ROLE | MILESTONE_REVIEWER_ROLE | RECIPIENT_ROLE | CREATE_DAC_ROLE | CREATE_CAMPAIGN_ROLE | CREATE_MILESTONE_ROLE | EXCHANGE_RATE_ROLE | SET_EXCHANGE_RATE_PROVIDER | ENABLE_TOKEN_ROLE | TRANSFER_ROLE
 
 ## Principios de desarrollo
 
