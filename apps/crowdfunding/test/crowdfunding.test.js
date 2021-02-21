@@ -38,7 +38,7 @@ const tokenTestGroups = [
 
 //Price providers
 const ExchangeRateProvider = artifacts.require('ExchangeRateProvider');
-const PriceProviderMock = artifacts.require('./mocks/PriceProviderMock')
+const MoCStateMock = artifacts.require('./mocks/MoCStateMock')
 
 
 // 0: EntityType.Dac;
@@ -66,12 +66,6 @@ const MILESTONE_STATUS_FINISHED = 5;
 
 // 0: DonationStatus.Available;
 const DONATION_STATUS_AVAILABLE = 0;
-
-// Equivalencia de 0.01 USD en Ether (Wei)
-// 1 ETH = 1E+18 Wei = 100 USD > 0.01 USD = 1E+14 Wei
-// TODO Este valor debe establerse por un Oracle.
-
-const USD_ETH_RATE = new BN('766260038006'); //Correspond to BTC Price of 13.0504
 
 contract('Crowdfunding App', (accounts) => {
     const [
@@ -107,8 +101,7 @@ contract('Crowdfunding App', (accounts) => {
         ENABLE_TOKEN_ROLE = await crowdfundingBase.ENABLE_TOKEN_ROLE();
         TRANSFER_ROLE = await vaultBase.TRANSFER_ROLE()
 
-        const ethConstant = await EtherTokenConstantMock.new()
-        RBTC = await ethConstant.getETHConstant()
+        RBTC = '0x0000000000000000000000000000000000000000';
     })
 
     beforeEach(async () => {
@@ -1423,13 +1416,16 @@ contract('Crowdfunding App', (accounts) => {
         // 10 ETH > 1E+019 Wei
         const donationAmount = new BN('10000000000000000000');
         
+        const RBTC_PRICE = 52000;
+        const RBTC_RATE = new BN(10000000000000000 / 52000);
+        
         beforeEach(async () => {
 
             await crowdfunding.enableToken(RBTC, { from: deployer });
 
             //Inicializacion de price provider
-            priceProviderMock = await PriceProviderMock.new("13050400000000000000000");
-            exchangeRateProvider = await ExchangeRateProvider.new(priceProviderMock.address);
+            moCStateMock = await MoCStateMock.new(RBTC_PRICE);
+            exchangeRateProvider = await ExchangeRateProvider.new(moCStateMock.address);
             await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address);
 
             dacId1 = await saveDac(crowdfunding, delegate);
@@ -1496,7 +1492,7 @@ contract('Crowdfunding App', (accounts) => {
                 giver: giver,
                 token: RBTC,
                 amount: donationAmount,
-                amountRemainding: donationAmount.sub(FIAT_AMOUNT_TARGET.mul(USD_ETH_RATE)),
+                amountRemainding: donationAmount.sub(FIAT_AMOUNT_TARGET.mul(RBTC_RATE)),
                 entityId: milestoneId1,
                 budgetEntityId: campaignId1,
                 status: DONATION_STATUS_AVAILABLE
@@ -1518,7 +1514,7 @@ contract('Crowdfunding App', (accounts) => {
                 errors.CROWDFUNDING_WITHDRAW_NOT_APPROVED);
         })
 
-        xit('Withdraw ETH sin cotización', async () => {  //TODO: CRITICAL: AGREGAR MANEJO DE ERRORES SI NO HAY COTIZACION
+        it.skip('Withdraw ETH sin cotización', async () => {  //TODO: CRITICAL: AGREGAR MANEJO DE ERRORES SI NO HAY COTIZACION
 
             // Inicialmente de completa y aprueba el milestone.
             await crowdfunding.milestoneComplete(milestoneId1, INFO_CID, { from: milestoneManager });
@@ -1537,8 +1533,8 @@ contract('Crowdfunding App', (accounts) => {
 
         beforeEach(async () => {
             //Inicializacion de price provider
-            priceProviderMock = await PriceProviderMock.new("13050400000000000000000");
-            exchangeRateProvider = await ExchangeRateProvider.new(priceProviderMock.address);
+            moCStateMock = await MoCStateMock.new("13050400000000000000000");
+            exchangeRateProvider = await ExchangeRateProvider.new(moCStateMock.address);
             await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address);
 
         });

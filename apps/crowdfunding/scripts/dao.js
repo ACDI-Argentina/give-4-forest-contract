@@ -10,6 +10,7 @@ const DAOFactory = artifacts.require(
 )
 
 const newDao = async (deployer) => {
+
   // Deploy a DAOFactory.
   const kernelBase = await Kernel.new(true, { from: deployer })
   const aclBase = await ACL.new({ from: deployer })

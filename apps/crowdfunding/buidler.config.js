@@ -30,9 +30,21 @@ module.exports = {
       // Public Key: 0x41ba2e6eF76ABFd57fC0DD03e696c711EC4002Ca
       // Private Key: da87821735850d8165de05b6c20d8c71d33b700d8fa8c3480b3d8b7318f1bb89
       accounts: ['0xda87821735850d8165de05b6c20d8c71d33b700d8fa8c3480b3d8b7318f1bb89'],
-      gas: 6200000
+      gas: 6500000,
+      timeout: 180000
       // Explorer: https://explorer.testnet.rsk.co
       // Faucet: https://faucet.rsk.co
+    },
+    rskMainnet: {
+      url: 'https://public-node.rsk.co',
+      chainId: 30,
+      from: '0x60fcf72766f805c04b272796ef1b0b7c4d051c46',
+      // a list of local accounts (by setting it to an array of hex-encoded private keys)
+      // IMPORTANTE: no subir la repositorio los valores de este array
+      accounts: [''],
+      gas: 6200000,
+      timeout: 600000
+      // Explorer: https://explorer.rsk.co
     }
   },
   solc: {
@@ -72,30 +84,36 @@ module.exports = {
   namedAccounts: {
     deployer: {
       default: 0, // here this will by default take the first account as deployer
+      30: '0x60fcf72766f805c04b272796ef1b0b7c4d051c46',
       31: '0x41ba2e6eF76ABFd57fC0DD03e696c711EC4002Ca'
     },
     account1: {
       default: 1,
+      30: '0x42378FeAD5534dbAff26E7fC10d24cB9C6648B1E',
       31: '0x9deC90af27E95299D56Cef85eE1aD7E77353dDBB',
       33: '0xee4b388fb98420811C9e04AE8378330C05A2735a'
     },
     account2: {
       default: 2,
+      30: '0x9048F048D6B9Bb99Df1AD1121400e05802F9cE9d',
       31: '0xdEC19efEEf1962D82FfAA3FC8C9A8064BF5Bbe3c',
       33: '0x0bfA3B6b0E799F2eD34444582187B2cDf2fB11a7'      
     },
     account3: {
       default: 3,
+      30: '0x81519f8C093959Db4a79d8364aDDAD12dd9E853a',
       31: '0x8B5Ea78bfa461b81DFFd032D1e5Ed38b9b62651b',
       33: '0x36d1d3c43422EF3B1d7d23F20a25977c29BC3f0e'
     },
     account4: {
       default: 4,
+      30: '0xD8C94aDaA7FC0CF79D0C86f2B4102ce48A68B130',
       31: '0xd97f0f2b7a96099dB0863B8313D83086d1E01292',
       33: '0x9063541acBD959baeB6Bf64158944b7e5844534a'
     },
     account5: {
       default: 5,
+      30: '0x921B37ba0E0E23DB6521C90f481Aa38fe6B7B4b1',
       31: '0x768C06E270491c03D86f5fC2B9E1ba9E837067eB',
       33: '0xd703eE823B2A2466F22147bfE74a0F605EbB20a4'
     }

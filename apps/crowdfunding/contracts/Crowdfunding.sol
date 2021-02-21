@@ -439,9 +439,10 @@ contract Crowdfunding is AragonApp, Constants {
             address token = donationData.tokens[i1];
             uint256 tokenAmount = 0;
             uint256 tokenRate = exchangeRateProvider.getExchangeRate(token);
-            for (uint256 i2 = 0; i2 < entity.budgetDonationIds.length; i2++) {
+            uint256[] memory budgetDonationIds = entity.budgetDonationIds;
+            for (uint256 i2 = 0; i2 < budgetDonationIds.length; i2++) {
                 DonationLib.Donation storage donation = _getDonation(
-                    entity.budgetDonationIds[i2]
+                    budgetDonationIds[i2]
                 );
                 if (donation.token != token) {
                     // La donación no se realizó con el token analizado. Se omite su procesamiento.
@@ -453,9 +454,9 @@ contract Crowdfunding is AragonApp, Constants {
                 if (amountTarget >= donation.amountRemainding) {
                     // No se superó el monto objetivo.
                     tokenAmount = tokenAmount.add(donation.amountRemainding);
-                    donation.amountRemainding = 0;
-                    donation.status = DonationLib.Status.Spent;
                     amountTarget = amountTarget.sub(donation.amountRemainding);
+                    donation.amountRemainding = 0;
+                    donation.status = DonationLib.Status.Spent;                    
                 } else {
                     // El monto restante de la donación es superior al objetivo.
                     if (amountTarget != 0) {

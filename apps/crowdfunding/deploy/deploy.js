@@ -1,6 +1,6 @@
 const arg = require("arg");
 
-const args = arg( {'--network': String},process.argv);
+const args = arg({ '--network': String }, process.argv);
 const network = args["--network"] || "rskRegtest";
 
 console.log(`[${new Date().toISOString()}] Deploying on ${network}...`);
@@ -18,7 +18,7 @@ const ActivityLib = artifacts.require('ActivityLib')
 const DonationLib = artifacts.require('DonationLib')
 const Vault = artifacts.require('Vault')
 
-const PriceProviderMock = artifacts.require('PriceProviderMock');
+const MoCStateMock = artifacts.require('MoCStateMock');
 const ExchangeRateProvider = artifacts.require('ExchangeRateProvider')
 
 const { linkLib,
@@ -35,7 +35,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const { log } = deployments;
     const { deployer, account1, account2, account3, account4, account5 } = await getNamedAccounts();
 
-    log(`Aragon deploy`);
+    log(`Aragon DAO deploy`);
 
     // Deploy de la DAO
     const { kernelBase, aclBase, dao, acl } = await newDao(deployer);
@@ -45,44 +45,55 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(` - DAO: ${dao.address}`);
     log(` - ACL: ${acl.address}`);
 
+    await new Promise(resolve => setTimeout(resolve, 30000));
+
     log(`Crowdfunding deploy`);
+
+    log(` - Libraries`);
 
     // Link Crowdfunding > ArrayLib
     const arrayLib = await ArrayLib.new({ from: deployer });
     await linkLib(arrayLib, Crowdfunding, ARRAY_LIB_PLACEHOLDER);
+    log(`   - Array Lib: ${arrayLib.address}`);
+
     // Link Crowdfunding > EntityLib
     const entityLib = await EntityLib.new({ from: deployer });
     await linkLib(entityLib, Crowdfunding, ENTITY_LIB_PLACEHOLDER);
+    log(`   - Entity Lib: ${entityLib.address}`);
+
     // Link Crowdfunding > DacLib
     const dacLib = await DacLib.new({ from: deployer });
     await linkLib(dacLib, Crowdfunding, DAC_LIB_PLACEHOLDER);
+    log(`   - Dac Lib: ${dacLib.address}`);
+
     // Link Crowdfunding > CampaignLib
     const campaignLib = await CampaignLib.new({ from: deployer });
     await linkLib(campaignLib, Crowdfunding, CAMPAIGN_LIB_PLACEHOLDER);
+    log(`   - Campaign Lib: ${campaignLib.address}`);
+
     // Link Crowdfunding > MilestoneLib
     const milestoneLib = await MilestoneLib.new({ from: deployer });
     await linkLib(milestoneLib, Crowdfunding, MILESTONE_LIB_PLACEHOLDER);
+    log(`   - Milestone Lib: ${milestoneLib.address}`);
+
     // Link Crowdfunding > ActivityLib
     const activityLib = await ActivityLib.new({ from: deployer });
     await linkLib(activityLib, Crowdfunding, ACTIVITY_LIB_PLACEHOLDER);
+    log(`   - Activity Lib: ${activityLib.address}`);
+
     // Link Crowdfunding > DonationLib
     const donationLib = await DonationLib.new({ from: deployer });
     await linkLib(donationLib, Crowdfunding, DONATION_LIB_PLACEHOLDER);
+    log(`   - Donation Lib: ${donationLib.address}`);
 
     const crowdfundingBase = await Crowdfunding.new({ from: deployer });
+    log(` - Crowdfunding Base: ${crowdfundingBase.address}`);
+
     const crowdfundingAddress = await newApp(dao, 'crowdfunding', crowdfundingBase.address, deployer);
     const crowdfunding = await Crowdfunding.at(crowdfundingAddress);
-
-    log(` - Libraries`);
-    log(`   - Entity Lib: ${entityLib.address}`);
-    log(`   - Dac Lib: ${dacLib.address}`);
-    log(`   - Campaign Lib: ${campaignLib.address}`);
-    log(`   - Milestone Lib: ${milestoneLib.address}`);
-    log(`   - Activity Lib: ${activityLib.address}`);
-    log(`   - Donation Lib: ${donationLib.address}`);
-    log(`   - Array Lib: ${arrayLib.address}`);
-    log(` - Crowdfunding Base: ${crowdfundingBase.address}`);
     log(` - Crowdfunding: ${crowdfunding.address}`);
+
+    await new Promise(resolve => setTimeout(resolve, 30000));
 
     const vaultBase = await Vault.new({ from: deployer });
     const vaultAddress = await newApp(dao, 'vault', vaultBase.address, deployer);
@@ -92,6 +103,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(` - Vault: ${vault.address}`);
 
     // Configuración de grupos y permisos
+
+    await new Promise(resolve => setTimeout(resolve, 30000));
 
     log(` - Set groups`);
 
@@ -120,6 +133,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(`   - MILESTONE_MANAGER_ROLE`);
     await createPermission(acl, account3, crowdfunding.address, MILESTONE_MANAGER_ROLE, deployer);
     log(`       - Account3: ${account3}`);
+    await new Promise(resolve => setTimeout(resolve, 30000));
     log(`   - MILESTONE_REVIEWER_ROLE`);
     await createPermission(acl, account3, crowdfunding.address, MILESTONE_REVIEWER_ROLE, deployer);
     log(`       - Account3: ${account3}`);
@@ -138,6 +152,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(`       - Account5: ${account5}`);
     await grantPermission(acl, account1, crowdfunding.address, RECIPIENT_ROLE, deployer);
     log(`       - Account1: ${account1}`);
+
+    await new Promise(resolve => setTimeout(resolve, 30000));
 
     log(` - Set permissions`);
 
@@ -163,6 +179,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(`       - Account1: ${account1}`);
     await grantPermission(acl, account2, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
     log(`       - Account2: ${account2}`);
+    await new Promise(resolve => setTimeout(resolve, 30000));
     log(`   - EXCHANGE_RATE_ROLE`);
     await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
     log(`   - SET_EXCHANGE_RATE_PROVIDER`);
@@ -175,6 +192,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     await createPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
     log(`       - Crowdfunding: ${crowdfunding.address}`);
 
+    await new Promise(resolve => setTimeout(resolve, 30000));
+
     // Inicialización
     await vault.initialize()
     await crowdfunding.initialize(vault.address);
@@ -185,23 +204,29 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log(` - ETH Exchange Rate`);
 
-    
-    let priceProviderAddress;
+    let moCStateAddress;
 
-    if(network === "rskRegtest"){
-        const RBTC_PRICE = new BN('13050400000000000000000');
-        const priceProviderMock = await PriceProviderMock.new( RBTC_PRICE, { from: deployer });
-        priceProviderAddress = priceProviderMock.address;
-        log(`   - PriceProviderMock: ${priceProviderAddress}`);
-        
-    } else {
-        priceProviderAddress = "0x2d39Cc54dc44FF27aD23A91a9B5fd750dae4B218"; //PriceProvider of MoC
+    if (network === "rskRegtest") {
+        const RBTC_PRICE = new BN(5237886 / 100);
+        const moCStateMock = await MoCStateMock.new(RBTC_PRICE, { from: deployer });
+        moCStateAddress = moCStateMock.address;
+    } else if (network === "rskTestnet") {
+        // MoCState de MOC Oracles en Testnet 
+        moCStateAddress = "0x0adb40132cB0ffcEf6ED81c26A1881e214100555";
+    } else if (network === "rskMainnet") {
+        // MoCState de MOC Oracles en Mainnet 
+        moCStateAddress = "0xb9C42EFc8ec54490a37cA91c423F7285Fa01e257";
     }
 
-    const exchangeRateProvider = await ExchangeRateProvider.new(priceProviderAddress,{ from: deployer });
-    await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address, { from: deployer });
+    log(`   - MoCState: ${moCStateAddress}`);
+    
+    const exchangeRateProvider = await ExchangeRateProvider.new(moCStateAddress, { from: deployer });
 
     log(`   - ExchangeRateProvider: ${exchangeRateProvider.address}`);
+
+    await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address, { from: deployer });
+
+    await new Promise(resolve => setTimeout(resolve, 30000));
 
     // Habilitación de ETH (RBTC) para donar.
 
