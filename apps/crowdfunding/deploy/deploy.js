@@ -198,11 +198,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     await vault.initialize()
     await crowdfunding.initialize(vault.address);
 
-    const ETH = '0x0000000000000000000000000000000000000000';
-
     // Exchange Rate
 
     log(` - ETH Exchange Rate`);
+
+    const ETH = '0x0000000000000000000000000000000000000000';
 
     let moCStateAddress;
 
@@ -219,7 +219,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     }
 
     log(`   - MoCState: ${moCStateAddress}`);
-    
+
     const exchangeRateProvider = await ExchangeRateProvider.new(moCStateAddress, { from: deployer });
 
     log(`   - ExchangeRateProvider: ${exchangeRateProvider.address}`);

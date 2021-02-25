@@ -9,7 +9,7 @@ import "@aragon/os/contracts/lib/math/SafeMath.sol";
 contract ExchangeRateProvider {
     using SafeMath for uint256;
     IMoCState internal moCState;
-    address RBTC = 0x0000000000000000000000000000000000000000;
+    address RBTC = address(0);
 
     //array of allowed tokens? //require comprobaria que se encuentre en el listado
 
@@ -23,7 +23,7 @@ contract ExchangeRateProvider {
      */
     function getExchangeRate(address _token) public view returns (uint256) {
         if (_token == RBTC) {
-            uint256 tokenPrice = getRbtcPrice();
+            uint256 tokenPrice = moCState.getBitcoinPrice();
             return _asExchangeRate(tokenPrice);
         } else {
             return 0; //we should revert transaction? https://blog.polymath.network/try-catch-in-solidity-handling-the-revert-exception-f53718f76047
@@ -43,7 +43,7 @@ contract ExchangeRateProvider {
      *
      * 1RBTC = 1000000000000000000 wei ==== USD_PRICE USD
      *                           X wei ====      0.01 USD
-     * 
+     *
      * RBTC_RATE = 1000000000000000000 * 0.01 / USD_PRICE;
      * RBTC_RATE = 10000000000000000 / USD_PRICE;
      */
@@ -52,7 +52,8 @@ contract ExchangeRateProvider {
         pure
         returns (uint256)
     {
+        uint256 weiFactor = 1000000000000000000;
         uint256 numerator = 10000000000000000;
-        return (numerator).div(tokenPrice);
+        return numerator.div(tokenPrice.div(weiFactor));
     }
 }

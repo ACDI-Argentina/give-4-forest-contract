@@ -31,7 +31,7 @@ module.exports = {
       // Private Key: da87821735850d8165de05b6c20d8c71d33b700d8fa8c3480b3d8b7318f1bb89
       accounts: ['0xda87821735850d8165de05b6c20d8c71d33b700d8fa8c3480b3d8b7318f1bb89'],
       gas: 6500000,
-      timeout: 180000
+      timeout: 600000
       // Explorer: https://explorer.testnet.rsk.co
       // Faucet: https://faucet.rsk.co
     },
