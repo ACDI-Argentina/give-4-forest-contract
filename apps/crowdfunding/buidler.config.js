@@ -42,8 +42,8 @@ module.exports = {
       // a list of local accounts (by setting it to an array of hex-encoded private keys)
       // IMPORTANTE: no subir la repositorio los valores de este array
       accounts: [''],
-      gas: 6200000,
-      timeout: 600000
+      gas: 6500000,
+      timeout: 3600000
       // Explorer: https://explorer.rsk.co
     }
   },
@@ -89,31 +89,31 @@ module.exports = {
     },
     account1: {
       default: 1,
-      30: '0x42378FeAD5534dbAff26E7fC10d24cB9C6648B1E',
+      30: '0x42378fEad5534DbAFf26E7Fc10d24Cb9C6648b1e',
       31: '0x9deC90af27E95299D56Cef85eE1aD7E77353dDBB',
       33: '0xee4b388fb98420811C9e04AE8378330C05A2735a'
     },
     account2: {
       default: 2,
-      30: '0x9048F048D6B9Bb99Df1AD1121400e05802F9cE9d',
+      30: '0x9048F048d6b9Bb99Df1ad1121400e05802F9Ce9d',
       31: '0xdEC19efEEf1962D82FfAA3FC8C9A8064BF5Bbe3c',
       33: '0x0bfA3B6b0E799F2eD34444582187B2cDf2fB11a7'      
     },
     account3: {
       default: 3,
-      30: '0x81519f8C093959Db4a79d8364aDDAD12dd9E853a',
+      30: '0x81519F8C093959db4A79D8364addad12dD9E853A',
       31: '0x8B5Ea78bfa461b81DFFd032D1e5Ed38b9b62651b',
       33: '0x36d1d3c43422EF3B1d7d23F20a25977c29BC3f0e'
     },
     account4: {
       default: 4,
-      30: '0xD8C94aDaA7FC0CF79D0C86f2B4102ce48A68B130',
+      30: '0xD8C94aDaa7FC0cF79D0C86f2b4102Ce48A68B130',
       31: '0xd97f0f2b7a96099dB0863B8313D83086d1E01292',
       33: '0x9063541acBD959baeB6Bf64158944b7e5844534a'
     },
     account5: {
       default: 5,
-      30: '0x921B37ba0E0E23DB6521C90f481Aa38fe6B7B4b1',
+      30: '0x921b37BA0E0e23db6521c90f481aA38Fe6b7B4b1',
       31: '0x768C06E270491c03D86f5fC2B9E1ba9E837067eB',
       33: '0xd703eE823B2A2466F22147bfE74a0F605EbB20a4'
     }

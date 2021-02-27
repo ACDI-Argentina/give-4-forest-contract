@@ -21,6 +21,9 @@ const Vault = artifacts.require('Vault')
 const MoCStateMock = artifacts.require('MoCStateMock');
 const ExchangeRateProvider = artifacts.require('ExchangeRateProvider')
 
+const Kernel = artifacts.require('@aragon/os/build/contracts/kernel/Kernel')
+const ACL = artifacts.require('@aragon/os/build/contracts/acl/ACL')
+
 const { linkLib,
     ARRAY_LIB_PLACEHOLDER,
     ENTITY_LIB_PLACEHOLDER,
@@ -29,6 +32,10 @@ const { linkLib,
     MILESTONE_LIB_PLACEHOLDER,
     ACTIVITY_LIB_PLACEHOLDER,
     DONATION_LIB_PLACEHOLDER } = require('../scripts/libs')
+
+function sleep() {
+    return new Promise(resolve => setTimeout(resolve, 300000));
+}
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
 
@@ -45,7 +52,10 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(` - DAO: ${dao.address}`);
     log(` - ACL: ${acl.address}`);
 
-    await new Promise(resolve => setTimeout(resolve, 30000));
+    //const dao = await Kernel.at('0xd598F0116dd8c36b4E2aEcF7ac54553E93bD340A');
+    //const acl = await ACL.at(await dao.acl());
+
+    await sleep();
 
     log(`Crowdfunding deploy`);
 
@@ -55,56 +65,64 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     const arrayLib = await ArrayLib.new({ from: deployer });
     await linkLib(arrayLib, Crowdfunding, ARRAY_LIB_PLACEHOLDER);
     log(`   - Array Lib: ${arrayLib.address}`);
+    await sleep();
 
     // Link Crowdfunding > EntityLib
     const entityLib = await EntityLib.new({ from: deployer });
     await linkLib(entityLib, Crowdfunding, ENTITY_LIB_PLACEHOLDER);
     log(`   - Entity Lib: ${entityLib.address}`);
+    await sleep();
 
     // Link Crowdfunding > DacLib
     const dacLib = await DacLib.new({ from: deployer });
     await linkLib(dacLib, Crowdfunding, DAC_LIB_PLACEHOLDER);
     log(`   - Dac Lib: ${dacLib.address}`);
+    await sleep();
 
     // Link Crowdfunding > CampaignLib
     const campaignLib = await CampaignLib.new({ from: deployer });
     await linkLib(campaignLib, Crowdfunding, CAMPAIGN_LIB_PLACEHOLDER);
     log(`   - Campaign Lib: ${campaignLib.address}`);
+    await sleep();
 
     // Link Crowdfunding > MilestoneLib
     const milestoneLib = await MilestoneLib.new({ from: deployer });
     await linkLib(milestoneLib, Crowdfunding, MILESTONE_LIB_PLACEHOLDER);
     log(`   - Milestone Lib: ${milestoneLib.address}`);
+    await sleep();
 
     // Link Crowdfunding > ActivityLib
     const activityLib = await ActivityLib.new({ from: deployer });
     await linkLib(activityLib, Crowdfunding, ACTIVITY_LIB_PLACEHOLDER);
     log(`   - Activity Lib: ${activityLib.address}`);
+    await sleep();
 
     // Link Crowdfunding > DonationLib
     const donationLib = await DonationLib.new({ from: deployer });
     await linkLib(donationLib, Crowdfunding, DONATION_LIB_PLACEHOLDER);
     log(`   - Donation Lib: ${donationLib.address}`);
+    await sleep();
 
     const crowdfundingBase = await Crowdfunding.new({ from: deployer });
     log(` - Crowdfunding Base: ${crowdfundingBase.address}`);
+    await sleep();
 
     const crowdfundingAddress = await newApp(dao, 'crowdfunding', crowdfundingBase.address, deployer);
     const crowdfunding = await Crowdfunding.at(crowdfundingAddress);
     log(` - Crowdfunding: ${crowdfunding.address}`);
-
-    await new Promise(resolve => setTimeout(resolve, 30000));
+    await sleep();
 
     const vaultBase = await Vault.new({ from: deployer });
+    await sleep();
     const vaultAddress = await newApp(dao, 'vault', vaultBase.address, deployer);
+    await sleep();
     const vault = await Vault.at(vaultAddress);
+    await sleep();
 
     log(` - Vault Base: ${vaultBase.address}`);
     log(` - Vault: ${vault.address}`);
 
     // Configuración de grupos y permisos
-
-    await new Promise(resolve => setTimeout(resolve, 30000));
 
     log(` - Set groups`);
 
@@ -117,43 +135,55 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let RECIPIENT_ROLE = await crowdfundingBase.RECIPIENT_ROLE();
     log(`   - DELEGATE_ROLE`);
     await createPermission(acl, account1, crowdfunding.address, DELEGATE_ROLE, deployer);
+    await sleep();
     log(`       - Account1: ${account1}`);
     log(`   - CAMPAIGN_MANAGER_ROLE`);
     await createPermission(acl, account2, crowdfunding.address, CAMPAIGN_MANAGER_ROLE, deployer);
+    await sleep();
     log(`       - Account2: ${account2}`);
     log(`   - CAMPAIGN_REVIEWER_ROLE`);
     await createPermission(acl, account3, crowdfunding.address, CAMPAIGN_REVIEWER_ROLE, deployer);
+    await sleep();
     log(`       - Account3: ${account3}`);
     await grantPermission(acl, account4, crowdfunding.address, CAMPAIGN_REVIEWER_ROLE, deployer);
+    await sleep();
     log(`       - Account4: ${account4}`);
     await grantPermission(acl, account5, crowdfunding.address, CAMPAIGN_REVIEWER_ROLE, deployer);
+    await sleep();
     log(`       - Account5: ${account5}`);
     await grantPermission(acl, account1, crowdfunding.address, CAMPAIGN_REVIEWER_ROLE, deployer);
+    await sleep();
     log(`       - Account1: ${account1}`);
     log(`   - MILESTONE_MANAGER_ROLE`);
     await createPermission(acl, account3, crowdfunding.address, MILESTONE_MANAGER_ROLE, deployer);
+    await sleep();
     log(`       - Account3: ${account3}`);
-    await new Promise(resolve => setTimeout(resolve, 30000));
     log(`   - MILESTONE_REVIEWER_ROLE`);
     await createPermission(acl, account3, crowdfunding.address, MILESTONE_REVIEWER_ROLE, deployer);
+    await sleep();
     log(`       - Account3: ${account3}`);
     await grantPermission(acl, account4, crowdfunding.address, MILESTONE_REVIEWER_ROLE, deployer);
+    await sleep();
     log(`       - Account4: ${account4}`);
     await grantPermission(acl, account5, crowdfunding.address, MILESTONE_REVIEWER_ROLE, deployer);
+    await sleep();
     log(`       - Account5: ${account5}`);
     await grantPermission(acl, account1, crowdfunding.address, MILESTONE_REVIEWER_ROLE, deployer);
+    await sleep();
     log(`       - Account1: ${account1}`);
     log(`   - RECIPIENT_ROLE`);
     await createPermission(acl, account3, crowdfunding.address, RECIPIENT_ROLE, deployer);
+    await sleep();
     log(`       - Account3: ${account3}`);
     await grantPermission(acl, account4, crowdfunding.address, RECIPIENT_ROLE, deployer);
+    await sleep();
     log(`       - Account4: ${account4}`);
     await grantPermission(acl, account5, crowdfunding.address, RECIPIENT_ROLE, deployer);
+    await sleep();
     log(`       - Account5: ${account5}`);
     await grantPermission(acl, account1, crowdfunding.address, RECIPIENT_ROLE, deployer);
     log(`       - Account1: ${account1}`);
-
-    await new Promise(resolve => setTimeout(resolve, 30000));
+    await sleep();
 
     log(` - Set permissions`);
 
@@ -166,37 +196,46 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let TRANSFER_ROLE = await vaultBase.TRANSFER_ROLE()
     log(`   - CREATE_DAC_ROLE`);
     await createPermission(acl, account1, crowdfunding.address, CREATE_DAC_ROLE, deployer);
+    await sleep();
     log(`       - Account1: ${account1}`);
     log(`   - CREATE_CAMPAIGN_ROLE`);
     await createPermission(acl, account2, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
+    await sleep();
     log(`       - Account2: ${account2}`);
     await grantPermission(acl, account1, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
+    await sleep();
     log(`       - Account1: ${account1}`);
     log(`   - CREATE_MILESTONE_ROLE`);
     await createPermission(acl, account3, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
+    await sleep();
     log(`       - Account3: ${account3}`);
     await grantPermission(acl, account1, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
+    await sleep();
     log(`       - Account1: ${account1}`);
     await grantPermission(acl, account2, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
+    await sleep();
     log(`       - Account2: ${account2}`);
-    await new Promise(resolve => setTimeout(resolve, 30000));
     log(`   - EXCHANGE_RATE_ROLE`);
     await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
+    await sleep();
     log(`   - SET_EXCHANGE_RATE_PROVIDER`);
     await createPermission(acl, deployer, crowdfunding.address, SET_EXCHANGE_RATE_PROVIDER, deployer);
+    await sleep();
     log(`       - Deployer: ${deployer}`);
     log(`   - ENABLE_TOKEN_ROLE`);
     await createPermission(acl, deployer, crowdfunding.address, ENABLE_TOKEN_ROLE, deployer);
+    await sleep();
     log(`       - Deployer: ${deployer}`);
     log(`   - TRANSFER_ROLE`);
     await createPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
+    await sleep();
     log(`       - Crowdfunding: ${crowdfunding.address}`);
 
-    await new Promise(resolve => setTimeout(resolve, 30000));
-
     // Inicialización
-    await vault.initialize()
+    await vault.initialize();
+    await sleep();
     await crowdfunding.initialize(vault.address);
+    await sleep();
 
     // Exchange Rate
 
@@ -221,12 +260,11 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     log(`   - MoCState: ${moCStateAddress}`);
 
     const exchangeRateProvider = await ExchangeRateProvider.new(moCStateAddress, { from: deployer });
-
     log(`   - ExchangeRateProvider: ${exchangeRateProvider.address}`);
+    await sleep();
 
     await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address, { from: deployer });
-
-    await new Promise(resolve => setTimeout(resolve, 30000));
+    await sleep();
 
     // Habilitación de ETH (RBTC) para donar.
 
