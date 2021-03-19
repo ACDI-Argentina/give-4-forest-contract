@@ -34,7 +34,9 @@ const { linkLib,
     DONATION_LIB_PLACEHOLDER } = require('../scripts/libs')
 
 function sleep() {
-    return new Promise(resolve => setTimeout(resolve, 300000));
+    // Mainnet
+    //return new Promise(resolve => setTimeout(resolve, 300000));
+    return new Promise(resolve => setTimeout(resolve, 1));
 }
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
@@ -246,7 +248,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let moCStateAddress;
 
     if (network === "rskRegtest") {
-        const RBTC_PRICE = new BN(5237886 / 100);
+        const RBTC_PRICE = new BN(209505428914);
         const moCStateMock = await MoCStateMock.new(RBTC_PRICE, { from: deployer });
         moCStateAddress = moCStateMock.address;
     } else if (network === "rskTestnet") {
