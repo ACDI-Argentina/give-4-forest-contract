@@ -1416,8 +1416,9 @@ contract('Crowdfunding App', (accounts) => {
         // 10 ETH > 1E+019 Wei
         const donationAmount = new BN('10000000000000000000');
         
-        const RBTC_PRICE = 52000;
-        const RBTC_RATE = new BN(10000000000000000 / 52000);
+        const RBTC_PRICE = new BN('58172000000000000000000');
+        //const RBTC_RATE = new BN(10000000000000000 / (58172000000000000000000 / 1000000000000000000));
+        const RBTC_RATE = new BN(171904008801);
         
         beforeEach(async () => {
 

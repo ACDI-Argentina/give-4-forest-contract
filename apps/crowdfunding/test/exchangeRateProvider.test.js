@@ -12,6 +12,7 @@ const MoCStateMock = artifacts.require('./mocks/MoCStateMock')
 const BNEqualsNumber = (bn1, n2) => assert.ok(bn1.eq(new BN(n2)));
 
 const RBTC = "0x0000000000000000000000000000000000000000";
+const RBTC_PRICE = new BN('58172000000000000000000');
 const randomAddr = "0xD059764e0B0C949001bF19F9cd06eA7D9e4090D7";
 
 contract('ExchangeRateProvider', (accounts) => {
@@ -45,7 +46,7 @@ contract('ExchangeRateProvider', (accounts) => {
             //Inicializacion de price provider
             await createPermission(acl, deployer, crowdfunding.address, SET_EXCHANGE_RATE_PROVIDER, deployer);
             
-            moCStateMock = await MoCStateMock.new(5200000);
+            moCStateMock = await MoCStateMock.new(RBTC_PRICE);
             exchangeRateProvider = await ExchangeRateProvider.new(moCStateMock.address);
             await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address);
 
@@ -63,7 +64,8 @@ contract('ExchangeRateProvider', (accounts) => {
             const exrProvider = await ExchangeRateProvider.at(exrProviderAddr);
             
             const exchangeRate = await exrProvider.getExchangeRate(RBTC);
-            BNEqualsNumber(exchangeRate, 10000000000000000 / 5200000);
+            //BNEqualsNumber(exchangeRate, 10000000000000000 / (58172000000000000000000 / 1000000000000000000));
+            BNEqualsNumber(exchangeRate, 171904008801);
         })
 
         it('get not existent token exchange rate from Crowdfunding', async () => {

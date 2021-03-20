@@ -248,7 +248,7 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     let moCStateAddress;
 
     if (network === "rskRegtest") {
-        const RBTC_PRICE = new BN(209505428914);
+        const RBTC_PRICE = new BN('58172000000000000000000');
         const moCStateMock = await MoCStateMock.new(RBTC_PRICE, { from: deployer });
         moCStateAddress = moCStateMock.address;
     } else if (network === "rskTestnet") {
