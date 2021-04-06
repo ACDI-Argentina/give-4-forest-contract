@@ -20,6 +20,7 @@ const Vault = artifacts.require('Vault')
 
 const MoCStateMock = artifacts.require('MoCStateMock');
 const ExchangeRateProvider = artifacts.require('ExchangeRateProvider')
+const SimpleERC20 = artifacts.require('SimpleERC20');
 
 const Kernel = artifacts.require('@aragon/os/build/contracts/kernel/Kernel')
 const ACL = artifacts.require('@aragon/os/build/contracts/acl/ACL')
@@ -238,6 +239,15 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     await sleep();
     await crowdfunding.initialize(vault.address);
     await sleep();
+
+    // ERC20 Token
+
+    log(` - ERC20 Token`);
+
+    if (network === "rskRegtest") {
+        const simpleERC20 = await SimpleERC20.new({ from: deployer });
+        log(`   - SimpleERC20: ${simpleERC20.address}`);
+    }
 
     // Exchange Rate
 
