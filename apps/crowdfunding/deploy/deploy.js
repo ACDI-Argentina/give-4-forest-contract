@@ -244,8 +244,9 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log(` - ERC20 Token`);
 
+    let simpleERC20
     if (network === "rskRegtest") {
-        const simpleERC20 = await SimpleERC20.new({ from: deployer });
+        simpleERC20 = await SimpleERC20.new({ from: deployer });
         log(`   - SimpleERC20: ${simpleERC20.address}`);
     }
 
@@ -278,10 +279,15 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
     await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address, { from: deployer });
     await sleep();
 
-    // Habilitación de ETH (RBTC) para donar.
+    // Habilitación de tokens para donar.
 
-    log(` - Enable ETH (RBTC)`);
+    log(` - Enable token donations`);
+
     await crowdfunding.enableToken(ETH, { from: deployer });
+    log(`   - Enable ETH (RBTC)`);
+
+    await crowdfunding.enableToken(simpleERC20.address, { from: deployer });
+    log(`   - SimpleERC20`);    
 
     log(` - Initialized`);
 }

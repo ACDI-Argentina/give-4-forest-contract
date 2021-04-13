@@ -26,7 +26,7 @@ contract ExchangeRateProvider {
             uint256 tokenPrice = moCState.getBitcoinPrice();
             return _asExchangeRate(tokenPrice);
         } else {
-            return 0; //we should revert transaction? https://blog.polymath.network/try-catch-in-solidity-handling-the-revert-exception-f53718f76047
+            return 1; //we should revert transaction? https://blog.polymath.network/try-catch-in-solidity-handling-the-revert-exception-f53718f76047
             //Otra alternativa sería retornar una tupla (has,exchangeRate)
         }
     }

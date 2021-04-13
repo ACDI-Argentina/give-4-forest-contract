@@ -62,3 +62,51 @@ web3.eth.sendTransaction({
     console.log(`Confirmation Number: ${confNumber}`);
     console.log(`Receipt`, receipt);
 });*/
+
+// ERC20 Token
+
+let minAbi = [
+    // transfer
+    {
+        "constant": false,
+        "inputs": [
+            {
+                "name": "_to",
+                "type": "address"
+            },
+            {
+                "name": "_value",
+                "type": "uint256"
+            }
+        ],
+        "name": "transfer",
+        "outputs": [
+            {
+                "name": "",
+                "type": "bool"
+            }
+        ],
+        "type": "function"
+    }
+];
+
+let tokenAddress = '0x0Aa058aD63E36bC2f98806f2D638353AE89C3634';
+let fromAddress = '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826';
+let toAddress = '0xee4b388fb98420811C9e04AE8378330C05A2735a';
+// Use BigNumber
+let decimals = web3.utils.toBN(18);
+let amount = web3.utils.toBN(10);
+
+// Get ERC20 Token contract instance
+let contract = new web3.eth.Contract(minAbi, tokenAddress);
+
+// calculate ERC20 token amount
+value = amount.mul(web3.utils.toBN(10).pow(decimals));
+
+// call transfer function
+contract.methods.transfer(toAddress, value)
+    .send({from: fromAddress})
+    /*.on('transactionHash', function(hash) {
+        console.log(value + ' tokens transferidos a ' + toAddress);
+        console.log(hash);
+    })*/;
