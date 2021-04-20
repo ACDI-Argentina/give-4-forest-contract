@@ -1,6 +1,9 @@
 pragma solidity 0.4.24;
 
-contract SimpleERC20 {
+/**
+ * Mock del Token DOC (https://api.moneyonchain.com/web/all#tokens) para ser usado en Desarrollo.
+ */
+contract DocTokenMock {
     uint256 public _totalSupply = 10**9 * 10**18;
     // Balances for each account
     mapping(address => uint256) private balances;

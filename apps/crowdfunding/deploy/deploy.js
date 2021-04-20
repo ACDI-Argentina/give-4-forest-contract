@@ -19,8 +19,10 @@ const DonationLib = artifacts.require('DonationLib')
 const Vault = artifacts.require('Vault')
 
 const MoCStateMock = artifacts.require('MoCStateMock');
-const ExchangeRateProvider = artifacts.require('ExchangeRateProvider')
-const SimpleERC20 = artifacts.require('SimpleERC20');
+const RoCStateMock = artifacts.require('RoCStateMock');
+const DocTokenMock = artifacts.require('DocTokenMock');
+const RifTokenMock = artifacts.require('RifTokenMock');
+const ExchangeRateProvider = artifacts.require('ExchangeRateProvider');
 
 const Kernel = artifacts.require('@aragon/os/build/contracts/kernel/Kernel')
 const ACL = artifacts.require('@aragon/os/build/contracts/acl/ACL')
@@ -242,37 +244,72 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     // ERC20 Token
 
-    log(` - ERC20 Token`);
+    log(` - ERC20 Tokens`);
 
-    let simpleERC20
+    let rifAddress;
+    let docAddress;
+    let DOC_PRICE = new BN('00001000000000000000000'); // Precio del DOC: 1,00 US$
     if (network === "rskRegtest") {
-        simpleERC20 = await SimpleERC20.new({ from: deployer });
-        log(`   - SimpleERC20: ${simpleERC20.address}`);
+
+        let rifTokenMock = await RifTokenMock.new({ from: deployer });
+        rifAddress = rifTokenMock.address;
+        log(`   - RifTokenMock: ${rifAddress}`);
+
+        let docTokenMock = await DocTokenMock.new({ from: deployer });
+        docAddress = docTokenMock.address;
+        log(`   - DocTokenMock: ${docAddress}`);
+
+    } else if (network === "rskTestnet") {
+
+        // TODO
+        rifAddress = '0x19f64674d8a5b4e652319f5e239efd3bc969a1fe';
+        docAddress = '';
+
+    } else if (network === "rskMainnet") {
+
+        // TODO
+        rifAddress = '0x2acc95758f8b5f583470ba265eb685a8f45fc9d5';
+        docAddress = '';
     }
 
     // Exchange Rate
 
-    log(` - ETH Exchange Rate`);
+    log(` - RBTC Exchange Rate`);
 
-    const ETH = '0x0000000000000000000000000000000000000000';
+    const RBTC = '0x0000000000000000000000000000000000000000';
 
     let moCStateAddress;
+    let roCStateAddress;
 
     if (network === "rskRegtest") {
-        const RBTC_PRICE = new BN('58172000000000000000000');
+        const RBTC_PRICE = new BN('58172000000000000000000'); // Precio del RBTC: 58172,00 US$
         const moCStateMock = await MoCStateMock.new(RBTC_PRICE, { from: deployer });
         moCStateAddress = moCStateMock.address;
+        const RIF_PRICE = new BN('00000391974000000000000'); // Precio del RIF: 0,391974 US$
+        const roCStateMock = await RoCStateMock.new(RIF_PRICE, { from: deployer });
+        roCStateAddress = roCStateMock.address;
     } else if (network === "rskTestnet") {
         // MoCState de MOC Oracles en Testnet 
         moCStateAddress = "0x0adb40132cB0ffcEf6ED81c26A1881e214100555";
+        // RoCState de MOC Oracles en Testnet 
+        roCStateAddress = "0x496eD67F77D044C8d9471fe86085Ccb5DC4d2f63";
     } else if (network === "rskMainnet") {
         // MoCState de MOC Oracles en Mainnet 
         moCStateAddress = "0xb9C42EFc8ec54490a37cA91c423F7285Fa01e257";
+        // RoCState de MOC Oracles en Mainnet 
+        moCStateAddress = "0x541F68a796Fe5ae3A381d2Aa5a50b975632e40A6";
     }
 
     log(`   - MoCState: ${moCStateAddress}`);
+    log(`   - RoCState: ${roCStateAddress}`);
 
-    const exchangeRateProvider = await ExchangeRateProvider.new(moCStateAddress, { from: deployer });
+    const exchangeRateProvider = await ExchangeRateProvider.new(
+        moCStateAddress,
+        roCStateAddress,
+        rifAddress,
+        docAddress,
+        DOC_PRICE,
+        { from: deployer });
     log(`   - ExchangeRateProvider: ${exchangeRateProvider.address}`);
     await sleep();
 
@@ -283,11 +320,14 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
 
     log(` - Enable token donations`);
 
-    await crowdfunding.enableToken(ETH, { from: deployer });
-    log(`   - Enable ETH (RBTC)`);
+    await crowdfunding.enableToken(RBTC, { from: deployer });
+    log(`   - Enable RBTC`);
 
-    await crowdfunding.enableToken(simpleERC20.address, { from: deployer });
-    log(`   - SimpleERC20`);    
+    await crowdfunding.enableToken(rifAddress, { from: deployer });
+    log(`   - RifToken`);
+    
+    await crowdfunding.enableToken(docAddress, { from: deployer });
+    log(`   - DocToken`);
 
     log(` - Initialized`);
 }
