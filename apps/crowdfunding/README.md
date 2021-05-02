@@ -91,8 +91,21 @@ $env:DAO_ADDRESS="..."
 node .\scripts\upgrade.js
 ```
 
-- BUIDLER_NETWORK = rskrEGTEST | rskTestnet | rskMainnet
+- BUIDLER_NETWORK = rskRegtest | rskTestnet | rskMainnet
 - DAO_ADDRESS es la dirección del Aragon DAOdisponible desde el deploy inicial según la red.
+
+Este scrtip es genérico para una actualización. Las actualización generalmente siguen scrtip específicos según los cambios en la versión. A continuación se lista los upgrades.
+
+### v1.1.0
+
+```
+$env:BUIDLER_NETWORK="..."
+$env:CROWDFUNDING_ADDRESS="..."
+node .\scripts\upgrade-v1.1.0.js
+```
+
+- BUIDLER_NETWORK = rskRegtest | rskTestnet | rskMainnet
+- CROWDFUNDING_ADDRESS es la dirección del smart contract de Crowdfunding (proxy).
 
 ## Otorgar permisos
 
@@ -106,7 +119,7 @@ $env:ACCOUNT_ADDRESS="..."
 $env:ROLE="..."
 node .\scripts\upgrade.js
 ```
-- BUIDLER_NETWORK = rskrEGTEST | rskTestnet | rskMainnet
+- BUIDLER_NETWORK = rskRegtest | rskTestnet | rskMainnet
 - DAO_ADDRESS es la dirección del Aragon DAOdisponible desde el deploy inicial según la red.
 - CROWDFUNDING_ADDRESS es la dirección del smart contract de Crowdfunding.
 - ACCOUNT_ADDRESS es la dirección pública de la cuenta a la cual se otorga el permiso.

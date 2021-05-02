@@ -1,9 +1,10 @@
 const bre = require("@nomiclabs/buidler")
-const Crowdfunding = artifacts.require('Crowdfunding')
-const RoCStateMock = artifacts.require('RoCStateMock')
-const DocTokenMock = artifacts.require('DocTokenMock')
-const RifTokenMock = artifacts.require('RifTokenMock')
-const ExchangeRateProvider = artifacts.require('ExchangeRateProvider')
+const Crowdfunding = bre.artifacts.require('Crowdfunding')
+const RoCStateMock = bre.artifacts.require('RoCStateMock')
+const DocTokenMock = bre.artifacts.require('DocTokenMock')
+const RifTokenMock = bre.artifacts.require('RifTokenMock')
+const ExchangeRateProvider = bre.artifacts.require('ExchangeRateProvider')
+const BN = require('bn.js');
 
 function sleep() {
   // Mainnet
@@ -13,16 +14,21 @@ function sleep() {
 
 async function main() {
 
+  console.log(`Upgrade v1.1.0`);
+  console.log(` - BUIDLER_NETWORK: ${process.env.BUIDLER_NETWORK}`);
+  console.log(` - CROWDFUNDING_ADDRESS: ${process.env.CROWDFUNDING_ADDRESS}`);
+
   const { deployer } = await bre.getNamedAccounts();
 
   console.log(`Crowdfunding compile`);
   await bre.run("compile");
 
-  const crowdfunding = await Crowdfunding.at('0xd598F01...................');
+  const network = process.env.BUIDLER_NETWORK;
+  const crowdfunding = await Crowdfunding.at(process.env.CROWDFUNDING_ADDRESS);
 
   // ERC20 Token
 
-  log(` - ERC20 Tokens`);
+  console.log(` - ERC20 Tokens`);
 
   let rifAddress;
   let docAddress;
@@ -31,29 +37,30 @@ async function main() {
 
     let rifTokenMock = await RifTokenMock.new({ from: deployer });
     rifAddress = rifTokenMock.address;
-    log(`   - RifTokenMock: ${rifAddress}`);
 
     let docTokenMock = await DocTokenMock.new({ from: deployer });
     docAddress = docTokenMock.address;
-    log(`   - DocTokenMock: ${docAddress}`);
 
   } else if (network === "rskTestnet") {
 
     // TODO
     rifAddress = '0x19f64674d8a5b4e652319f5e239efd3bc969a1fe';
-    docAddress = '';
-
+    //docAddress = '';
+    // Temporal hasta que tenga la dirección de DOC en Testnet.
+    docAddress = '0x19f64674d8a5b4e652319f5e239efd3bc969a1fe';
   } else if (network === "rskMainnet") {
 
     // TODO
     rifAddress = '0x2acc95758f8b5f583470ba265eb685a8f45fc9d5';
     docAddress = '';
   }
+  console.log(`   - RifToken: ${rifAddress}`);
+  console.log(`   - DocToken: ${docAddress}`);
   await sleep();
 
   // Exchange Rate
 
-  log(` - RBTC Exchange Rate`);
+  console.log(` - RBTC Exchange Rate`);
 
   let moCStateAddress;
   let roCStateAddress;
@@ -78,8 +85,8 @@ async function main() {
   }
   await sleep();
 
-  log(`   - MoCState: ${moCStateAddress}`);
-  log(`   - RoCState: ${roCStateAddress}`);
+  console.log(`   - MoCState: ${moCStateAddress}`);
+  console.log(`   - RoCState: ${roCStateAddress}`);
 
   const exchangeRateProvider = await ExchangeRateProvider.new(
     moCStateAddress,
@@ -88,21 +95,23 @@ async function main() {
     docAddress,
     DOC_PRICE,
     { from: deployer });
-  log(`   - ExchangeRateProvider: ${exchangeRateProvider.address}`);
+  console.log(`   - ExchangeRateProvider: ${exchangeRateProvider.address}`);
   await sleep();
 
   await crowdfunding.setExchangeRateProvider(exchangeRateProvider.address, { from: deployer });
+  console.log(`   - Set ExchangeRateProvider en Crowdfunding`);
   await sleep();
 
   // Habilitación de tokens para donar.
 
-  log(` - Enable token donations`);
+  console.log(` - Enable token donations`);
 
   await crowdfunding.enableToken(rifAddress, { from: deployer });
-  log(`   - RifToken`);
+  console.log(`   - RifToken: ${rifAddress}`);
+  await sleep();
 
   await crowdfunding.enableToken(docAddress, { from: deployer });
-  log(`   - DocToken`);
+  console.log(`   - DocToken: ${docAddress}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
