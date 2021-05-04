@@ -43,16 +43,13 @@ async function main() {
 
   } else if (network === "rskTestnet") {
 
-    // TODO
     rifAddress = '0x19f64674d8a5b4e652319f5e239efd3bc969a1fe';
-    //docAddress = '';
-    // Temporal hasta que tenga la dirección de DOC en Testnet.
-    docAddress = '0x19f64674d8a5b4e652319f5e239efd3bc969a1fe';
+    docAddress = '0xCB46c0ddc60D18eFEB0E586C17Af6ea36452Dae0';
+
   } else if (network === "rskMainnet") {
 
-    // TODO
     rifAddress = '0x2acc95758f8b5f583470ba265eb685a8f45fc9d5';
-    docAddress = '';
+    docAddress = '0xe700691dA7b9851F2F35f8b8182c69c53CcaD9Db';
   }
   console.log(`   - RifToken: ${rifAddress}`);
   console.log(`   - DocToken: ${docAddress}`);
