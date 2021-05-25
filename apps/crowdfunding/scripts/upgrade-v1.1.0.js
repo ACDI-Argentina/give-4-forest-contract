@@ -8,8 +8,8 @@ const BN = require('bn.js');
 
 function sleep() {
   // Mainnet
-  //return new Promise(resolve => setTimeout(resolve, 300000));
-  return new Promise(resolve => setTimeout(resolve, 1));
+  return new Promise(resolve => setTimeout(resolve, 300000));
+  //return new Promise(resolve => setTimeout(resolve, 1));
 }
 
 async function main() {
@@ -78,7 +78,7 @@ async function main() {
     // MoCState de MOC Oracles en Mainnet 
     moCStateAddress = "0xb9C42EFc8ec54490a37cA91c423F7285Fa01e257";
     // RoCState de MOC Oracles en Mainnet 
-    moCStateAddress = "0x541F68a796Fe5ae3A381d2Aa5a50b975632e40A6";
+    roCStateAddress = "0x541F68a796Fe5ae3A381d2Aa5a50b975632e40A6";
   }
   await sleep();
 
