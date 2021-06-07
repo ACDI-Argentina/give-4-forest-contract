@@ -1139,6 +1139,57 @@ contract('Crowdfunding App', (accounts) => {
                 crowdfunding.milestoneReview(milestoneId1, false, INFO_CID, { from: notAuthorized }),
                 errors.CROWDFUNDING_AUTH_FAILED);
         })
+
+        it('Milestone Cancelado por Milestone Reviewer', async () => {
+
+            await crowdfunding.milestoneCancel(milestoneId1, INFO_CID, { from: milestoneReviewer });
+
+            let milestone = await crowdfunding.getMilestone(milestoneId1);
+            assert.equal(milestone.status, MILESTONE_STATUS_CANCELLED);
+        })
+
+        it('Milestone Cancelado por Milestone Manager', async () => {
+
+            await crowdfunding.milestoneCancel(milestoneId1, INFO_CID, { from: milestoneManager });
+
+            let milestone = await crowdfunding.getMilestone(milestoneId1);
+            assert.equal(milestone.status, MILESTONE_STATUS_CANCELLED);
+        })
+
+        it('Milestone Cancelado por Campaign Reviewer', async () => {
+
+            await crowdfunding.milestoneCancel(milestoneId1, INFO_CID, { from: campaignReviewer });
+
+            let milestone = await crowdfunding.getMilestone(milestoneId1);
+            assert.equal(milestone.status, MILESTONE_STATUS_CANCELLED);
+        })
+
+        it('Milestone Cancelado por Campaign Manager', async () => {
+
+            await crowdfunding.milestoneCancel(milestoneId1, INFO_CID, { from: campaignManager });
+
+            let milestone = await crowdfunding.getMilestone(milestoneId1);
+            assert.equal(milestone.status, MILESTONE_STATUS_CANCELLED);
+        })
+
+        it('Milestone Cancelado no autorizado', async () => {
+
+            // notAuthorized account no es el manager o reviewer del milestone o manager o reviewer de la campaign.
+            await assertRevert(
+                crowdfunding.milestoneCancel(milestoneId1, INFO_CID, { from: notAuthorized }),
+                errors.CROWDFUNDING_AUTH_FAILED);
+        })
+
+        it('Milestone Cancelado no activo ni cancelado', async () => {
+
+            await crowdfunding.milestoneCancel(milestoneId1, INFO_CID, { from: milestoneManager });
+
+            // Un Milestone Cancelado no puede volver a estar Cancelado.
+            await assertRevert(
+                crowdfunding.milestoneCancel(milestoneId1, INFO_CID, { from: milestoneManager }),
+                errors.CROWDFUNDING_MILESTONE_CANNOT_CANCEL);
+        })
+
     })
 
     context('Withdraw', function () {
