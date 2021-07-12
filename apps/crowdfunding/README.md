@@ -117,10 +117,10 @@ $env:DAO_ADDRESS="..."
 $env:CROWDFUNDING_ADDRESS="..."
 $env:ACCOUNT_ADDRESS="..."
 $env:ROLE="..."
-node .\scripts\upgrade.js
+node .\scripts\grant-permission.js
 ```
 - BUIDLER_NETWORK = rskRegtest | rskTestnet | rskMainnet
-- DAO_ADDRESS es la dirección del Aragon DAOdisponible desde el deploy inicial según la red.
+- DAO_ADDRESS es la dirección del Aragon DAO disponible desde el deploy inicial según la red.
 - CROWDFUNDING_ADDRESS es la dirección del smart contract de Crowdfunding.
 - ACCOUNT_ADDRESS es la dirección pública de la cuenta a la cual se otorga el permiso.
 - ROLE = GIVER_ROLE | DELEGATE_ROLE | CAMPAIGN_MANAGER_ROLE | CAMPAIGN_REVIEWER_ROLE | MILESTONE_MANAGER_ROLE | MILESTONE_REVIEWER_ROLE | RECIPIENT_ROLE | CREATE_DAC_ROLE | CREATE_CAMPAIGN_ROLE | CREATE_MILESTONE_ROLE | EXCHANGE_RATE_ROLE | SET_EXCHANGE_RATE_PROVIDER | ENABLE_TOKEN_ROLE | TRANSFER_ROLE

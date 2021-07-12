@@ -11,7 +11,7 @@ function stripHexPrefix(str) {
 
 
 async function main() {
-  const address = '0x42378FeaD5534DbAFf26e7FC10d24CB9C6648B1e';
+  const address = '0x3315f76FB2a5757e4Bf70123200E3Ee57CD7BADf';
   // Ethereum Mainnet: 1
   // Mainnet: 30
   const chainId = 1;
