@@ -83,6 +83,9 @@ contract Constants is EtherTokenConstant {
     // Milestone Complete
     string
         internal constant ERROR_MILESTONE_CANNOT_COMPLETE = "CROWDFUNDING_MILESTONE_CANNOT_COMPLETE";
+    // Milestone Cancel
+    string
+        internal constant ERROR_MILESTONE_CANNOT_CANCEL = "CROWDFUNDING_MILESTONE_CANNOT_CANCEL";
     // Milestone Review
     string
         internal constant ERROR_MILESTONE_REVIEW_NOT_COMPLETED = "CROWDFUNDING_MILESTONE_REVIEW_NOT_COMPLETED";

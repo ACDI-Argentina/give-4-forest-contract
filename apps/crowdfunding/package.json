@@ -1,6 +1,6 @@
 {
   "name": "@acdi/give4forests-crowdfunding-contract",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Crowdfunding Smart Contract de El Futuro está en el Monte",
   "main": "index.js",
   "scripts": {

@@ -66,6 +66,7 @@ contract Crowdfunding is AragonApp, Constants {
     event MilestoneApprove(uint256 milestoneId);
     event MilestoneReject(uint256 milestoneId);
     event MilestoneWithdraw(uint256 milestoneId, address token, uint256 amount);
+    event MilestoneCancel(uint256 milestoneId);
 
     /**
      * @notice Crea la DAC `title`. Quien envía la transacción es el delegate de la Dac.
@@ -487,6 +488,38 @@ contract Crowdfunding is AragonApp, Constants {
             emit MilestoneWithdraw(_milestoneId, token, tokenAmount);
         }
         milestone.status = MilestoneLib.Status.Paid;
+    }
+
+    /**
+     * @notice Marca el milestone con id `_milestoneId` como cancelado.
+     * @param _milestoneId Id del milestone que se cancela.
+     * @param _activityInfoCid Content ID de las información (JSON) de la actividad
+     */
+    function milestoneCancel(uint256 _milestoneId, string _activityInfoCid) external isInitialized {
+
+        MilestoneLib.Milestone storage milestone = _getMilestone(_milestoneId);
+
+        CampaignLib.Campaign storage campaign = _getCampaign(milestone.campaignId);
+
+        // Campaign manager, reviewer y milestone manager, reviewer pueden marcar el Milestone como cancelado.
+        require(milestone.manager == msg.sender ||
+            milestone.reviewer == msg.sender ||
+            campaign.manager == msg.sender ||
+            campaign.reviewer == msg.sender, ERROR_AUTH_FAILED);
+
+        // El Milestone debe estar Activo.
+        require(milestone.status == MilestoneLib.Status.Active,
+            ERROR_MILESTONE_CANNOT_CANCEL);
+
+        // Registración de la actividad.
+        uint256 activityId = activityData.insert(
+            _activityInfoCid,
+            msg.sender,
+            _milestoneId
+        );
+        milestone.activityIds.push(activityId);
+        milestone.status = MilestoneLib.Status.Cancelled;
+        emit MilestoneCancel(_milestoneId);
     }
 
     /**
