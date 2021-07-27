@@ -16,8 +16,14 @@ const linkLib = async (lib, destination, libPlaceholder) => {
   destination.bytecode = destination.bytecode.replace(new RegExp(libPlaceholder, 'g'), libAddr)
 }
 
+const linkLibByAddress = async (libAddr, destination, libPlaceholder) => {
+  libAddr = libAddr.replace('0x', '').toLowerCase()
+  destination.bytecode = destination.bytecode.replace(new RegExp(libPlaceholder, 'g'), libAddr)
+}
+
 module.exports = {
   linkLib,
+  linkLibByAddress,
   ARRAY_LIB_PLACEHOLDER,
   ENTITY_LIB_PLACEHOLDER,
   DAC_LIB_PLACEHOLDER,
