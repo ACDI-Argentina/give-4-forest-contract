@@ -70,25 +70,25 @@ async function main() {
 
   } else if (network === "rskTestnet") {
 
-    //TODO: Complete with current deployed libs addresses
-    arrayLibAddress = "0x...";
-    entityLibAddress = "0x...";
-    dacLibAddress = "0x...";
-    campaignLibAddress = "0x...";
-    milestoneLibAddress = "0x...";
-    activityLibAddress = "0x...";
-    donationLibAddress = "0x...";
+    // Current deployed libs addresses in rskTestnet
+    arrayLibAddress = "0xBF39fbFc22C0A00963dB3ED1729732165567FFc1";
+    entityLibAddress = "0x5A8161bc9724828a5e01BB5620e48Cc342C39616";
+    dacLibAddress = "0xA87903C1537482c43b3E76Dc06a6B3A61B170F1e";
+    campaignLibAddress = "0xF52909b1c703142eaDf568A2b262982eb16882d4";
+    milestoneLibAddress = "0xC8Fb1e0e04AB94d6C46c72e60538f42d6525C9aF";
+    activityLibAddress = "0x152c8F248254D76947D1585A3Aaa4A4b0515076D";
+    donationLibAddress = "0x57B654e72c9ED35dE3DEda574f5C1A682a55C36e";
 
   } else if (network === "rskMainnet") {
 
-    //TODO: Complete with current deployed libs addresses
-    arrayLibAddress = "0x...";
-    entityLibAddress = "0x...";
-    dacLibAddress = "0x...";
-    campaignLibAddress = "0x...";
-    milestoneLibAddress = "0x...";
-    activityLibAddress = "0x...";
-    donationLibAddress = "0x...";
+    // Current deployed libs addresses in rskMainnet
+    arrayLibAddress = "0x71cD4E418d84494dd3430dcB52e0a6156E2C9600";
+    entityLibAddress = "0x7E07dCd98CA3140ae884C711Cec34D3B0545BF51";
+    dacLibAddress = "0x3CC26cf808A46d6aCCf11A6d6928193ff6403167";
+    campaignLibAddress = "0x2ea6dbb4E6DbC0F87a8CD0B8dC22894fBC96af2A";
+    milestoneLibAddress = "0xCc7ECF4058255B338640dA6F319EEd0b5d70a0EC";
+    activityLibAddress = "0x2Dec5258D6177de8A886AF3DF3ef9f9e12B80222";
+    donationLibAddress = "0x7aA170dB95101C902C629aAf77Bd711950508Ec9";
 
   }
 
