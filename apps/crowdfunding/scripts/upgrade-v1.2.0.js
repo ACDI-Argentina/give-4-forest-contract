@@ -109,6 +109,8 @@ async function main() {
 
   const crowdfundingBase = await Crowdfunding.new({ from: deployer });
 
+  await sleep();
+
   console.log(` - Libraries`);
   console.log(`   - Entity Lib: ${entityLibAddress}`);
   console.log(`   - Dac Lib: ${dacLibAddress}`);
