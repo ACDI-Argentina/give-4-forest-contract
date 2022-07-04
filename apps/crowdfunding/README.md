@@ -36,6 +36,8 @@ grep \"bytecode\" artifacts/* | awk '{print $1 " " length($3)/2}'
 
 > La primera vez la compilación falla al no encontrar algunos smart contracts de Aragon, por ejemplo, es posible encontrarse con el siguiente error: *Error: BDLR700: Artifact for contract "Kernel" not found.* En este caso ejecutamos ```npm start```. Esto último a menudo muestra algún error, pero lo que nos interesa es que compile los smart contracts faltantes. Una vez hecho esto volver a ejecutar ```npm run compile```.
 
+> Workaround: dado que la aplicación funciona con Node v10, se requiere importar los siguientes componentes en algunas librerías tras los errores de compilación. `var globalThis = require('globalthis')();` y `const { TextEncoder, TextDecoder } = require("util");`.
+
 ## Testing
 
 Para ejecutar los tests del smart contract, debe ejecutarse el siguiente comando.

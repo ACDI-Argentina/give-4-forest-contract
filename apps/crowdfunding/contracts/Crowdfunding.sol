@@ -12,7 +12,7 @@ import "./MilestoneLib.sol";
 import "./ActivityLib.sol";
 import "./DonationLib.sol";
 
-import "./ExchangeRateProvider.sol";
+import "@acdi/efem-contract/contracts/ExchangeRateProvider.sol";
 /**
  * @title Crowdfunding
  * @author ACDI
