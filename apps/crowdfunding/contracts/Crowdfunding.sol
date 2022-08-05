@@ -72,7 +72,7 @@ contract Crowdfunding is AragonApp, Constants {
      * @notice Crea la DAC `title`. Quien envía la transacción es el delegate de la Dac.
      * @param _infoCid Content ID de las información (JSON) de la Dac. IPFS Cid.
      */
-    function saveDac(string _infoCid, uint256 _dacId) external auth(CREATE_DAC_ROLE) {
+    function saveDac(string _infoCid, uint256 _dacId) external auth(DELEGATE_ROLE) {
         uint256 entityId;
         if(_dacId == 0 ){
             entityId = _newEntity(EntityLib.EntityType.Dac);
@@ -99,7 +99,7 @@ contract Crowdfunding is AragonApp, Constants {
         uint256 _dacId,
         address _reviewer,
         uint256 _campaignId
-    ) external auth(CREATE_CAMPAIGN_ROLE) {
+    ) external auth(CAMPAIGN_MANAGER_ROLE) {
         DacLib.Dac storage dac = _getDac(_dacId); // Se comprueba que la Dac exista.
         uint256 entityId;
 
@@ -145,7 +145,7 @@ contract Crowdfunding is AragonApp, Constants {
         address _recipient,
         address _campaignReviewer,
         uint256 _milestoneId
-    ) external auth(CREATE_MILESTONE_ROLE) {
+    ) external auth(CAMPAIGN_MANAGER_ROLE) {
         CampaignLib.Campaign storage campaign = _getCampaign(_campaignId);// Se comprueba que la Campaign exista.
 
         uint256 entityId = _milestoneId;
@@ -532,7 +532,7 @@ contract Crowdfunding is AragonApp, Constants {
 
     function setExchangeRateProvider(ExchangeRateProvider _exchangeRateProvider) 
         public 
-        auth(SET_EXCHANGE_RATE_PROVIDER){
+        auth(SET_EXCHANGE_RATE_PROVIDER_ROLE){
         exchangeRateProvider = _exchangeRateProvider; 
     }
 

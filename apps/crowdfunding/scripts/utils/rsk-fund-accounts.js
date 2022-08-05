@@ -103,14 +103,14 @@ async function main() {
     value = amount.mul(web3.utils.toBN(10).pow(decimals));
 
     // RIF Token
-    let rifTokenAddress = '0x0Aa058aD63E36bC2f98806f2D638353AE89C3634';
+    let rifTokenAddress = '0x13cF0a53b6102b518e8b547d5E50b38C1b089E08';
     // Get ERC20 Token contract instance
     let rifContract = new web3.eth.Contract(minAbi, rifTokenAddress);
     // call transfer function
     await rifContract.methods.transfer(toAddress, value).send({ from: fromAddress });
 
     // DOC Token
-    let docTokenAddress = '0xb2e09ab18a1792025D8505B5722E527d5e90c8e7';
+    let docTokenAddress = '0xc3e75147D582fFc126590C537cEe894180aAcDDC';
     // Get ERC20 Token contract instance
     let docContract = new web3.eth.Contract(minAbi, docTokenAddress);
     // call transfer function

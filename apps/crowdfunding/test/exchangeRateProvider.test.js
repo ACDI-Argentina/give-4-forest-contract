@@ -21,12 +21,12 @@ contract('ExchangeRateProvider', (accounts) => {
     let exchangeRateProvider, moCStateMock;
     const deployer = accounts[0];
     const giver = accounts[1];
-    let SET_EXCHANGE_RATE_PROVIDER;
+    let SET_EXCHANGE_RATE_PROVIDER_ROLE;
 
     before(async () => {
         crowdfundingBase = await newCrowdfunding(deployer);
         vaultBase = await Vault.new({ from: deployer });
-        SET_EXCHANGE_RATE_PROVIDER = await crowdfundingBase.SET_EXCHANGE_RATE_PROVIDER();
+        SET_EXCHANGE_RATE_PROVIDER_ROLE = await crowdfundingBase.SET_EXCHANGE_RATE_PROVIDER_ROLE();
     })
 
     beforeEach(async () => {
@@ -44,7 +44,7 @@ contract('ExchangeRateProvider', (accounts) => {
             await crowdfunding.initialize(vault.address);
 
             //Inicializacion de price provider
-            await createPermission(acl, deployer, crowdfunding.address, SET_EXCHANGE_RATE_PROVIDER, deployer);
+            await createPermission(acl, deployer, crowdfunding.address, SET_EXCHANGE_RATE_PROVIDER_ROLE, deployer);
             
             moCStateMock = await MoCStateMock.new(RBTC_PRICE);
             exchangeRateProvider = await ExchangeRateProvider.new(moCStateMock.address);

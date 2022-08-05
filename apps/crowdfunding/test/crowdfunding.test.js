@@ -85,7 +85,7 @@ contract('Crowdfunding App', (accounts) => {
 
     let crowdfundingBase, crowdfunding;
     let vaultBase, vault;
-    let CREATE_DAC_ROLE, CREATE_CAMPAIGN_ROLE, CREATE_MILESTONE_ROLE, EXCHANGE_RATE_ROLE, ENABLE_TOKEN_ROLE, SET_EXCHANGE_RATE_PROVIDER;
+    let DELEGATE_ROLE, CAMPAIGN_MANAGER_ROLE, ENABLE_TOKEN_ROLE, SET_EXCHANGE_RATE_PROVIDER_ROLE;
     let TRANSFER_ROLE;
     let RBTC;
 
@@ -93,11 +93,9 @@ contract('Crowdfunding App', (accounts) => {
         crowdfundingBase = await newCrowdfunding(deployer);
         vaultBase = await Vault.new({ from: deployer });
         // Setup constants
-        CREATE_DAC_ROLE = await crowdfundingBase.CREATE_DAC_ROLE();
-        CREATE_CAMPAIGN_ROLE = await crowdfundingBase.CREATE_CAMPAIGN_ROLE();
-        CREATE_MILESTONE_ROLE = await crowdfundingBase.CREATE_MILESTONE_ROLE();
-        EXCHANGE_RATE_ROLE = await crowdfundingBase.EXCHANGE_RATE_ROLE();
-        SET_EXCHANGE_RATE_PROVIDER = await crowdfundingBase.SET_EXCHANGE_RATE_PROVIDER();
+        DELEGATE_ROLE = await crowdfundingBase.DELEGATE_ROLE();
+        CAMPAIGN_MANAGER_ROLE = await crowdfundingBase.CAMPAIGN_MANAGER_ROLE();
+        SET_EXCHANGE_RATE_PROVIDER_ROLE = await crowdfundingBase.SET_EXCHANGE_RATE_PROVIDER_ROLE();
         ENABLE_TOKEN_ROLE = await crowdfundingBase.ENABLE_TOKEN_ROLE();
         TRANSFER_ROLE = await vaultBase.TRANSFER_ROLE()
 
@@ -116,17 +114,14 @@ contract('Crowdfunding App', (accounts) => {
             vault = await Vault.at(vaultAddress);
 
             // Configuración de permisos
-            await createPermission(acl, delegate, crowdfunding.address, CREATE_DAC_ROLE, deployer);
-            await createPermission(acl, campaignManager, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
-            await createPermission(acl, campaignManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
-            await grantPermission(acl, milestoneManager, crowdfunding.address, CREATE_MILESTONE_ROLE, deployer);
-            await createPermission(acl, deployer, crowdfunding.address, EXCHANGE_RATE_ROLE, deployer);
-            await createPermission(acl, deployer, crowdfunding.address, SET_EXCHANGE_RATE_PROVIDER, deployer);
+            await createPermission(acl, delegate, crowdfunding.address, DELEGATE_ROLE, deployer);
+            await createPermission(acl, campaignManager, crowdfunding.address, CAMPAIGN_MANAGER_ROLE, deployer);
+            await createPermission(acl, deployer, crowdfunding.address, SET_EXCHANGE_RATE_PROVIDER_ROLE, deployer);
             await createPermission(acl, deployer, crowdfunding.address, ENABLE_TOKEN_ROLE, deployer);
             await createPermission(acl, crowdfunding.address, vault.address, TRANSFER_ROLE, deployer);
 
-            await grantPermission(acl, campaignManager2, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
-            await grantPermission(acl, campaignManager3, crowdfunding.address, CREATE_CAMPAIGN_ROLE, deployer);
+            await grantPermission(acl, campaignManager2, crowdfunding.address, CAMPAIGN_MANAGER_ROLE, deployer);
+            await grantPermission(acl, campaignManager3, crowdfunding.address, CAMPAIGN_MANAGER_ROLE, deployer);
 
             // Inicialización
             await vault.initialize()
