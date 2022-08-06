@@ -1,63 +1,137 @@
-# Aragon Apps <img align="right" src="https://raw.githubusercontent.com/aragon/design/master/readme-logo.png" height="80px" /> [![Travis branch](https://img.shields.io/travis/aragon/aragon-apps/master.svg?style=for-the-badge)](https://travis-ci.com/aragon/aragon-apps) [![Coveralls branch](https://img.shields.io/coveralls/aragon/aragon-apps/master.svg?style=for-the-badge)](https://coveralls.io/github/aragon/aragon-apps)
+# Crowdfunding Smart Contract
 
-## Apps
+Smart contract de Crowdfunding.
 
-This repository contains the following apps:
+Se utiliza [Buidler](https://buidler.dev) como herramienta de ejecución de las tareas de compilación, testing y despliegue del smart contract.
 
-- **[Finance](apps/finance)**: Send payments and manage expenses with budgeting.
-- **[Survey](apps/survey)**: Create polls to gauge community opinions.
-- **[Tokens](apps/token-manager)**: Manages organization tokens.
-- **[Vault](apps/vault)**: Securely owns and manages tokens on behalf of a DAO.
-- **[Voting](apps/voting)**: Create votes that execute actions on behalf of token holders.
+En la sección [Architectural Decision Log](docs/adr/index.md) se encuentran los registros de decisiones de arquitectura que han sido tomadas.
 
-Each of the individual apps come with a frontend that is intended to be installed and used through the [Aragon client](http://github.com/aragon/aragon).
+## Requisitos sobre sistema operativo
 
-You can read more about how each of the individual apps work in the [Aragon user guide](https://help.aragon.org/category/15-aragon-apps).
+### Windows
 
-## Coming soon apps
+Instalar Python.
 
-The following apps are still under development, and not ready for production deployment yet:
+## Instalación de dependencias
 
-- **[Payroll](future-apps/payroll)**: Manages employees' payrolls.
-
-## Quick start
+Primero deben instalarse las dependencias del proyecto con el siguiente comando:
 
 ```
 npm install
 ```
 
-This installs global package dependencies and also bootstraps the entire monorepo through [`lerna`](https://github.com/lerna/lerna).
+## Compilación
 
-> **Note**: the monorepo is set up in such a way that you **must** install it through a `lerna bootstrap` (done automatically after an `npm install`).
->
-> If you're only interested in the contract dependencies, and not the frontends, you can use `INSTALL_FRONTEND=false npm install` instead.
->
-> If you're only interested in bootstrapping one package, you can use `npx lerna bootstrap --scope @aragon/<package> --include-filtered-dependencies`
+Para compilar el smart contract, debe ejecutarse el siguiente comando.
 
-Running tests on all apps can be done by running `npm run test` at the root directory (note that running all of the tests can take a significant amount of time!).
+```
+npm run compile
+```
 
-Running tests of an individual app can be done by running `npm run test` inside an individual app's directory, or through the selective `npm run test:<app>` scripts.
+Se requiere mantener reducido el bytecode generado por el smart contract para no superar la restricción [EIP 170](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-170.md). El siguiente comando mide la cantidad de bytes generados para cada contrato compilado.
 
-By default, tests are run on an in-memory instance of testrpc.
+```
+grep \"bytecode\" artifacts/* | awk '{print $1 " " length($3)/2}'
+```
 
-## Contributing
+> La primera vez la compilación falla al no encontrar algunos smart contracts de Aragon, por ejemplo, es posible encontrarse con el siguiente error: *Error: BDLR700: Artifact for contract "Kernel" not found.* En este caso ejecutamos ```npm start```. Esto último a menudo muestra algún error, pero lo que nos interesa es que compile los smart contracts faltantes. Una vez hecho esto volver a ejecutar ```npm run compile```.
 
-For some introductory information on what an Aragon app is, and how to build one, please read through the [Aragon stack introduction](https://hack.aragon.org/docs/stack) and [Your first Aragon app](https://hack.aragon.org/docs/tutorial). The [aragonAPI documentation](https://hack.aragon.org/docs/api-intro) is also available as a reference.
+> Workaround: dado que la aplicación funciona con Node v10, se requiere importar los siguientes componentes en algunas librerías tras los errores de compilación. `var globalThis = require('globalthis')();` y `const { TextEncoder, TextDecoder } = require("util");`.
 
-#### 👋 Get started contributing with a [good first issue](https://github.com/aragon/aragon-apps/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+## Testing
 
-Don't be shy to contribute even the smallest tweak. 🐲 There are still some dragons to be aware of, but we'll be here to help you get started!
+Para ejecutar los tests del smart contract, debe ejecutarse el siguiente comando.
 
-For more details about contributing to Aragon, please check the [contributing guide](./CONTRIBUTING.md).
+```
+npm run test
+```
 
-#### Issues
+Los test se ejecutan por defecto sobre la blockchain *buidlerevm*.
 
-If you come across an issue with Aragon, do a search in the [Issues](https://github.com/aragon/aragon-apps/issues?utf8=%E2%9C%93&q=is%3Aissue) tab of this repo and the [Aragon client's issues](https://github.com/aragon/aragon/issues?utf8=%E2%9C%93&q=is%3Aissue) to make sure it hasn't been reported before. Follow these steps to help us prevent duplicate issues and unnecessary notifications going to the many people watching this repo:
+## Publicar en NPM
 
-- If the issue you found has been reported and is still open, and the details match your issue, give a "thumbs up" to the relevant posts in the issue thread to signal that you have the same issue. No further action is required on your part.
-- If the issue you found has been reported and is still open, but the issue is missing some details, you can add a comment to the issue thread describing the additional details.
-- If the issue you found has been reported but has been closed, you can comment on the closed issue thread and ask to have the issue reopened because you are still experiencing the issue. Alternatively, you can open a new issue, reference the closed issue by number or link, and state that you are still experiencing the issue. Provide any additional details in your post so we can better understand the issue and how to fix it.
+Para que el módulo quede públicamente accecible y pueda utilizarse por los demás módulos de la aplicación, es necesario publicarlo de la siguiente manera:
 
-## Help
+```
+npm login
+npm publish --access public
+```
 
-For help and support, feel free to contact us at any time on our Spectrum [App development channel](https://spectrum.chat/aragon/app-development).
+El módulo se publica con el scope de la organización **@acdi**.
+
+## Despliegue
+
+Para desplegar el smart contract sobre la blockchain de RSK, debe ejecutarse el comando descrito según el ambiente.
+
+Junto con el smart contract de Crowdfunding se despliegan los smart contract de Aragon y librerías por lo que este proceso puede demandar algunos minutos.
+
+Las direcciones que aparecen en el log deben utilizarse para configurar la aplicación de Crowdfunding.
+
+### Desarrollo
+
+En desarrollo se utiliza un nodo local de **RSK Regtest** accesible desde *http://localhost:4444*.
+
+```
+npm run deploy:rsk-regtest
+```
+
+### Testing
+
+En testing se utiliza el nodo público de **RSK Testnet** accesible desde *https://public-node.testnet.rsk.co*.
+
+```
+npm run deploy:rsk-testnet
+```
+
+## Actualizar smart contract
+
+Para actualizar el smart contract debe ejecutarse el siguiente script, especificando los parámetros:
+
+```
+$env:BUIDLER_NETWORK="..."
+$env:DAO_ADDRESS="..."
+node .\scripts\upgrade.js
+```
+
+- BUIDLER_NETWORK = rskRegtest | rskTestnet | rskMainnet
+- DAO_ADDRESS es la dirección del Aragon DAOdisponible desde el deploy inicial según la red.
+
+Este scrtip es genérico para una actualización. Las actualización generalmente siguen scrtip específicos según los cambios en la versión. A continuación se lista los upgrades.
+
+### v1.1.0
+
+```
+$env:BUIDLER_NETWORK="..."
+$env:CROWDFUNDING_ADDRESS="..."
+node .\scripts\upgrade-v1.1.0.js
+```
+
+- BUIDLER_NETWORK = rskRegtest | rskTestnet | rskMainnet
+- CROWDFUNDING_ADDRESS es la dirección del smart contract de Crowdfunding (proxy).
+
+## Otorgar permisos
+
+Para otorgar permisos debe ejecutarse el siguiente script, especificando los parámetros:
+
+```
+$env:BUIDLER_NETWORK="..."
+$env:DAO_ADDRESS="..."
+$env:CROWDFUNDING_ADDRESS="..."
+$env:ACCOUNT_ADDRESS="..."
+$env:ROLE="..."
+node .\scripts\grant-permission.js
+```
+- BUIDLER_NETWORK = rskRegtest | rskTestnet | rskMainnet
+- DAO_ADDRESS es la dirección del Aragon DAO disponible desde el deploy inicial según la red.
+- CROWDFUNDING_ADDRESS es la dirección del smart contract de Crowdfunding.
+- ACCOUNT_ADDRESS es la dirección pública de la cuenta a la cual se otorga el permiso.
+- ROLE = GIVER_ROLE | DELEGATE_ROLE | CAMPAIGN_MANAGER_ROLE | CAMPAIGN_REVIEWER_ROLE | MILESTONE_MANAGER_ROLE | MILESTONE_REVIEWER_ROLE | RECIPIENT_ROLE | SET_EXCHANGE_RATE_PROVIDER_ROLE | ENABLE_TOKEN_ROLE
+
+## Principios de desarrollo
+
+Para el desarrollo del smart contract se deben seguir los siguientes principios:
+
+- Seguir la [guía de estilos](https://solidity.readthedocs.io/en/v0.6.11/style-guide.html) de desarrollo de Solidity.
+- El orden los metodos debe ser: *external*, *public*, *internal* y *private*; Deben seguir un orden de relevancia.
+- Siempre que sea posible, el tratamiento sobre las entidades debe delegarse en las librerías para mantener el bytecode del smart contract reducido.
+- Sebe realizarse testing automático de las funcionalidades expuestas al exterior.
