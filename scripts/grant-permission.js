@@ -13,7 +13,7 @@ async function main() {
   const role = process.env.ROLE;
   const roleHash = keccak256(role);
 
-  const dao = await Kernel.at(process.env.DAO_ADDRESS);
+  const dao = await Kernel.at(process.env.DAO_CONTRACT_ADDRESS);
   const acl = await ACL.at(await dao.acl());
 
   console.log(` - Grant permission`);

@@ -123,13 +123,13 @@ async function main() {
 
   // Actualización de la DAO
 
-  const dao = await Kernel.at(process.env.DAO_ADDRESS);
+  const dao = await Kernel.at(process.env.DAO_CONTRACT_ADDRESS);
   const namespace = await dao.APP_BASES_NAMESPACE();
   const appId = hash('crowdfunding');
   const appAddress = crowdfundingBase.address;
 
   console.log(` - Upgrade app`);
-  console.log(`   - DAO Address: ${process.env.DAO_ADDRESS}`);
+  console.log(`   - DAO Address: ${process.env.DAO_CONTRACT_ADDRESS}`);
   console.log(`   - Namespace: ${namespace}`);
   console.log(`   - App Id: ${appId}`);
   console.log(`   - App Address: ${appAddress}`);

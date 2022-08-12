@@ -1,16 +1,19 @@
+require('dotenv').config({ path: `./scripts/utils/.env.${process.env.NODE_ENV}` });
+
 var Web3 = require('web3');
-var network = "http://localhost:4444";
-
-
 
 async function main() {
 
+    const { NETWORK_NODE_URL,
+        RIF_TOKEN_ADDRESS,
+        DOC_TOKEN_ADDRESS } = process.env;
+
     console.log('');
     console.log('RSK Node Status');
-    console.log('  Network: ' + network);
+    console.log('  Network: ' + NETWORK_NODE_URL);
     console.log('-------------------------------------------');
 
-    var web3 = new Web3(network);
+    var web3 = new Web3(NETWORK_NODE_URL);
 
     // Ver https://github.com/trufflesuite/truffle/issues/2160
 
@@ -103,16 +106,14 @@ async function main() {
     value = amount.mul(web3.utils.toBN(10).pow(decimals));
 
     // RIF Token
-    let rifTokenAddress = '0x13cF0a53b6102b518e8b547d5E50b38C1b089E08';
     // Get ERC20 Token contract instance
-    let rifContract = new web3.eth.Contract(minAbi, rifTokenAddress);
+    let rifContract = new web3.eth.Contract(minAbi, RIF_TOKEN_ADDRESS);
     // call transfer function
     await rifContract.methods.transfer(toAddress, value).send({ from: fromAddress });
 
     // DOC Token
-    let docTokenAddress = '0xc3e75147D582fFc126590C537cEe894180aAcDDC';
     // Get ERC20 Token contract instance
-    let docContract = new web3.eth.Contract(minAbi, docTokenAddress);
+    let docContract = new web3.eth.Contract(minAbi, DOC_TOKEN_ADDRESS);
     // call transfer function
     await docContract.methods.transfer(toAddress, value).send({ from: fromAddress });
 }

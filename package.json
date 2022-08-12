@@ -9,9 +9,14 @@
     "test": "buidler test --network buidlerevm",
     "start": "buidler start",
     "test:rsk": "buidler test --network rskRegtest",
+    
     "rsk-regtest:deploy": "npm run compile && buidler deploy --network rskRegtest",
+    "rsk-regtest:found-accounts": "NODE_ENV=regtest node scripts/utils/rsk-fund-accounts.js",
+
     "rsk-testnet:deploy": "npm run compile && buidler deploy --network rskTestnet",
+
     "rsk-mainnet:deploy": "npm run compile && buidler deploy --network rskMainnet",
+    
     "publish:major": "buidler publish major",
     "publish:minor": "buidler publish minor",
     "publish:patch": "buidler publish patch",

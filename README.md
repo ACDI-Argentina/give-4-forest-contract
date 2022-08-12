@@ -69,19 +69,44 @@ Las direcciones que aparecen en el log deben utilizarse para configurar la aplic
 
 ### Desarrollo
 
+Si el entorno de desarrollo es Windows, instalar `win-node-env`.
+
+```
+npm install -g win-node-env
+```
+
 En desarrollo se utiliza un nodo local de **RSK Regtest** accesible desde *http://localhost:4444*.
 
 ```
-npm run deploy:rsk-regtest
+npm run rsk-regtest:deploy
 ```
+
+Opcionalmente, puede especificarse qué *DAO*, *Admin* o *Exchange Rate Provider* utilizar en el deploy:
+
+```
+$env:DAO_CONTRACT_ADDRESS="..."
+$env:ADMIN_CONTRACT_ADDRESS="..."
+$env:EXCHANGE_RATE_PROVIDER_CONTRACT_ADDRESS="..."
+npm run rsk-regtest:deploy
+```
+
+- DAO_CONTRACT_ADDRESS es la dirección del Aragon DAOdisponible desde el deploy inicial según la red.
+- ADMIN_CONTRACT_ADDRESS es la dirección del smart contract de administración.
+- EXCHANGE_RATE_PROVIDER_CONTRACT_ADDRESS es la dirección del *Exchange Rate Provider* a utilizar.
 
 ### Testing
 
 En testing se utiliza el nodo público de **RSK Testnet** accesible desde *https://public-node.testnet.rsk.co*.
 
 ```
-npm run deploy:rsk-testnet
+$env:DAO_CONTRACT_ADDRESS="..."
+$env:ADMIN_CONTRACT_ADDRESS="..."
+$env:EXCHANGE_RATE_PROVIDER_CONTRACT_ADDRESS="..."
+npm run rsk-testnet:deploy
 ```
+- DAO_CONTRACT_ADDRESS es la dirección del Aragon DAOdisponible desde el deploy inicial según la red.
+- ADMIN_CONTRACT_ADDRESS es la dirección del smart contract de administración.
+- EXCHANGE_RATE_PROVIDER_CONTRACT_ADDRESS es la dirección del *Exchange Rate Provider* a utilizar.
 
 ## Actualizar smart contract
 
@@ -89,12 +114,12 @@ Para actualizar el smart contract debe ejecutarse el siguiente script, especific
 
 ```
 $env:BUIDLER_NETWORK="..."
-$env:DAO_ADDRESS="..."
+$env:DAO_CONTRACT_ADDRESS="..."
 node .\scripts\upgrade.js
 ```
 
 - BUIDLER_NETWORK = rskRegtest | rskTestnet | rskMainnet
-- DAO_ADDRESS es la dirección del Aragon DAOdisponible desde el deploy inicial según la red.
+- DAO_CONTRACT_ADDRESS es la dirección del Aragon DAOdisponible desde el deploy inicial según la red.
 
 Este scrtip es genérico para una actualización. Las actualización generalmente siguen scrtip específicos según los cambios en la versión. A continuación se lista los upgrades.
 
@@ -115,14 +140,14 @@ Para otorgar permisos debe ejecutarse el siguiente script, especificando los par
 
 ```
 $env:BUIDLER_NETWORK="..."
-$env:DAO_ADDRESS="..."
+$env:DAO_CONTRACT_ADDRESS="..."
 $env:CROWDFUNDING_ADDRESS="..."
 $env:ACCOUNT_ADDRESS="..."
 $env:ROLE="..."
 node .\scripts\grant-permission.js
 ```
 - BUIDLER_NETWORK = rskRegtest | rskTestnet | rskMainnet
-- DAO_ADDRESS es la dirección del Aragon DAO disponible desde el deploy inicial según la red.
+- DAO_CONTRACT_ADDRESS es la dirección del Aragon DAO disponible desde el deploy inicial según la red.
 - CROWDFUNDING_ADDRESS es la dirección del smart contract de Crowdfunding.
 - ACCOUNT_ADDRESS es la dirección pública de la cuenta a la cual se otorga el permiso.
 - ROLE = GIVER_ROLE | DELEGATE_ROLE | CAMPAIGN_MANAGER_ROLE | CAMPAIGN_REVIEWER_ROLE | MILESTONE_MANAGER_ROLE | MILESTONE_REVIEWER_ROLE | RECIPIENT_ROLE | SET_EXCHANGE_RATE_PROVIDER_ROLE | ENABLE_TOKEN_ROLE
