@@ -1,6 +1,6 @@
 {
   "name": "@acdi/give4forest-contract",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Crowdfunding Smart Contract de El Futuro está en el Monte",
   "main": "index.js",
   "scripts": {
@@ -23,7 +23,7 @@
     "rsk-regtest:has-user-role": "NODE_ENV=regtest node scripts/utils/has-user-role.js"
   },
   "dependencies": {
-    "@acdi/efem-contract": "C:\\dev\\acdi\\project\\efem-contract",
+    "@acdi/efem-contract": "1.0.0",
     "@aragon/apps-vault": "^4.1.0",
     "@aragon/os": "^4.4.0",
     "bn.js": "^5.1.2",
