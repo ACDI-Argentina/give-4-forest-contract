@@ -20,7 +20,8 @@
     "publish:major": "buidler publish major",
     "publish:minor": "buidler publish minor",
     "publish:patch": "buidler publish patch",
-    "rsk-regtest:has-user-role": "NODE_ENV=regtest node scripts/utils/has-user-role.js"
+    "rsk-regtest:has-user-role": "NODE_ENV=regtest node scripts/utils/has-user-role.js",
+    "rsk-mainnet:has-user-role": "NODE_ENV=mainnet node scripts/utils/has-user-role.js"
   },
   "dependencies": {
     "@acdi/efem-contract": "1.0.0",

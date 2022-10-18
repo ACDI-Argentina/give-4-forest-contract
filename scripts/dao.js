@@ -11,15 +11,49 @@ const DAOFactory = artifacts.require(
 
 const newDao = async (deployer) => {
 
-  // Deploy a DAOFactory.
-  const kernelBase = await Kernel.new(true, { from: deployer })
-  const aclBase = await ACL.new({ from: deployer })
-  const registryFactory = await EVMScriptRegistryFactory.new({ from: deployer })
-  const daoFactory = await DAOFactory.new(
-    kernelBase.address,
-    aclBase.address,
-    registryFactory.address
-  )
+  let kernelBase;
+  if (process.env.DAO_KERNEL_BASE_ADDRESS) {
+    // Se especificó la dirección del DAO Kernel.
+    kernelBase = await Kernel.at(process.env.DAO_KERNEL_BASE_ADDRESS);
+    console.log(`   - DAO - Kernel Base: ${kernelBase.address}`);
+  } else {
+    kernelBase = await Kernel.new(true, { from: deployer });
+    console.log(`   - DAO - Deploy Kernel Base: ${kernelBase.address}`);
+  }
+  
+  let aclBase;
+  if (process.env.DAO_ACL_BASE_ADDRESS) {
+    // Se especificó la dirección del DAO ACL.
+    aclBase = await ACL.at(process.env.DAO_ACL_BASE_ADDRESS);
+    console.log(`   - DAO - ACL Base: ${aclBase.address}`);
+  } else {
+    aclBase = await ACL.new({ from: deployer });
+    console.log(`   - DAO - Deploy ACL Base: ${aclBase.address}`);
+  }
+  
+  let registryFactory;
+  if (process.env.DAO_REGISTRY_FACTORY_ADDRESS) {
+    // Se especificó la dirección del DAO Registry Factory.
+    registryFactory = await EVMScriptRegistryFactory.at(process.env.DAO_REGISTRY_FACTORY_ADDRESS);
+    console.log(`   - DAO - Registry Factory: ${registryFactory.address}`);
+  } else {
+    registryFactory = await EVMScriptRegistryFactory.new({ from: deployer });
+    console.log(`   - DAO - Deploy Registry Factory: ${registryFactory.address}`);
+  }
+  
+  let daoFactory;
+  if (process.env.DAO_FACTORY_ADDRESS) {
+    // Se especificó la dirección del DAO Factory.
+    daoFactory = await DAOFactory.at(process.env.DAO_FACTORY_ADDRESS);
+    console.log(`   - DAO - Factory: ${daoFactory.address}`);
+  } else {
+    daoFactory = await DAOFactory.new(
+      kernelBase.address,
+      aclBase.address,
+      registryFactory.address
+    );
+    console.log(`   - DAO - Deploy Factory: ${daoFactory.address}`);
+  }
 
   // Create a DAO instance.
   const daoReceipt = await daoFactory.newDAO(deployer)

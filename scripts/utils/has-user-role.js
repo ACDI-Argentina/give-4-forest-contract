@@ -26,9 +26,10 @@ async function main() {
 
     const hasUserRole = await adminContract.methods.hasUserRole(
         //"0xFEF920D44230D08dDcCDcBA539c2c1C03D76D8D8",
-        "0x0bfA3B6b0E799F2eD34444582187B2cDf2fB11a7",
+        "0x60Fcf72766F805c04B272796EF1B0B7c4D051c46",
         //"0xF3DC026B103EeEB4df54806E325Ce1C16cBB5Ed0",
-        "0x05A55E87d40572ea0F9e9D37079FB9cA11bdCc67",
+        /*"0x05A55E87d40572ea0F9e9D37079FB9cA11bdCc67",*/
+        ADMIN_CONTRACT_ADDRESS,
         web3.utils.keccak256(ROLE)).call();
 
 
