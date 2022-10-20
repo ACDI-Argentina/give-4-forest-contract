@@ -13,6 +13,7 @@ import "./ActivityLib.sol";
 import "./DonationLib.sol";
 
 import "@acdi/efem-contract/contracts/ExchangeRateProvider.sol";
+
 /**
  * @title Crowdfunding
  * @author ACDI
@@ -32,7 +33,7 @@ contract Crowdfunding is AragonApp, Constants {
     CampaignLib.Data campaignData;
     MilestoneLib.Data milestoneData;
     ActivityLib.Data activityData;
-    DonationLib.Data donationData; 
+    DonationLib.Data donationData;
 
     ExchangeRateProvider public exchangeRateProvider;
 
@@ -71,17 +72,25 @@ contract Crowdfunding is AragonApp, Constants {
     /**
      * @notice Crea la DAC `title`. Quien envía la transacción es el delegate de la Dac.
      * @param _infoCid Content ID de las información (JSON) de la Dac. IPFS Cid.
+     * @param _delegate address del DAC Delegate
      */
-    function saveDac(string _infoCid, uint256 _dacId) external auth(DELEGATE_ROLE) {
+    function saveDac(
+        string _infoCid,
+        uint256 _dacId,
+        address _delegate
+    ) external auth(DELEGATE_ROLE) {
         uint256 entityId;
-        if(_dacId == 0 ){
+        if (_dacId == 0) {
             entityId = _newEntity(EntityLib.EntityType.Dac);
         } else {
             entityId = _dacId;
-            require(msg.sender == dacData.getDac(entityId).delegate, ERROR_AUTH_FAILED);
+            require(
+                msg.sender == dacData.getDac(entityId).delegate,
+                ERROR_AUTH_FAILED
+            );
         }
 
-        dacData.save(entityId, _infoCid, msg.sender,_dacId);
+        dacData.save(entityId, _infoCid, _delegate, _dacId);
 
         emit SaveDac(entityId);
     }
@@ -91,12 +100,14 @@ contract Crowdfunding is AragonApp, Constants {
      * quien envía la transacción es el manager de la campaign.
      * @param _infoCid Content ID de las información (JSON) de la Campaign. IPFS Cid.
      * @param _dacId Id de la Dac a la cual pertenece la Campaign.
+     * @param _manager address del Campaign Manager
      * @param _reviewer address del Campaign Reviewer
-     *  @param _campaignId 0 para nueva campaign o el id del campaign en el caso de  modificación
+     * @param _campaignId 0 para nueva campaign o el id del campaign en el caso de  modificación
      */
     function saveCampaign(
         string _infoCid,
         uint256 _dacId,
+        address _manager,
         address _reviewer,
         uint256 _campaignId
     ) external auth(CAMPAIGN_MANAGER_ROLE) {
@@ -107,15 +118,21 @@ contract Crowdfunding is AragonApp, Constants {
             entityId = _newEntity(EntityLib.EntityType.Campaign);
         } else {
             entityId = _campaignId;
-            require(msg.sender == campaignData.getCampaign(entityId).manager, ERROR_AUTH_FAILED);
-            ArrayLib.removeElement(_getDac(_getCampaign(entityId).dacIds[0]).campaignIds, entityId); //Borra la referencias desde las dac anterior, TODO: COMPROBAR SI CAMBIO
+            require(
+                msg.sender == campaignData.getCampaign(entityId).manager,
+                ERROR_AUTH_FAILED
+            );
+            ArrayLib.removeElement(
+                _getDac(_getCampaign(entityId).dacIds[0]).campaignIds,
+                entityId
+            ); //Borra la referencias desde las dac anterior, TODO: COMPROBAR SI CAMBIO
         }
 
         campaignData.save(
             entityId,
             _infoCid,
             _dacId,
-            msg.sender,
+            _manager,
             _reviewer,
             _campaignId
         );
@@ -146,7 +163,7 @@ contract Crowdfunding is AragonApp, Constants {
         address _campaignReviewer,
         uint256 _milestoneId
     ) external auth(CAMPAIGN_MANAGER_ROLE) {
-        CampaignLib.Campaign storage campaign = _getCampaign(_campaignId);// Se comprueba que la Campaign exista.
+        CampaignLib.Campaign storage campaign = _getCampaign(_campaignId); // Se comprueba que la Campaign exista.
 
         uint256 entityId = _milestoneId;
 
@@ -156,9 +173,10 @@ contract Crowdfunding is AragonApp, Constants {
         } else {
             require(
                 msg.sender == campaign.manager ||
-                msg.sender == milestoneData.getMilestone(_milestoneId).manager  
-            , ERROR_AUTH_FAILED);
-
+                    msg.sender ==
+                    milestoneData.getMilestone(_milestoneId).manager,
+                ERROR_AUTH_FAILED
+            );
         }
         milestoneData.save(
             entityId,
@@ -171,10 +189,10 @@ contract Crowdfunding is AragonApp, Constants {
             _campaignReviewer,
             _milestoneId
         );
-        if (_milestoneId == 0) { 
+        if (_milestoneId == 0) {
             campaign.milestoneIds.push(entityId);
         }
-        emit SaveMilestone(entityId);        
+        emit SaveMilestone(entityId);
     }
 
     /**
@@ -457,7 +475,7 @@ contract Crowdfunding is AragonApp, Constants {
                     tokenAmount = tokenAmount.add(donation.amountRemainding);
                     amountTarget = amountTarget.sub(donation.amountRemainding);
                     donation.amountRemainding = 0;
-                    donation.status = DonationLib.Status.Spent;                    
+                    donation.status = DonationLib.Status.Spent;
                 } else {
                     // El monto restante de la donación es superior al objetivo.
                     if (amountTarget != 0) {
@@ -495,21 +513,30 @@ contract Crowdfunding is AragonApp, Constants {
      * @param _milestoneId Id del milestone que se cancela.
      * @param _activityInfoCid Content ID de las información (JSON) de la actividad
      */
-    function milestoneCancel(uint256 _milestoneId, string _activityInfoCid) external isInitialized {
-
+    function milestoneCancel(uint256 _milestoneId, string _activityInfoCid)
+        external
+        isInitialized
+    {
         MilestoneLib.Milestone storage milestone = _getMilestone(_milestoneId);
 
-        CampaignLib.Campaign storage campaign = _getCampaign(milestone.campaignId);
+        CampaignLib.Campaign storage campaign = _getCampaign(
+            milestone.campaignId
+        );
 
         // Campaign manager, reviewer y milestone manager, reviewer pueden marcar el Milestone como cancelado.
-        require(milestone.manager == msg.sender ||
-            milestone.reviewer == msg.sender ||
-            campaign.manager == msg.sender ||
-            campaign.reviewer == msg.sender, ERROR_AUTH_FAILED);
+        require(
+            milestone.manager == msg.sender ||
+                milestone.reviewer == msg.sender ||
+                campaign.manager == msg.sender ||
+                campaign.reviewer == msg.sender,
+            ERROR_AUTH_FAILED
+        );
 
         // El Milestone debe estar Activo.
-        require(milestone.status == MilestoneLib.Status.Active,
-            ERROR_MILESTONE_CANNOT_CANCEL);
+        require(
+            milestone.status == MilestoneLib.Status.Active,
+            ERROR_MILESTONE_CANNOT_CANCEL
+        );
 
         // Registración de la actividad.
         uint256 activityId = activityData.insert(
@@ -530,10 +557,11 @@ contract Crowdfunding is AragonApp, Constants {
         donationData.insertToken(_token);
     }
 
-    function setExchangeRateProvider(ExchangeRateProvider _exchangeRateProvider) 
-        public 
-        auth(SET_EXCHANGE_RATE_PROVIDER_ROLE){
-        exchangeRateProvider = _exchangeRateProvider; 
+    function setExchangeRateProvider(ExchangeRateProvider _exchangeRateProvider)
+        public
+        auth(SET_EXCHANGE_RATE_PROVIDER_ROLE)
+    {
+        exchangeRateProvider = _exchangeRateProvider;
     }
 
     // Getters functions
@@ -799,5 +827,4 @@ contract Crowdfunding is AragonApp, Constants {
     {
         return donationData.getDonation(_id);
     }
-
 }

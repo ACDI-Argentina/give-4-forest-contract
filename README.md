@@ -134,6 +134,24 @@ node .\scripts\upgrade-v1.1.0.js
 - BUIDLER_NETWORK = rskRegtest | rskTestnet | rskMainnet
 - CROWDFUNDING_ADDRESS es la dirección del smart contract de Crowdfunding (proxy).
 
+### v1.3.0
+
+```
+$env:BUIDLER_NETWORK="..."
+$env:DAO_CONTRACT_ADDRESS="..."
+$env:ARRAY_LIB_ADDRESS="..."
+$env:ENTITY_LIB_ADDRESS="..."
+$env:DAC_LIB_ADDRESS="..."
+$env:CAMPAIGN_LIB_ADDRESS="..."
+$env:MILESTONE_LIB_ADDRESS="..."
+$env:ACTIVITY_LIB_ADDRESS="..."
+$env:DONATION_LIB_ADDRESS="..."
+node .\scripts\upgrade-v1.3.0.js
+```
+
+- BUIDLER_NETWORK = rskRegtest | rskTestnet | rskMainnet
+- CROWDFUNDING_ADDRESS es la dirección del smart contract de Crowdfunding (proxy).
+
 ## Otorgar permisos
 
 Para otorgar permisos debe ejecutarse el siguiente script, especificando los parámetros:
