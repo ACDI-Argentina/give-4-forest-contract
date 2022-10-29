@@ -34,10 +34,10 @@ library MilestoneLib {
         uint256[] ids;
         /// @dev Iterable Mapping de Milestones
         mapping(uint256 => Milestone) milestones;
-    }    
+    }
 
-    string
-        internal constant ERROR_MILESTONE_NOT_EXISTS = "CROWDFUNDING_MILESTONE_NOT_EXIST";
+    string internal constant ERROR_MILESTONE_NOT_EXISTS =
+        "CROWDFUNDING_MILESTONE_NOT_EXIST";
 
     /**
      * @notice Inserta un nuevo Milestone.
@@ -98,7 +98,6 @@ library MilestoneLib {
         //self.milestones[id] = milestone;
     }
 
-
     function save(
         Data storage self,
         uint256 id, //entityId
@@ -111,18 +110,53 @@ library MilestoneLib {
         address _campaignReviewer,
         uint256 _milestoneId
     ) public {
-        if(_milestoneId == 0 ){ //new 
-            return insert(self,id,_infoCid,_campaignId,_fiatAmountTarget,_manager,_reviewer,_recipient,_campaignReviewer);
+        if (_milestoneId == 0) {
+            //new
+            return
+                insert(
+                    self,
+                    id,
+                    _infoCid,
+                    _campaignId,
+                    _fiatAmountTarget,
+                    _manager,
+                    _reviewer,
+                    _recipient,
+                    _campaignReviewer
+                );
         } else {
-            getMilestone(self,_milestoneId); //check if exists
-            return update(self,id,_infoCid,_campaignId,_fiatAmountTarget,_manager,_reviewer,_recipient,_campaignReviewer);
+            getMilestone(self, _milestoneId); //check if exists
+            return
+                update(
+                    self,
+                    id,
+                    _infoCid,
+                    _campaignId,
+                    _fiatAmountTarget,
+                    _manager,
+                    _reviewer,
+                    _recipient,
+                    _campaignReviewer
+                );
         }
     }
 
-
-
-
-
+    /**
+     * @notice Actualiza los datos referentes a la campaña del milestone.
+     * @param _id Id del Milestone a actualizar.
+     * @param _manager address del Campaign Manager
+     * @param _campaignReviewer address del Campaign Reviewer
+     */
+    function updateCampaignData(
+        Data storage self,
+        uint256 _id, //entityId
+        address _manager,
+        address _campaignReviewer
+    ) public {
+        Milestone storage milestone = self.milestones[_id];
+        milestone.manager = _manager;
+        milestone.campaignReviewer = _campaignReviewer;
+    }
 
     /**
      * @notice Obtiene el Milestone `_id`

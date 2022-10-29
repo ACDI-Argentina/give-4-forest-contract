@@ -118,14 +118,26 @@ contract Crowdfunding is AragonApp, Constants {
             entityId = _newEntity(EntityLib.EntityType.Campaign);
         } else {
             entityId = _campaignId;
-            require(
-                msg.sender == campaignData.getCampaign(entityId).manager,
-                ERROR_AUTH_FAILED
-            );
+            CampaignLib.Campaign storage campaign = _getCampaign(_campaignId);
+            require(msg.sender == campaign.manager, ERROR_AUTH_FAILED);
             ArrayLib.removeElement(
-                _getDac(_getCampaign(entityId).dacIds[0]).campaignIds,
-                entityId
+                _getDac(campaign.dacIds[0]).campaignIds,
+                _campaignId
             ); //Borra la referencias desde las dac anterior, TODO: COMPROBAR SI CAMBIO
+
+            // Workaround: cuando se edita una campaña, deben actualizarse los campos
+            // managerAddress y campaignReviewerAddress de cada milestone relacionado.
+            // Ver issue: https://github.com/ACDI-Argentina/give-4-forest/issues/45
+
+            for (uint256 i = 0; i < campaign.milestoneIds.length; i++) {
+                milestoneData.updateCampaignData(
+                    campaign.milestoneIds[i],
+                    // Se actualiza el Milestone Manager con el Campaign Manager.
+                    _manager,
+                    // Se actualiza el Campaign Reviewer con el Campaign Reviewer.
+                    _reviewer
+                );
+            }
         }
 
         campaignData.save(
